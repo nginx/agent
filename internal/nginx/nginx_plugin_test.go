@@ -10,9 +10,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"sort"
+	"os"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
+	"github.com/nginx/agent/v3/internal/file/filefakes"
+	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
+	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/test/stub"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -32,74 +38,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestResource_Process_Apply(t *testing.T) {
-	ctx := context.Background()
-
-	tests := []struct {
-		name     string
-		message  *bus.Message
-		applyErr error
-		topic    []string
-	}{
-		{
-			name: "Test 1: Write Config Successful Topic - Success Status",
-			message: &bus.Message{
-				Topic: bus.WriteConfigSuccessfulTopic,
-				Data: &model.ConfigApplyMessage{
-					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-					Error:         nil,
-				},
-			},
-			applyErr: nil,
-			topic:    []string{bus.ReloadSuccessfulTopic},
-		},
-		{
-			name: "Test 2: Write Config Successful Topic - Fail Status",
-			message: &bus.Message{
-				Topic: bus.WriteConfigSuccessfulTopic,
-				Data: &model.ConfigApplyMessage{
-					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-					Error:         nil,
-				},
-			},
-			applyErr: errors.New("error reloading"),
-			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplyFailedTopic},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
-			fakeNginxService.ApplyConfigReturns(&model.NginxConfigContext{}, test.applyErr)
-			messagePipe := busfakes.NewFakeMessagePipe()
-
-			resourcePlugin := NewNginx(types.AgentConfig())
-			resourcePlugin.nginxService = fakeNginxService
-
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
-			require.NoError(t, err)
-
-			resourcePlugin.messagePipe = messagePipe
-
-			resourcePlugin.Process(ctx, test.message)
-
-			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
-
-			if len(test.topic) > 1 {
-				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
-			}
-
-			if test.applyErr != nil {
-				response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
-				assert.True(tt, ok)
-				assert.Equal(tt, test.applyErr.Error(), response.GetCommandResponse().GetError())
-			}
-		})
-	}
-}
 
 func TestResource_createPlusAPIError(t *testing.T) {
 	s := "failed to get the HTTP servers of upstream nginx1: expected 200 response, got 404. error.status=404;" +
@@ -280,15 +218,16 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewNginx(types.AgentConfig())
-			resourcePlugin.nginxService = fakeNginxService
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+			nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+			nginxPlugin.nginxService = fakeNginxService
 
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			err := messagePipe.Register(2, []bus.Plugin{nginxPlugin})
 			require.NoError(tt, err)
 
-			resourcePlugin.messagePipe = messagePipe
+			nginxPlugin.messagePipe = messagePipe
 
-			resourcePlugin.Process(ctx, test.message)
+			nginxPlugin.Process(ctx, test.message)
 
 			assert.Equal(tt, test.topic[0], messagePipe.Messages()[0].Topic)
 
@@ -383,15 +322,16 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewNginx(types.AgentConfig())
-			resourcePlugin.nginxService = fakeNginxService
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+			nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+			nginxPlugin.nginxService = fakeNginxService
 
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			err := messagePipe.Register(2, []bus.Plugin{nginxPlugin})
 			require.NoError(tt, err)
 
-			resourcePlugin.messagePipe = messagePipe
+			nginxPlugin.messagePipe = messagePipe
 
-			resourcePlugin.Process(ctx, test.message)
+			nginxPlugin.Process(ctx, test.message)
 
 			assert.Equal(tt, test.topic[0], messagePipe.Messages()[0].Topic)
 
@@ -525,15 +465,16 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewNginx(types.AgentConfig())
-			resourcePlugin.nginxService = fakeNginxService
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+			nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+			nginxPlugin.nginxService = fakeNginxService
 
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			err := messagePipe.Register(2, []bus.Plugin{nginxPlugin})
 			require.NoError(t, err)
 
-			resourcePlugin.messagePipe = messagePipe
+			nginxPlugin.messagePipe = messagePipe
 
-			resourcePlugin.Process(ctx, test.message)
+			nginxPlugin.Process(ctx, test.message)
 
 			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
@@ -671,97 +612,39 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 	}
 }
 
-func TestResource_Process_Rollback(t *testing.T) {
-	ctx := context.Background()
-
-	tests := []struct {
-		name        string
-		message     *bus.Message
-		rollbackErr error
-		topic       []string
-	}{
-		{
-			name: "Test 1: Rollback Write Topic - Success Status",
-			message: &bus.Message{
-				Topic: bus.RollbackWriteTopic,
-				Data: &model.ConfigApplyMessage{
-					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-					Error:         errors.New("something went wrong with config apply"),
-				},
-			},
-			rollbackErr: nil,
-			topic:       []string{bus.ConfigApplyCompleteTopic},
-		},
-		{
-			name: "Test 2: Rollback Write Topic - Fail Status",
-			message: &bus.Message{
-				Topic: bus.RollbackWriteTopic,
-				Data: &model.ConfigApplyMessage{
-					CorrelationID: "",
-					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-					Error:         errors.New("something went wrong with config apply"),
-				},
-			},
-			rollbackErr: errors.New("error reloading"),
-			topic:       []string{bus.ConfigApplyCompleteTopic, bus.DataPlaneResponseTopic},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
-			fakeNginxService.ApplyConfigReturns(&model.NginxConfigContext{}, test.rollbackErr)
-			messagePipe := busfakes.NewFakeMessagePipe()
-
-			resourcePlugin := NewNginx(types.AgentConfig())
-			resourcePlugin.nginxService = fakeNginxService
-
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
-			require.NoError(t, err)
-
-			resourcePlugin.messagePipe = messagePipe
-
-			resourcePlugin.Process(ctx, test.message)
-
-			sort.Slice(messagePipe.Messages(), func(i, j int) bool {
-				return messagePipe.Messages()[i].Topic < messagePipe.Messages()[j].Topic
-			})
-
-			assert.Len(tt, messagePipe.Messages(), len(test.topic))
-
-			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
-
-			if len(test.topic) > 1 {
-				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
-			}
-
-			if test.rollbackErr != nil {
-				rollbackResponse, ok := messagePipe.Messages()[1].Data.(*mpi.DataPlaneResponse)
-				assert.True(tt, ok)
-				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
-				assert.Equal(tt, test.rollbackErr.Error(), rollbackResponse.GetCommandResponse().GetError())
-			}
-		})
-	}
-}
-
 func TestResource_Subscriptions(t *testing.T) {
-	resourcePlugin := NewNginx(types.AgentConfig())
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	assert.Equal(t,
 		[]string{
-			bus.ResourceUpdateTopic,
-			bus.WriteConfigSuccessfulTopic,
-			bus.RollbackWriteTopic,
 			bus.APIActionRequestTopic,
-			bus.AgentConfigUpdateTopic,
+			bus.ConnectionResetTopic,
+			bus.ConnectionCreatedTopic,
+			bus.NginxConfigUpdateTopic,
+			bus.ConfigUploadRequestTopic,
+			bus.ConfigApplyRequestTopic,
 		},
-		resourcePlugin.Subscriptions())
+		nginxPlugin.Subscriptions())
+
+	readNginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Auxiliary, &sync.RWMutex{})
+	assert.Equal(t,
+		[]string{
+			bus.APIActionRequestTopic,
+			bus.ConnectionResetTopic,
+			bus.ConnectionCreatedTopic,
+			bus.NginxConfigUpdateTopic,
+			bus.ConfigUploadRequestTopic,
+		},
+		readNginxPlugin.Subscriptions())
 }
 
 func TestResource_Info(t *testing.T) {
-	resourcePlugin := NewNginx(types.AgentConfig())
-	assert.Equal(t, &bus.Info{Name: "nginx"}, resourcePlugin.Info())
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+	assert.Equal(t, &bus.Info{Name: "nginx"}, nginxPlugin.Info())
+
+	readNginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Auxiliary, &sync.RWMutex{})
+	assert.Equal(t, &bus.Info{Name: "auxiliary-nginx"}, readNginxPlugin.Info())
 }
 
 func TestResource_Init(t *testing.T) {
@@ -771,9 +654,10 @@ func TestResource_Init(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
-	resourcePlugin := NewNginx(types.AgentConfig())
-	resourcePlugin.nginxService = &fakeNginxService
-	err := resourcePlugin.Init(ctx, messagePipe)
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+	nginxPlugin.nginxService = &fakeNginxService
+	err := nginxPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
 	messages := messagePipe.Messages()
@@ -781,8 +665,313 @@ func TestResource_Init(t *testing.T) {
 	assert.Empty(t, messages)
 }
 
+func TestResource_Process_handleConfigUploadRequest(t *testing.T) {
+	ctx := context.Background()
+
+	tempDir := os.TempDir()
+	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
+	fileMeta := protos.FileMeta(testFile.Name(), "")
+
+	message := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+			ConfigUploadRequest: &mpi.ConfigUploadRequest{
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{
+						{
+							FileMeta: fileMeta,
+						},
+						{
+							FileMeta: fileMeta,
+						},
+					},
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "123",
+						Version:    "f33ref3d32d3c32d3a",
+					},
+				},
+			},
+		},
+	}
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
+	messagePipe := busfakes.NewFakeMessagePipe()
+
+	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+	err := nginxPlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+
+	nginxPlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
+	nginxPlugin.Process(ctx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+
+	assert.Eventually(
+		t,
+		func() bool { return fakeFileServiceClient.UpdateFileCallCount() == 2 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	messages := messagePipe.Messages()
+	assert.Len(t, messages, 1)
+	assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+
+	dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+	assert.True(t, ok)
+	assert.Equal(
+		t,
+		mpi.CommandResponse_COMMAND_STATUS_OK,
+		dataPlaneResponse.GetCommandResponse().GetStatus(),
+	)
+}
+
+func TestResource_Process_handleConfigUploadRequest_Failure(t *testing.T) {
+	ctx := context.Background()
+
+	fileMeta := protos.FileMeta("/unknown/file.conf", "")
+
+	message := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+			ConfigUploadRequest: &mpi.ConfigUploadRequest{
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{
+						{
+							FileMeta: fileMeta,
+						},
+						{
+							FileMeta: fileMeta,
+						},
+					},
+					ConfigVersion: protos.CreateConfigVersion(),
+				},
+			},
+		},
+	}
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
+	messagePipe := busfakes.NewFakeMessagePipe()
+
+	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+	err := nginxPlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+
+	nginxPlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
+	nginxPlugin.Process(ctx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.Messages()) == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	assert.Equal(t, 0, fakeFileServiceClient.UpdateFileCallCount())
+
+	messages := messagePipe.Messages()
+	assert.Len(t, messages, 1)
+
+	assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+
+	dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+	assert.True(t, ok)
+	assert.Equal(
+		t,
+		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		dataPlaneResponse.GetCommandResponse().GetStatus(),
+	)
+}
+
+func TestResource_Process_handleConfigApplyRequest(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+
+	filePath := tempDir + "/nginx.conf"
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+
+	message := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: protos.CreateConfigApplyRequest(protos.FileOverview(filePath, fileHash)),
+		},
+	}
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+
+	tests := []struct {
+		message               *mpi.ManagementPlaneRequest
+		configApplyReturnsErr error
+		name                  string
+		configApplyStatus     model.WriteStatus
+	}{
+		{
+			name:                  "Test 1 - Success",
+			configApplyReturnsErr: nil,
+			configApplyStatus:     model.OK,
+			message:               message,
+		},
+		{
+			name:                  "Test 2 - Fail, Rollback",
+			configApplyReturnsErr: errors.New("something went wrong"),
+			configApplyStatus:     model.RollbackRequired,
+			message:               message,
+		},
+		{
+			name:                  "Test 3 - Fail, No Rollback",
+			configApplyReturnsErr: errors.New("something went wrong"),
+			configApplyStatus:     model.Error,
+			message:               message,
+		},
+		{
+			name:                  "Test 4 - Fail to cast payload",
+			configApplyReturnsErr: errors.New("something went wrong"),
+			configApplyStatus:     model.Error,
+			message:               nil,
+		},
+		{
+			name:                  "Test 5 - No changes needed",
+			configApplyReturnsErr: nil,
+			configApplyStatus:     model.NoChange,
+			message:               message,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+			fakeNginxService.ApplyConfigReturns(&model.NginxConfigContext{}, test.configApplyReturnsErr)
+
+			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
+			fakeFileManagerService.ConfigApplyReturns(test.configApplyStatus, test.configApplyReturnsErr)
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+
+			err := nginxPlugin.Init(ctx, messagePipe)
+			nginxPlugin.fileManagerService = fakeFileManagerService
+			nginxPlugin.nginxService = fakeNginxService
+			require.NoError(t, err)
+
+			nginxPlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: test.message})
+
+			messages := messagePipe.Messages()
+
+			switch {
+			case test.configApplyStatus == model.OK:
+				assert.Len(t, messages, 2)
+				assert.Equal(t, bus.EnableWatchersTopic, messages[0].Topic)
+				assert.Equal(t, bus.DataPlaneResponseTopic, messages[1].Topic)
+
+				msg, ok := messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, msg.GetCommandResponse().GetStatus())
+				assert.Equal(t, "Config apply successful", msg.GetCommandResponse().GetMessage())
+			case test.configApplyStatus == model.RollbackRequired:
+				assert.Len(t, messages, 3)
+
+				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_ERROR,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+				assert.Equal(t, "Config apply failed, rolling back config",
+					dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
+
+				dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(t, "Config apply failed, rollback successful",
+					dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					dataPlaneResponse.GetCommandResponse().GetStatus())
+
+				assert.Equal(t, bus.EnableWatchersTopic, messages[2].Topic)
+			case test.configApplyStatus == model.NoChange:
+				assert.Len(t, messages, 2)
+
+				response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(t, 1, fakeFileManagerService.ClearCacheCallCount())
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_OK,
+					response.GetCommandResponse().GetStatus(),
+				)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_OK,
+					response.GetCommandResponse().GetStatus(),
+				)
+
+				assert.Equal(t, bus.EnableWatchersTopic, messages[1].Topic)
+
+			case test.message == nil:
+				assert.Empty(t, messages)
+			default:
+				assert.Len(t, messages, 2)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+				assert.Equal(t, "Config apply failed", dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
+				assert.Equal(t, bus.EnableWatchersTopic, messages[1].Topic)
+			}
+		})
+	}
+}
+
+func TestNginxPlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
+	ctx := context.Background()
+
+	fileMeta := protos.FileMeta("/etc/nginx/nginx/conf", "")
+
+	message := &model.NginxConfigContext{
+		Files: []*mpi.File{
+			{
+				FileMeta: fileMeta,
+			},
+		},
+	}
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.UpdateOverviewReturns(&mpi.UpdateOverviewResponse{
+		Overview: nil,
+	}, nil)
+
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
+	messagePipe := busfakes.NewFakeMessagePipe()
+
+	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+	err := nginxPlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+
+	nginxPlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
+	nginxPlugin.Process(ctx, &bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message})
+
+	assert.Eventually(
+		t,
+		func() bool { return fakeFileServiceClient.UpdateOverviewCallCount() == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+}
+
 //nolint:revive,lll // maximum number of arguments exceed
-func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, getUpstreamsFunc func(serviceInterface *nginxfakes.FakeNginxServiceInterface), instance *mpi.Instance, message *bus.Message, topic []string, err error) {
+func runResourceTestHelper(t *testing.T, ctx context.Context, testName string,
+	getUpstreamsFunc func(serviceInterface *nginxfakes.FakeNginxServiceInterface), instance *mpi.Instance,
+	message *bus.Message, topic []string, err error,
+) {
 	t.Helper()
 
 	t.Run(testName, func(tt *testing.T) {
@@ -794,14 +983,15 @@ func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, g
 		}
 
 		messagePipe := busfakes.NewFakeMessagePipe()
-		resourcePlugin := NewNginx(types.AgentConfig())
-		resourcePlugin.nginxService = fakeNginxService
+		fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+		nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+		nginxPlugin.nginxService = fakeNginxService
 
-		registerErr := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+		registerErr := messagePipe.Register(2, []bus.Plugin{nginxPlugin})
 		require.NoError(t, registerErr)
 
-		resourcePlugin.messagePipe = messagePipe
-		resourcePlugin.Process(ctx, message)
+		nginxPlugin.messagePipe = messagePipe
+		nginxPlugin.Process(ctx, message)
 
 		assert.Equal(tt, topic[0], messagePipe.Messages()[0].Topic)
 

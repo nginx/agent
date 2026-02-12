@@ -86,7 +86,7 @@ type (
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
-	fileManagerServiceInterface interface {
+	FileManagerServiceInterface interface {
 		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
 			err error)
 		Rollback(ctx context.Context, instanceID string) error
