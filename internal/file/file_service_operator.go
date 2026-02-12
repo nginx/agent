@@ -539,7 +539,7 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunks(
 		chunkID++
 	}
 
-	// Ensure the stream is properly closed and wait for the server's response
+	// Ensure the stream is closed and wait for the server's response only
 	// after all chunks are sent
 	_, err = updateFileStreamClient.CloseAndRecv()
 	return err
