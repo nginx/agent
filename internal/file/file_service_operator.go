@@ -436,10 +436,18 @@ func (fso *FileServiceOperator) sendUpdateFileStream(
 
 	err = fso.sendUpdateFileStreamHeader(ctx, fileToUpdate, chunkSize, updateFileStreamClient)
 	if err != nil {
+		_, closeErr := updateFileStreamClient.CloseAndRecv()
+		slog.DebugContext(ctx, "Unable to close File Stream", "err", closeErr)
 		return err
 	}
 
-	return fso.sendFileUpdateStreamChunks(ctx, fileToUpdate, chunkSize, updateFileStreamClient)
+	chunkErr := fso.sendFileUpdateStreamChunks(ctx, fileToUpdate, chunkSize, updateFileStreamClient)
+
+	_, closeErr := updateFileStreamClient.CloseAndRecv()
+	if closeErr != nil {
+		slog.DebugContext(ctx, "Unable to close File Stream", "err", closeErr)
+	}
+	return chunkErr
 }
 
 func (fso *FileServiceOperator) sendUpdateFileStreamHeader(
@@ -538,10 +546,10 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunks(
 
 		chunkID++
 	}
-
-	// Ensure the stream is closed and wait for the server's response only
-	// after all chunks are sent
-	_, err = updateFileStreamClient.CloseAndRecv()
+	//
+	//// Ensure the stream is closed and wait for the server's response only
+	//// after all chunks are sent
+	//_, err = updateFileStreamClient.CloseAndRecv()
 	return err
 }
 
