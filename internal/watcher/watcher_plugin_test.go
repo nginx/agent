@@ -49,18 +49,14 @@ func TestWatcher_Init(t *testing.T) {
 
 	assert.Empty(t, messages)
 
-	instanceUpdatesMessage := instance.InstanceUpdatesMessage{
+	resourceUpdatesMessage := instance.ResourceUpdatesMessage{
 		CorrelationID: logger.GenerateCorrelationID(),
-		InstanceUpdates: instance.InstanceUpdates{
-			NewInstances: []*mpi.Instance{
+		Resource: &mpi.Resource{
+			ResourceId: protos.HostResource().GetResourceId(),
+			Instances: []*mpi.Instance{
 				protos.NginxOssInstance([]string{}),
 			},
-			UpdatedInstances: []*mpi.Instance{
-				protos.NginxOssInstance([]string{}),
-			},
-			DeletedInstances: []*mpi.Instance{
-				protos.NginxPlusInstance([]string{}),
-			},
+			Info: protos.HostResource().GetInfo(),
 		},
 	}
 
@@ -80,42 +76,32 @@ func TestWatcher_Init(t *testing.T) {
 		GrpcConnection: &grpc.GrpcConnection{},
 	}
 
-	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
+	watcherPlugin.resourceUpdatesChannel <- resourceUpdatesMessage
 	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
 	watcherPlugin.instanceHealthChannel <- instanceHealthMessage
 	watcherPlugin.commandCredentialUpdatesChannel <- credentialUpdateMessage
 
-	assert.Eventually(t, func() bool { return len(messagePipe.Messages()) == 6 }, 2*time.Second, 10*time.Millisecond)
+	assert.Eventually(t, func() bool { return len(messagePipe.Messages()) == 4 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.Messages()
 
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.AddInstancesTopic, Data: instanceUpdatesMessage.InstanceUpdates.NewInstances},
+		&bus.Message{Topic: bus.ResourceUpdateTopic, Data: resourceUpdatesMessage.Resource},
 		messages[0],
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: instanceUpdatesMessage.InstanceUpdates.UpdatedInstances},
+		&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: nginxConfigContextMessage.NginxConfigContext},
 		messages[1],
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdatesMessage.InstanceUpdates.DeletedInstances},
-		messages[2],
-	)
-	assert.Equal(
-		t,
-		&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: nginxConfigContextMessage.NginxConfigContext},
-		messages[3],
-	)
-	assert.Equal(
-		t,
 		&bus.Message{Topic: bus.InstanceHealthTopic, Data: instanceHealthMessage.InstanceHealth},
-		messages[4],
+		messages[2],
 	)
 	assert.Equal(t,
 		&bus.Message{Topic: bus.ConnectionResetTopic, Data: &grpc.GrpcConnection{}},
-		messages[5])
+		messages[3])
 }
 
 func TestWatcher_Info(t *testing.T) {

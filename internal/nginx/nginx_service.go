@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"context"
@@ -44,7 +44,7 @@ const (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
-//counterfeiter:generate . resourceServiceInterface
+//counterfeiter:generate . nginxServiceInterface
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . logTailerOperator
@@ -55,10 +55,8 @@ const (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . processOperator
 
-type resourceServiceInterface interface {
-	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
-	UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
-	DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
+type nginxServiceInterface interface {
+	UpdateResource(ctx context.Context, resource *mpi.Resource) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) (*model.NginxConfigContext, error)
 	Instance(instanceID string) *mpi.Instance
 	GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer,
@@ -89,24 +87,24 @@ type (
 	}
 )
 
-type ResourceService struct {
+type NginxService struct {
 	resource          *mpi.Resource
 	nginxConfigParser parser.ConfigParser
 	agentConfig       *config.Config
-	instanceOperators map[string]instanceOperator // key is instance ID
+	instanceOperator  instanceOperator
 	info              host.InfoInterface
 	manifestFilePath  string
 	resourceMutex     sync.Mutex
 	operatorsMutex    sync.Mutex
 }
 
-func NewResourceService(ctx context.Context, agentConfig *config.Config) *ResourceService {
-	resourceService := &ResourceService{
+func NewNginxService(ctx context.Context, agentConfig *config.Config) *NginxService {
+	resourceService := &NginxService{
 		resource:          &mpi.Resource{},
 		resourceMutex:     sync.Mutex{},
 		info:              host.NewInfo(),
 		operatorsMutex:    sync.Mutex{},
-		instanceOperators: make(map[string]instanceOperator),
+		instanceOperator:  NewInstanceOperator(agentConfig),
 		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
 		agentConfig:       agentConfig,
 		manifestFilePath:  agentConfig.LibDir + "/manifest.json",
@@ -117,17 +115,8 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 	return resourceService
 }
 
-func (r *ResourceService) AddInstances(instanceList []*mpi.Instance) *mpi.Resource {
-	r.resourceMutex.Lock()
-	defer r.resourceMutex.Unlock()
-	r.resource.Instances = append(r.resource.GetInstances(), instanceList...)
-	r.AddOperator(instanceList)
-
-	return r.resource
-}
-
-func (r *ResourceService) Instance(instanceID string) *mpi.Instance {
-	for _, instance := range r.resource.GetInstances() {
+func (n *NginxService) Instance(instanceID string) *mpi.Instance {
+	for _, instance := range n.resource.GetInstances() {
 		if instance.GetInstanceMeta().GetInstanceId() == instanceID {
 			return instance
 		}
@@ -136,120 +125,71 @@ func (r *ResourceService) Instance(instanceID string) *mpi.Instance {
 	return nil
 }
 
-func (r *ResourceService) AddOperator(instanceList []*mpi.Instance) {
-	r.operatorsMutex.Lock()
-	defer r.operatorsMutex.Unlock()
-	for _, instance := range instanceList {
-		r.instanceOperators[instance.GetInstanceMeta().GetInstanceId()] = NewInstanceOperator(r.agentConfig)
-	}
+func (n *NginxService) UpdateResource(ctx context.Context, resource *mpi.Resource) *mpi.Resource {
+	slog.DebugContext(ctx, "Updating resource", "resource", resource)
+	n.resourceMutex.Lock()
+	defer n.resourceMutex.Unlock()
+
+	n.resource = resource
+
+	return n.resource
 }
 
-func (r *ResourceService) RemoveOperator(instanceList []*mpi.Instance) {
-	r.operatorsMutex.Lock()
-	defer r.operatorsMutex.Unlock()
-	for _, instance := range instanceList {
-		delete(r.instanceOperators, instance.GetInstanceMeta().GetInstanceId())
-	}
-}
-
-func (r *ResourceService) UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
-	r.resourceMutex.Lock()
-	defer r.resourceMutex.Unlock()
-
-	for _, updatedInstance := range instanceList {
-		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
-		if ok {
-			for _, instance := range resourceCopy.GetInstances() {
-				if updatedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-					instance.InstanceMeta = updatedInstance.GetInstanceMeta()
-					instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
-					instance.InstanceConfig = updatedInstance.GetInstanceConfig()
-				}
-			}
-			r.resource = resourceCopy
-		} else {
-			slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
-				r.resource, "instances", instanceList)
-		}
-	}
-
-	return r.resource
-}
-
-func (r *ResourceService) DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
-	r.resourceMutex.Lock()
-	defer r.resourceMutex.Unlock()
-
-	for _, deletedInstance := range instanceList {
-		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
-		if ok {
-			for index, instance := range resourceCopy.GetInstances() {
-				if deletedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-					r.resource.Instances = append(r.resource.Instances[:index], r.resource.GetInstances()[index+1:]...)
-				}
-			}
-		} else {
-			slog.WarnContext(ctx, "Unable to clone resource while deleting instances", "resource",
-				r.resource, "instances", instanceList)
-		}
-	}
-	r.RemoveOperator(instanceList)
-
-	return r.resource
-}
-
-func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*model.NginxConfigContext, error) {
+func (n *NginxService) ApplyConfig(ctx context.Context, instanceID string) (*model.NginxConfigContext, error) {
 	var instance *mpi.Instance
-	operator := r.instanceOperators[instanceID]
 
-	if operator == nil {
-		return nil, fmt.Errorf("instance %s not found", instanceID)
+	if n.instanceOperator == nil {
+		return nil, errors.New("instance operator is nil")
 	}
 
-	for _, resourceInstance := range r.resource.GetInstances() {
+	for _, resourceInstance := range n.resource.GetInstances() {
 		if resourceInstance.GetInstanceMeta().GetInstanceId() == instanceID {
 			instance = resourceInstance
 		}
 	}
 
+	if instance == nil {
+		return nil, fmt.Errorf("instance %s not found", instanceID)
+	}
+
 	// Need to parse config to determine what error logs to watch if new ones are added as part of the NGINX reload
-	nginxConfigContext, parseErr := r.nginxConfigParser.Parse(ctx, instance)
+	nginxConfigContext, parseErr := n.nginxConfigParser.Parse(ctx, instance)
 	if parseErr != nil || nginxConfigContext == nil {
 		return nil, fmt.Errorf("failed to parse config %w", parseErr)
 	}
 
-	nginxConfigContext = r.updateConfigContextFiles(ctx, nginxConfigContext)
+	nginxConfigContext = n.updateConfigContextFiles(ctx, nginxConfigContext)
 
 	datasource.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 
 	slog.DebugContext(ctx, "Updated Instance Runtime after parsing config", "instance", instance.GetInstanceRuntime())
 
-	valErr := operator.Validate(ctx, instance)
+	valErr := n.instanceOperator.Validate(ctx, instance)
 	if valErr != nil {
 		return nil, fmt.Errorf("failed validating config %w", valErr)
 	}
 
-	reloadErr := operator.Reload(ctx, instance)
+	reloadErr := n.instanceOperator.Reload(ctx, instance)
 	if reloadErr != nil {
 		return nil, fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}
 
 	// Check if APIs have been added/updated/removed
-	nginxConfigContext.StubStatus = r.nginxConfigParser.FindStubStatusAPI(ctx, nginxConfigContext)
-	nginxConfigContext.PlusAPI = r.nginxConfigParser.FindPlusAPI(ctx, nginxConfigContext)
+	nginxConfigContext.StubStatus = n.nginxConfigParser.FindStubStatusAPI(ctx, nginxConfigContext)
+	nginxConfigContext.PlusAPI = n.nginxConfigParser.FindPlusAPI(ctx, nginxConfigContext)
 
 	datasource.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
-	r.UpdateInstances(ctx, []*mpi.Instance{instance})
+	n.updateInstances(ctx, []*mpi.Instance{instance})
 
 	slog.DebugContext(ctx, "Updated Instance Runtime after reloading NGINX", "instance", instance.GetInstanceRuntime())
 
 	return nginxConfigContext, nil
 }
 
-func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
+func (n *NginxService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
 	upstream string,
 ) ([]client.UpstreamServer, error) {
-	plusClient, err := r.createPlusClient(ctx, instance)
+	plusClient, err := n.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -263,9 +203,9 @@ func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *
 	return servers, createPlusAPIError(getServersErr)
 }
 
-func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
+func (n *NginxService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
 ) (*client.Upstreams, error) {
-	plusClient, err := r.createPlusClient(ctx, instance)
+	plusClient, err := n.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -280,9 +220,9 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 	return servers, createPlusAPIError(getUpstreamsErr)
 }
 
-func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.Instance,
+func (n *NginxService) GetStreamUpstreams(ctx context.Context, instance *mpi.Instance,
 ) (*client.StreamUpstreams, error) {
-	plusClient, err := r.createPlusClient(ctx, instance)
+	plusClient, err := n.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -300,10 +240,10 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 // max number of returns from function is 3
 //
 //nolint:revive // maximum return allowed is 3
-func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
+func (n *NginxService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.StreamUpstreamServer, err error) {
-	plusClient, err := r.createPlusClient(ctx, instance)
+	plusClient, err := n.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, nil, nil, err
@@ -323,10 +263,10 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 // max number of returns from function is 3
 //
 //nolint:revive // maximum return allowed is 3
-func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
+func (n *NginxService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.UpstreamServer, err error) {
-	plusClient, err := r.createPlusClient(ctx, instance)
+	plusClient, err := n.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, nil, nil, err
@@ -343,10 +283,32 @@ func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instanc
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
 
-func (r *ResourceService) updateConfigContextFiles(ctx context.Context,
+func (n *NginxService) updateInstances(ctx context.Context, instanceList []*mpi.Instance) {
+	n.resourceMutex.Lock()
+	defer n.resourceMutex.Unlock()
+
+	for _, updatedInstance := range instanceList {
+		resourceCopy, ok := proto.Clone(n.resource).(*mpi.Resource)
+		if ok {
+			for _, instance := range resourceCopy.GetInstances() {
+				if updatedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
+					instance.InstanceMeta = updatedInstance.GetInstanceMeta()
+					instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
+					instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+				}
+			}
+			n.resource = resourceCopy
+		} else {
+			slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
+				n.resource, "instances", instanceList)
+		}
+	}
+}
+
+func (n *NginxService) updateConfigContextFiles(ctx context.Context,
 	nginxConfigContext *model.NginxConfigContext,
 ) *model.NginxConfigContext {
-	manifestFiles, manifestErr := r.manifestFile()
+	manifestFiles, manifestErr := n.manifestFile()
 	if manifestErr != nil {
 		slog.ErrorContext(ctx, "Error getting manifest files", "error", manifestErr)
 	}
@@ -364,12 +326,12 @@ func (r *ResourceService) updateConfigContextFiles(ctx context.Context,
 	return nginxConfigContext
 }
 
-func (r *ResourceService) manifestFile() (map[string]*model.ManifestFile, error) {
-	if _, err := os.Stat(r.manifestFilePath); err != nil {
+func (n *NginxService) manifestFile() (map[string]*model.ManifestFile, error) {
+	if _, err := os.Stat(n.manifestFilePath); err != nil {
 		return nil, err
 	}
 
-	file, err := os.ReadFile(r.manifestFilePath)
+	file, err := os.ReadFile(n.manifestFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
@@ -416,7 +378,7 @@ func convertToStreamUpstreamServer(streamUpstreams []*structpb.Struct) []client.
 	return servers
 }
 
-func (r *ResourceService) createPlusClient(ctx context.Context, instance *mpi.Instance) (*client.NginxClient, error) {
+func (n *NginxService) createPlusClient(ctx context.Context, instance *mpi.Instance) (*client.NginxClient, error) {
 	plusAPI := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApi()
 	var endpoint string
 
@@ -459,31 +421,31 @@ func (r *ResourceService) createPlusClient(ctx context.Context, instance *mpi.In
 	)
 }
 
-func (r *ResourceService) updateResourceInfo(ctx context.Context) {
-	r.resourceMutex.Lock()
-	defer r.resourceMutex.Unlock()
+func (n *NginxService) updateResourceInfo(ctx context.Context) {
+	n.resourceMutex.Lock()
+	defer n.resourceMutex.Unlock()
 
-	isContainer, err := r.info.IsContainer()
+	isContainer, err := n.info.IsContainer()
 	if err != nil {
 		slog.WarnContext(ctx, "Failed to check if resource is container", "error", err)
 	}
 
 	if isContainer {
-		r.resource.Info, err = r.info.ContainerInfo(ctx)
+		n.resource.Info, err = n.info.ContainerInfo(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to get container info", "error", err)
 			return
 		}
-		r.resource.ResourceId = r.resource.GetContainerInfo().GetContainerId()
-		r.resource.Instances = []*mpi.Instance{}
+		n.resource.ResourceId = n.resource.GetContainerInfo().GetContainerId()
+		n.resource.Instances = []*mpi.Instance{}
 	} else {
-		r.resource.Info, err = r.info.HostInfo(ctx)
+		n.resource.Info, err = n.info.HostInfo(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to get host info", "error", err)
 			return
 		}
-		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
-		r.resource.Instances = []*mpi.Instance{}
+		n.resource.ResourceId = n.resource.GetHostInfo().GetHostId()
+		n.resource.Instances = []*mpi.Instance{}
 	}
 }
 
