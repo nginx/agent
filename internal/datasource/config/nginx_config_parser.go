@@ -74,6 +74,7 @@ var globFunction = func(path string) ([]string, error) {
 type (
 	NginxConfigParser struct {
 		agentConfig *config.Config
+		docker0IP   string
 	}
 )
 
@@ -103,7 +104,33 @@ type createAPIDetailsParams struct {
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
 		agentConfig: agentConfig,
+		docker0IP:   getDocker0IP(),
 	}
+}
+
+// getDocker0IP discovers the docker0 interface IP address
+// Returns empty string if docker0 interface is not found
+func getDocker0IP() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+
+	for _, iface := range ifaces {
+		if iface.Name == "docker0" {
+			addrs, err := iface.Addrs()
+			if err != nil {
+				continue
+			}
+			for _, addr := range addrs {
+				if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.To4() != nil {
+					return ipnet.IP.String()
+				}
+			}
+		}
+	}
+
+	return ""
 }
 
 func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
@@ -364,6 +391,10 @@ func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string
 
 		ip := net.ParseIP(host)
 		if ip.IsLoopback() || strings.EqualFold(host, "localhost") {
+			return matches[1]
+		}
+
+		if ncp.docker0IP != "" && strings.EqualFold(host, ncp.docker0IP) {
 			return matches[1]
 		}
 	}
