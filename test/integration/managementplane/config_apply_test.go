@@ -129,7 +129,7 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test2_TestValidConfig() {
 	s.Require().NoError(err)
 
 	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
-	responses := utils.ManagementPlaneResponses(s.T(), 3, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
 	manifestFiles := map[string]*model.ManifestFile{
