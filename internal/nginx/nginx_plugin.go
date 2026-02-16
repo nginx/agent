@@ -623,9 +623,9 @@ func (n *NginxPlugin) rollbackConfigApply(ctx context.Context, correlationID, in
 func (n *NginxPlugin) completeConfigApply(ctx context.Context, configContext *model.NginxConfigContext,
 	dpResponse *mpi.DataPlaneResponse,
 ) {
-	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
 	n.fileManagerService.ClearCache()
 	n.enableWatchers(ctx, configContext, dpResponse.GetInstanceId())
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
 }
 
 func (n *NginxPlugin) enableWatchers(ctx context.Context, configContext *model.NginxConfigContext, instanceID string) {

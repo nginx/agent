@@ -886,18 +886,20 @@ func TestNginx_Process_handleConfigApplyRequest(t *testing.T) {
 					dataPlaneResponse.GetCommandResponse().GetMessage())
 				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
 
-				dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.Equal(t, bus.EnableWatchersTopic, messages[1].Topic)
+
+				dataPlaneResponse, ok = messages[2].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(t, "Config apply failed, rollback successful",
 					dataPlaneResponse.GetCommandResponse().GetMessage())
 				assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 					dataPlaneResponse.GetCommandResponse().GetStatus())
 
-				assert.Equal(t, bus.EnableWatchersTopic, messages[2].Topic)
 			case test.configApplyStatus == model.NoChange:
 				assert.Len(t, messages, 2)
+				assert.Equal(t, bus.EnableWatchersTopic, messages[0].Topic)
 
-				response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				response, ok := messages[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(t, 1, fakeFileManagerService.ClearCacheCallCount())
 				assert.Equal(
@@ -911,13 +913,13 @@ func TestNginx_Process_handleConfigApplyRequest(t *testing.T) {
 					response.GetCommandResponse().GetStatus(),
 				)
 
-				assert.Equal(t, bus.EnableWatchersTopic, messages[1].Topic)
-
 			case test.message == nil:
 				assert.Empty(t, messages)
 			default:
 				assert.Len(t, messages, 2)
-				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.Equal(t, bus.EnableWatchersTopic, messages[0].Topic)
+
+				dataPlaneResponse, ok := messages[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,
@@ -926,7 +928,6 @@ func TestNginx_Process_handleConfigApplyRequest(t *testing.T) {
 				)
 				assert.Equal(t, "Config apply failed", dataPlaneResponse.GetCommandResponse().GetMessage())
 				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
-				assert.Equal(t, bus.EnableWatchersTopic, messages[1].Topic)
 			}
 		})
 	}
