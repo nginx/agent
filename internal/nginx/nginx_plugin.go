@@ -430,6 +430,10 @@ func (n *NginxPlugin) failedConfigApply(ctx context.Context, correlationID, inst
 
 	err := n.fileManagerService.Rollback(ctx, instanceID)
 	if err != nil {
+		configErr := fmt.Errorf("config apply error: %w", applyErr)
+		rbErr := fmt.Errorf("rollback error: %w", err)
+		combinedErr := errors.Join(configErr, rbErr)
+
 		rollbackResponse := response.CreateDataPlaneResponse(
 			correlationID,
 			&mpi.CommandResponse{
@@ -446,7 +450,7 @@ func (n *NginxPlugin) failedConfigApply(ctx context.Context, correlationID, inst
 			&mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				Message: "Config apply failed, rollback failed",
-				Error:   err.Error(),
+				Error:   combinedErr.Error(),
 			},
 			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 			instanceID,

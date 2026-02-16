@@ -39,7 +39,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResource_createPlusAPIError(t *testing.T) {
+func TestNginx_createPlusAPIError(t *testing.T) {
 	s := "failed to get the HTTP servers of upstream nginx1: expected 200 response, got 404. error.status=404;" +
 		" error.text=upstream not found; error.code=UpstreamNotFound; request_id=b534bdab5cb5e321e8b41b431828b270; " +
 		"href=https://nginx.org/en/docs/http/ngx_http_api_module.html"
@@ -61,7 +61,7 @@ func TestResource_createPlusAPIError(t *testing.T) {
 	assert.Equal(t, errors.New(string(expectedJSON)), result)
 }
 
-func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
+func TestNginx_Process_APIAction_GetHTTPServers(t *testing.T) {
 	ctx := context.Background()
 
 	inValidInstance := protos.NginxPlusInstance([]string{})
@@ -136,14 +136,14 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		runResourceTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
+		runNginxTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
 			fakeService.GetHTTPUpstreamServersReturns(test.upstreams, test.err)
 		}, test.instance, test.message, test.topic, test.err)
 	}
 }
 
 //nolint:dupl // need to refactor so that redundant code can be removed
-func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
+func TestNginx_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		instance    *mpi.Instance
@@ -247,7 +247,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 }
 
 //nolint:dupl // need to refactor so that redundant code can be removed
-func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
+func TestNginx_Process_APIAction_UpdateStreamServers(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		instance    *mpi.Instance
@@ -350,7 +350,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 	}
 }
 
-func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
+func TestNginx_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 	ctx := context.Background()
 
 	inValidInstance := protos.NginxPlusInstance([]string{})
@@ -492,7 +492,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 	}
 }
 
-func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
+func TestNginx_Process_APIAction_GetUpstreams(t *testing.T) {
 	ctx := context.Background()
 
 	inValidInstance := protos.NginxPlusInstance([]string{})
@@ -606,13 +606,13 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		runResourceTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
+		runNginxTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
 			fakeService.GetUpstreamsReturns(test.upstreams, test.err)
 		}, test.instance, test.message, test.topic, test.err)
 	}
 }
 
-func TestResource_Subscriptions(t *testing.T) {
+func TestNginx_Subscriptions(t *testing.T) {
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	assert.Equal(t,
@@ -640,7 +640,7 @@ func TestResource_Subscriptions(t *testing.T) {
 		readNginxPlugin.Subscriptions())
 }
 
-func TestResource_Info(t *testing.T) {
+func TestNginx_Info(t *testing.T) {
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	assert.Equal(t, &bus.Info{Name: "nginx"}, nginxPlugin.Info())
@@ -649,7 +649,7 @@ func TestResource_Info(t *testing.T) {
 	assert.Equal(t, &bus.Info{Name: "auxiliary-nginx"}, readNginxPlugin.Info())
 }
 
-func TestResource_Init(t *testing.T) {
+func TestNginx_Init(t *testing.T) {
 	ctx := context.Background()
 	fakeNginxService := nginxfakes.FakeNginxServiceInterface{}
 
@@ -667,7 +667,7 @@ func TestResource_Init(t *testing.T) {
 	assert.Empty(t, messages)
 }
 
-func TestResource_Process_handleConfigUploadRequest(t *testing.T) {
+func TestNginx_Process_handleConfigUploadRequest(t *testing.T) {
 	ctx := context.Background()
 
 	tempDir := os.TempDir()
@@ -728,7 +728,7 @@ func TestResource_Process_handleConfigUploadRequest(t *testing.T) {
 	)
 }
 
-func TestResource_Process_handleConfigUploadRequest_Failure(t *testing.T) {
+func TestNginx_Process_handleConfigUploadRequest_Failure(t *testing.T) {
 	ctx := context.Background()
 
 	fileMeta := protos.FileMeta("/unknown/file.conf", "")
@@ -786,7 +786,7 @@ func TestResource_Process_handleConfigUploadRequest_Failure(t *testing.T) {
 	)
 }
 
-func TestResource_Process_handleConfigApplyRequest(t *testing.T) {
+func TestNginx_Process_handleConfigApplyRequest(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
 
@@ -932,6 +932,113 @@ func TestResource_Process_handleConfigApplyRequest(t *testing.T) {
 	}
 }
 
+func TestNginxPlugin_Failed_ConfigApply(t *testing.T) {
+	ctx := context.Background()
+
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+	tests := []struct {
+		rollbackError      error
+		rollbackWriteError error
+		message            string
+		name               string
+	}{
+		{
+			name:               "Test 1 - Rollback Success",
+			message:            "",
+			rollbackError:      nil,
+			rollbackWriteError: nil,
+		},
+		{
+			name:               "Test 2 - Rollback Failed",
+			message:            "config apply error: something went wrong\nrollback error: rollback failed",
+			rollbackError:      errors.New("rollback failed"),
+			rollbackWriteError: nil,
+		},
+		{
+			name:               "Test 3 - Rollback Write Failed",
+			message:            "config apply error: something went wrong\nrollback error: rollback write failed",
+			rollbackError:      nil,
+			rollbackWriteError: errors.New("rollback write failed"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+			fakeNginxService.ApplyConfigReturnsOnCall(0, &model.NginxConfigContext{},
+				errors.New("something went wrong"))
+			fakeNginxService.ApplyConfigReturnsOnCall(1, &model.NginxConfigContext{}, tt.rollbackWriteError)
+
+			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
+			fakeFileManagerService.RollbackReturns(tt.rollbackError)
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			nginxPlugin := NewNginx(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+
+			err := nginxPlugin.Init(ctx, messagePipe)
+			nginxPlugin.fileManagerService = fakeFileManagerService
+			nginxPlugin.nginxService = fakeNginxService
+			require.NoError(t, err)
+
+			nginxPlugin.applyConfig(ctx, "dfsbhj6-bc92-30c1-a9c9-85591422068e", protos.
+				NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
+
+			messages := messagePipe.Messages()
+
+			dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(t, ok)
+			assert.Equal(
+				t,
+				mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				dataPlaneResponse.GetCommandResponse().GetStatus(),
+			)
+			assert.Equal(t, "Config apply failed, rolling back config",
+				dataPlaneResponse.GetCommandResponse().GetMessage())
+
+			if tt.rollbackError == nil && tt.rollbackWriteError == nil {
+				assert.Len(t, messages, 3)
+				dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+
+				assert.Equal(t, "Config apply failed, rollback successful",
+					dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, bus.EnableWatchersTopic, messages[2].Topic)
+			} else {
+				assert.Len(t, messages, 4)
+				dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_ERROR,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+
+				assert.Equal(t, "Rollback failed", dataPlaneResponse.GetCommandResponse().GetMessage())
+
+				dataPlaneResponse, ok = messages[2].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+
+				assert.Equal(t, "Config apply failed, rollback failed",
+					dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, tt.message, dataPlaneResponse.GetCommandResponse().GetError())
+				assert.Equal(t, bus.EnableWatchersTopic, messages[3].Topic)
+			}
+		})
+	}
+}
+
 func TestNginxPlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	ctx := context.Background()
 
@@ -970,7 +1077,7 @@ func TestNginxPlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 }
 
 //nolint:revive,lll // maximum number of arguments exceed
-func runResourceTestHelper(t *testing.T, ctx context.Context, testName string,
+func runNginxTestHelper(t *testing.T, ctx context.Context, testName string,
 	getUpstreamsFunc func(serviceInterface *nginxfakes.FakeNginxServiceInterface), instance *mpi.Instance,
 	message *bus.Message, topic []string, err error,
 ) {
