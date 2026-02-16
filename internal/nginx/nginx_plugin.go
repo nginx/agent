@@ -17,7 +17,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	response "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/file"
-	grpc2 "github.com/nginx/agent/v3/internal/grpc"
+	grpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
@@ -25,10 +25,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// The NginxPlugin plugin listens for a writeConfigSuccessfulTopic from the file plugin after the config apply
-// files have been written. The NginxPlugin plugin then, validates the config,
+// The Nginx plugin listens for a writeConfigSuccessfulTopic from the file plugin after the config apply
+// files have been written. The Nginx plugin then, validates the config,
 // reloads the instance and monitors the logs.
-// This is done in the NginxPlugin plugin to make the file plugin usable for every type of instance.
+// This is done in the Nginx plugin to make the file plugin usable for every type of instance.
 
 type NginxPlugin struct {
 	messagePipe        bus.MessagePipeInterface
@@ -36,7 +36,7 @@ type NginxPlugin struct {
 	agentConfig        *config.Config
 	agentConfigMutex   *sync.Mutex
 	manifestLock       *sync.RWMutex
-	conn               grpc2.GrpcConnectionInterface
+	conn               grpc.GrpcConnectionInterface
 	fileManagerService file.FileManagerServiceInterface
 	serverType         model.ServerType
 }
@@ -55,7 +55,7 @@ type plusAPIErr struct {
 
 var _ bus.Plugin = (*NginxPlugin)(nil)
 
-func NewNginx(agentConfig *config.Config, grpcConnection grpc2.GrpcConnectionInterface,
+func NewNginx(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
 	serverType model.ServerType, manifestLock *sync.RWMutex,
 ) *NginxPlugin {
 	return &NginxPlugin{
@@ -123,7 +123,7 @@ func (n *NginxPlugin) Process(ctx context.Context, msg *bus.Message) {
 			return
 		}
 		n.nginxService.UpdateResource(ctx, resourceUpdate)
-		slog.DebugContext(ctx, "NginxPlugin plugin received update resource message")
+		slog.DebugContext(ctx, "Nginx plugin received update resource message")
 
 		return
 	case bus.APIActionRequestTopic:
@@ -134,7 +134,7 @@ func (n *NginxPlugin) Process(ctx context.Context, msg *bus.Message) {
 		}
 	case bus.ConnectionCreatedTopic:
 		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
-			slog.DebugContext(ctxWithMetadata, "Resource plugin received connection created message")
+			slog.DebugContext(ctxWithMetadata, "Nginx plugin received connection created message")
 			n.fileManagerService.SetIsConnected(true)
 		}
 	case bus.NginxConfigUpdateTopic:
@@ -150,7 +150,7 @@ func (n *NginxPlugin) Process(ctx context.Context, msg *bus.Message) {
 			n.handleConfigApplyRequest(ctxWithMetadata, msg)
 		}
 	default:
-		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "NGINX plugin received message with unknown topic", "topic", msg.Topic)
 	}
 }
 
@@ -172,7 +172,7 @@ func (n *NginxPlugin) Subscriptions() []string {
 }
 
 func (n *NginxPlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
-	slog.DebugContext(ctx, "NginxPlugin plugin is reconfiguring to update agent configuration")
+	slog.DebugContext(ctx, "Nginx plugin is reconfiguring to update agent configuration")
 
 	n.agentConfigMutex.Lock()
 	defer n.agentConfigMutex.Unlock()
@@ -192,7 +192,7 @@ func (n *NginxPlugin) enableWatchers(ctx context.Context, configContext *model.N
 }
 
 func (n *NginxPlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "NginxPlugin plugin received config upload request message")
+	slog.DebugContext(ctx, "Nginx plugin received config upload request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(
@@ -234,12 +234,12 @@ func (n *NginxPlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 }
 
 func (n *NginxPlugin) handleConnectionReset(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "NginxPlugin plugin received connection reset message")
+	slog.DebugContext(ctx, "Nginx plugin received connection reset message")
 
-	if newConnection, ok := msg.Data.(grpc2.GrpcConnectionInterface); ok {
+	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
 		err := n.conn.Close(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "NginxPlugin plugin: unable to close connection", "error", err)
+			slog.ErrorContext(ctx, "Nginx plugin: unable to close connection", "error", err)
 		}
 
 		n.conn = newConnection
@@ -248,12 +248,12 @@ func (n *NginxPlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		n.fileManagerService.ResetClient(ctx, n.conn.FileServiceClient())
 		n.fileManagerService.SetIsConnected(reconnect)
 
-		slog.DebugContext(ctx, "NginxPlugin plugin connection reset successfully")
+		slog.DebugContext(ctx, "Nginx plugin connection reset successfully")
 	}
 }
 
 func (n *NginxPlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "NginxPlugin plugin received config update message")
+	slog.DebugContext(ctx, "Nginx plugin received config update message")
 	nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
 
 	if !ok {
@@ -266,7 +266,7 @@ func (n *NginxPlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 }
 
 func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "NginxPlugin plugin received config apply request message")
+	slog.DebugContext(ctx, "Nginx plugin received config apply request message")
 
 	var dataplaneResponse *mpi.DataPlaneResponse
 	correlationID := logger.CorrelationID(ctx)
@@ -303,7 +303,7 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 			instanceID,
 		)
-		n.completeConfigApply(ctx, dataplaneResponse)
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, dataplaneResponse)
 	case model.Error:
 		slog.ErrorContext(
 			ctx,
@@ -322,7 +322,7 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			instanceID,
 		)
 
-		n.completeConfigApply(ctx, dataplaneResponse)
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, dataplaneResponse)
 	case model.RollbackRequired:
 		slog.ErrorContext(
 			ctx,
@@ -361,7 +361,7 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 				instanceID,
 			)
-			n.completeConfigApply(ctx, rollbackResponse)
+			n.completeConfigApply(ctx, &model.NginxConfigContext{}, rollbackResponse)
 
 			return
 		}
@@ -375,7 +375,7 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			},
 			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 			instanceID)
-		n.completeConfigApply(ctx, dataplaneResponse)
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, dataplaneResponse)
 	case model.OK:
 		slog.DebugContext(ctx, "Changes required for config apply request")
 		n.applyConfig(ctx, correlationID, instanceID)
@@ -403,7 +403,7 @@ func (n *NginxPlugin) applyConfig(ctx context.Context, correlationID, instanceID
 
 		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
 
-		n.failedConfigApply(ctx, correlationID, instanceID, err)
+		n.rollbackConfigApply(ctx, correlationID, instanceID, err)
 
 		return
 	}
@@ -419,10 +419,22 @@ func (n *NginxPlugin) applyConfig(ctx context.Context, correlationID, instanceID
 		instanceID,
 	)
 
-	n.reloadSuccessful(ctx, configContext, dpResponse)
+	if configContext.Files != nil {
+		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")
+		updateError := n.fileManagerService.UpdateCurrentFilesOnDisk(
+			ctx,
+			files.ConvertToMapOfFiles(configContext.Files),
+			true,
+		)
+		if updateError != nil {
+			slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+		}
+	}
+
+	n.completeConfigApply(ctx, configContext, dpResponse)
 }
 
-func (n *NginxPlugin) failedConfigApply(ctx context.Context, correlationID, instanceID string, applyErr error) {
+func (n *NginxPlugin) rollbackConfigApply(ctx context.Context, correlationID, instanceID string, applyErr error) {
 	if instanceID == "" {
 		n.fileManagerService.ClearCache()
 		return
@@ -458,7 +470,7 @@ func (n *NginxPlugin) failedConfigApply(ctx context.Context, correlationID, inst
 
 		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 
-		n.completeConfigApply(ctx, applyResponse)
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, applyResponse)
 
 		return
 	}
@@ -466,14 +478,15 @@ func (n *NginxPlugin) failedConfigApply(ctx context.Context, correlationID, inst
 	n.handleRollbackWrite(ctx, correlationID, instanceID, applyErr)
 }
 
-func (n *NginxPlugin) completeConfigApply(ctx context.Context, dpResponse *mpi.DataPlaneResponse) {
+func (n *NginxPlugin) completeConfigApply(ctx context.Context, configContext *model.NginxConfigContext,
+	dpResponse *mpi.DataPlaneResponse) {
 	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
 	n.fileManagerService.ClearCache()
-	n.enableWatchers(ctx, &model.NginxConfigContext{}, dpResponse.GetInstanceId())
+	n.enableWatchers(ctx, configContext, dpResponse.GetInstanceId())
 }
 
 func (n *NginxPlugin) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "NginxPlugin plugin received api action request message")
+	slog.DebugContext(ctx, "Nginx plugin received api action request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 
 	if !ok {
@@ -570,7 +583,7 @@ func (n *NginxPlugin) handleNginxPlusActionRequest(ctx context.Context,
 }
 
 func (n *NginxPlugin) handleRollbackWrite(ctx context.Context, correlationID, instanceID string, applyErr error) {
-	slog.DebugContext(ctx, "NginxPlugin plugin received rollback write message")
+	slog.DebugContext(ctx, "Nginx plugin received rollback write message")
 	_, err := n.nginxService.ApplyConfig(ctx, instanceID)
 	if err != nil {
 		slog.ErrorContext(ctx, "Errors found during rollback, sending failure status", "error", err)
@@ -603,7 +616,7 @@ func (n *NginxPlugin) handleRollbackWrite(ctx context.Context, correlationID, in
 
 		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 
-		n.completeConfigApply(ctx, applyResponse)
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, applyResponse)
 
 		return
 	}
@@ -619,25 +632,5 @@ func (n *NginxPlugin) handleRollbackWrite(ctx context.Context, correlationID, in
 		instanceID,
 	)
 
-	n.completeConfigApply(ctx, applyResponse)
-}
-
-func (n *NginxPlugin) reloadSuccessful(ctx context.Context,
-	configContext *model.NginxConfigContext, dpResponse *mpi.DataPlaneResponse,
-) {
-	n.fileManagerService.ClearCache()
-	n.enableWatchers(ctx, configContext, dpResponse.GetInstanceId())
-
-	if configContext.Files != nil {
-		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")
-		updateError := n.fileManagerService.UpdateCurrentFilesOnDisk(
-			ctx,
-			files.ConvertToMapOfFiles(configContext.Files),
-			true,
-		)
-		if updateError != nil {
-			slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
-		}
-	}
-	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
+	n.completeConfigApply(ctx, &model.NginxConfigContext{}, applyResponse)
 }
