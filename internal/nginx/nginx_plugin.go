@@ -17,7 +17,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	response "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/file"
-	grpc "github.com/nginx/agent/v3/internal/grpc"
+	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
@@ -182,15 +182,6 @@ func (n *NginxPlugin) Reconfigure(ctx context.Context, agentConfig *config.Confi
 	return nil
 }
 
-func (n *NginxPlugin) enableWatchers(ctx context.Context, configContext *model.NginxConfigContext, instanceID string) {
-	enableWatcher := &model.EnableWatchers{
-		InstanceID:    instanceID,
-		ConfigContext: configContext,
-	}
-
-	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.EnableWatchersTopic, Data: enableWatcher})
-}
-
 func (n *NginxPlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Nginx plugin received config upload request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
@@ -263,6 +254,103 @@ func (n *NginxPlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 	}
 
 	n.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
+}
+
+func (n *NginxPlugin) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received api action request message")
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
+
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest", "payload",
+			msg.Data)
+
+		return
+	}
+
+	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ActionRequest)
+	if !requestOk {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ActionRequest",
+			"payload", msg.Data)
+	}
+
+	instanceID := request.ActionRequest.GetInstanceId()
+
+	switch request.ActionRequest.GetAction().(type) {
+	case *mpi.APIActionRequest_NginxPlusAction:
+		n.handleNginxPlusActionRequest(ctx, request.ActionRequest.GetNginxPlusAction(), instanceID)
+	default:
+		slog.DebugContext(ctx, "API action request not implemented yet")
+	}
+}
+
+func (n *NginxPlugin) handleNginxPlusActionRequest(ctx context.Context,
+	action *mpi.NGINXPlusAction, instanceID string,
+) {
+	correlationID := logger.CorrelationID(ctx)
+	instance := n.nginxService.Instance(instanceID)
+	apiAction := APIAction{
+		NginxService: n.nginxService,
+	}
+	if instance == nil {
+		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
+		resp := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   "failed to preform API action, could not find instance with ID: " + instanceID,
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
+
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
+		resp := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   "failed to preform API action, instance is not NGINX Plus",
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
+
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	switch action.GetAction().(type) {
+	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
+		slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
+		resp := apiAction.HandleUpdateHTTPUpstreamsRequest(ctx, action, instance)
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
+		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
+		resp := apiAction.HandleGetHTTPUpstreamsServersRequest(ctx, action, instance)
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	case *mpi.NGINXPlusAction_UpdateStreamServers:
+		slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
+		resp := apiAction.HandleUpdateStreamServersRequest(ctx, action, instance)
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	case *mpi.NGINXPlusAction_GetStreamUpstreams:
+		slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
+		resp := apiAction.HandleGetStreamUpstreamsRequest(ctx, instance)
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	case *mpi.NGINXPlusAction_GetUpstreams:
+		slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
+		resp := apiAction.HandleGetUpstreamsRequest(ctx, instance)
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	default:
+		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
+	}
 }
 
 func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
@@ -403,7 +491,7 @@ func (n *NginxPlugin) applyConfig(ctx context.Context, correlationID, instanceID
 
 		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
 
-		n.rollbackConfigApply(ctx, correlationID, instanceID, err)
+		n.writeRollbackConfig(ctx, correlationID, instanceID, err)
 
 		return
 	}
@@ -434,7 +522,8 @@ func (n *NginxPlugin) applyConfig(ctx context.Context, correlationID, instanceID
 	n.completeConfigApply(ctx, configContext, dpResponse)
 }
 
-func (n *NginxPlugin) rollbackConfigApply(ctx context.Context, correlationID, instanceID string, applyErr error) {
+func (n *NginxPlugin) writeRollbackConfig(ctx context.Context, correlationID, instanceID string, applyErr error) {
+	slog.DebugContext(ctx, "Starting rollback of config", "instance_id", instanceID)
 	if instanceID == "" {
 		n.fileManagerService.ClearCache()
 		return
@@ -475,115 +564,11 @@ func (n *NginxPlugin) rollbackConfigApply(ctx context.Context, correlationID, in
 		return
 	}
 
-	n.handleRollbackWrite(ctx, correlationID, instanceID, applyErr)
+	n.rollbackConfigApply(ctx, correlationID, instanceID, applyErr)
 }
 
-func (n *NginxPlugin) completeConfigApply(ctx context.Context, configContext *model.NginxConfigContext,
-	dpResponse *mpi.DataPlaneResponse) {
-	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
-	n.fileManagerService.ClearCache()
-	n.enableWatchers(ctx, configContext, dpResponse.GetInstanceId())
-}
-
-func (n *NginxPlugin) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Nginx plugin received api action request message")
-	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
-
-	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest", "payload",
-			msg.Data)
-
-		return
-	}
-
-	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ActionRequest)
-	if !requestOk {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ActionRequest",
-			"payload", msg.Data)
-	}
-
-	instanceID := request.ActionRequest.GetInstanceId()
-
-	switch request.ActionRequest.GetAction().(type) {
-	case *mpi.APIActionRequest_NginxPlusAction:
-		n.handleNginxPlusActionRequest(ctx, request.ActionRequest.GetNginxPlusAction(), instanceID)
-	default:
-		slog.DebugContext(ctx, "API action request not implemented yet")
-	}
-}
-
-func (n *NginxPlugin) handleNginxPlusActionRequest(ctx context.Context,
-	action *mpi.NGINXPlusAction, instanceID string,
-) {
-	correlationID := logger.CorrelationID(ctx)
-	instance := n.nginxService.Instance(instanceID)
-	apiAction := APIAction{
-		NginxService: n.nginxService,
-	}
-	if instance == nil {
-		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
-		resp := response.CreateDataPlaneResponse(
-			correlationID,
-			&mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "",
-				Error:   "failed to preform API action, could not find instance with ID: " + instanceID,
-			},
-			mpi.DataPlaneResponse_API_ACTION_REQUEST,
-			instanceID,
-		)
-
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
-		return
-	}
-
-	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
-		resp := response.CreateDataPlaneResponse(
-			correlationID,
-			&mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "",
-				Error:   "failed to preform API action, instance is not NGINX Plus",
-			},
-			mpi.DataPlaneResponse_API_ACTION_REQUEST,
-			instanceID,
-		)
-
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
-		return
-	}
-
-	switch action.GetAction().(type) {
-	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
-		slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
-		resp := apiAction.HandleUpdateHTTPUpstreamsRequest(ctx, action, instance)
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
-		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
-		resp := apiAction.HandleGetHTTPUpstreamsServersRequest(ctx, action, instance)
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-	case *mpi.NGINXPlusAction_UpdateStreamServers:
-		slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
-		resp := apiAction.HandleUpdateStreamServersRequest(ctx, action, instance)
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-	case *mpi.NGINXPlusAction_GetStreamUpstreams:
-		slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
-		resp := apiAction.HandleGetStreamUpstreamsRequest(ctx, instance)
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-	case *mpi.NGINXPlusAction_GetUpstreams:
-		slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
-		resp := apiAction.HandleGetUpstreamsRequest(ctx, instance)
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-	default:
-		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
-	}
-}
-
-func (n *NginxPlugin) handleRollbackWrite(ctx context.Context, correlationID, instanceID string, applyErr error) {
-	slog.DebugContext(ctx, "Nginx plugin received rollback write message")
+func (n *NginxPlugin) rollbackConfigApply(ctx context.Context, correlationID, instanceID string, applyErr error) {
+	slog.DebugContext(ctx, "Rolling back config apply, after config written", "instance_id", instanceID)
 	_, err := n.nginxService.ApplyConfig(ctx, instanceID)
 	if err != nil {
 		slog.ErrorContext(ctx, "Errors found during rollback, sending failure status", "error", err)
@@ -633,4 +618,21 @@ func (n *NginxPlugin) handleRollbackWrite(ctx context.Context, correlationID, in
 	)
 
 	n.completeConfigApply(ctx, &model.NginxConfigContext{}, applyResponse)
+}
+
+func (n *NginxPlugin) completeConfigApply(ctx context.Context, configContext *model.NginxConfigContext,
+	dpResponse *mpi.DataPlaneResponse,
+) {
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
+	n.fileManagerService.ClearCache()
+	n.enableWatchers(ctx, configContext, dpResponse.GetInstanceId())
+}
+
+func (n *NginxPlugin) enableWatchers(ctx context.Context, configContext *model.NginxConfigContext, instanceID string) {
+	enableWatcher := &model.EnableWatchers{
+		InstanceID:    instanceID,
+		ConfigContext: configContext,
+	}
+
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.EnableWatchersTopic, Data: enableWatcher})
 }
