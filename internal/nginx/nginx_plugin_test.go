@@ -1001,7 +1001,7 @@ func TestNginxPlugin_Failed_ConfigApply(t *testing.T) {
 			if tt.rollbackError == nil && tt.rollbackWriteError == nil {
 				assert.Len(t, messages, 3)
 				assert.Equal(t, bus.EnableWatchersTopic, messages[1].Topic)
-				
+
 				dataPlaneResponse, ok = messages[2].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
