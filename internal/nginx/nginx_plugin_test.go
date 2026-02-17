@@ -1000,7 +1000,9 @@ func TestNginxPlugin_Failed_ConfigApply(t *testing.T) {
 
 			if tt.rollbackError == nil && tt.rollbackWriteError == nil {
 				assert.Len(t, messages, 3)
-				dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.Equal(t, bus.EnableWatchersTopic, messages[1].Topic)
+				
+				dataPlaneResponse, ok = messages[2].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,
@@ -1010,7 +1012,6 @@ func TestNginxPlugin_Failed_ConfigApply(t *testing.T) {
 
 				assert.Equal(t, "Config apply failed, rollback successful",
 					dataPlaneResponse.GetCommandResponse().GetMessage())
-				assert.Equal(t, bus.EnableWatchersTopic, messages[2].Topic)
 			} else {
 				assert.Len(t, messages, 4)
 				dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
@@ -1022,8 +1023,9 @@ func TestNginxPlugin_Failed_ConfigApply(t *testing.T) {
 				)
 
 				assert.Equal(t, "Rollback failed", dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, bus.EnableWatchersTopic, messages[2].Topic)
 
-				dataPlaneResponse, ok = messages[2].Data.(*mpi.DataPlaneResponse)
+				dataPlaneResponse, ok = messages[3].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,
@@ -1034,7 +1036,6 @@ func TestNginxPlugin_Failed_ConfigApply(t *testing.T) {
 				assert.Equal(t, "Config apply failed, rollback failed",
 					dataPlaneResponse.GetCommandResponse().GetMessage())
 				assert.Equal(t, tt.message, dataPlaneResponse.GetCommandResponse().GetError())
-				assert.Equal(t, bus.EnableWatchersTopic, messages[3].Topic)
 			}
 		})
 	}
