@@ -217,6 +217,8 @@ func (mgs *FileService) UpdateFileStream(streamingServer grpc.ClientStreamingSer
 		return writeChunkedFileError
 	}
 
+	streamingServer.SendAndClose(&v1.UpdateFileResponse{})
+
 	return nil
 }
 
