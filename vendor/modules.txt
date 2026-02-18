@@ -240,9 +240,9 @@ github.com/nats-io/nkeys
 ## explicit
 github.com/nats-io/nuid
 # github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000 => ./sdk
-## explicit; go 1.24.2
+## explicit; go 1.25.7
 # github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000 => .
-## explicit; go 1.24.2
+## explicit; go 1.25.7
 # github.com/nginx/nginx-plus-go-client/v3 v3.0.1
 ## explicit; go 1.24.2
 github.com/nginx/nginx-plus-go-client/v3/client
