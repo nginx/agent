@@ -28,7 +28,6 @@ jobs:
             fetch-tags: 'true'
       
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -38,7 +37,6 @@ jobs:
           secrets-filter: 'artifactory'
       
       - name: Generate SBOM Document
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         id: sbom-src
         uses: nginxinc/compliance-rules/.github/actions/sbom-source@main
         with:
