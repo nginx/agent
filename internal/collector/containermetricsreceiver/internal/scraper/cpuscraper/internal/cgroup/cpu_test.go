@@ -13,7 +13,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCollectCPUStats(t *testing.T) {
@@ -79,10 +80,18 @@ func TestCollectCPUStats(t *testing.T) {
 			cpuStat, err := cgroupCPUSource.collectCPUStats(ctx)
 
 			// Assert error
-			assert.IsType(tt, test.errorType, err)
+			if test.errorType == nil {
+				require.NoError(tt, err)
+			} else {
+				require.Error(tt, err)
+				// satisfy the linter's requirement for a more specific check than IsType.
+				require.Condition(tt, func() bool {
+					return errors.As(err, &test.errorType)
+				}, "Error should be of type %T", test.errorType)
+			}
 
 			// Assert result
-			assert.Equal(tt, test.cpuStat, cpuStat)
+			require.Equal(tt, test.cpuStat, cpuStat)
 		})
 	}
 }

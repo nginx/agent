@@ -74,7 +74,7 @@ func NewScraper(
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
 
-	operators := make([]operator.Config, 0)
+	operators := make([]operator.Config, 0, len(cfg.AccessLogs))
 
 	for _, accessLog := range cfg.AccessLogs {
 		logger.Info("Adding access log file operator", zap.String("file_path", accessLog.FilePath))

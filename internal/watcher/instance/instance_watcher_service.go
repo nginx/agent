@@ -188,7 +188,6 @@ func (iw *InstanceWatcherService) HandleNginxConfigContextUpdate(ctx context.Con
 func (iw *InstanceWatcherService) checkForUpdates(
 	ctx context.Context,
 ) {
-	var instancesToParse []*mpi.Instance
 	correlationID := logger.GenerateCorrelationID()
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
 
@@ -197,6 +196,8 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
 	}
 
+	instancesToParse := make([]*mpi.Instance, 0, len(instanceUpdates.UpdatedInstances)+
+		len(instanceUpdates.NewInstances))
 	instancesToParse = append(instancesToParse, instanceUpdates.UpdatedInstances...)
 	instancesToParse = append(instancesToParse, instanceUpdates.NewInstances...)
 

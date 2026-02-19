@@ -350,10 +350,15 @@ func validateError(t *testing.T, validationError error, isErrorExpected bool) {
 
 func Test_ValidateGrpcError(t *testing.T) {
 	result := ValidateGrpcError(TestError{})
-	assert.IsType(t, TestError{}, result)
+	if result == nil {
+		t.Fatalf("expected an error, got nil")
+	}
+	var te TestError
+	require.ErrorAs(t, result, &te)
 
 	result = ValidateGrpcError(status.Errorf(codes.InvalidArgument, "error"))
-	assert.IsType(t, &backoff.PermanentError{}, result)
+	var pe *backoff.PermanentError
+	require.ErrorAs(t, result, &pe)
 }
 
 func Test_transportCredentials(t *testing.T) {

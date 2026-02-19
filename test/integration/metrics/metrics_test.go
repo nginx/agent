@@ -53,7 +53,7 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
 	family := s.metricFamilies[metricName]
 	s.Require().NotNil(family)
 
-	var baselineMetric []float64
+	baselineMetric := make([]float64, 0, 1)
 	baselineMetric = append(baselineMetric, utils.SumMetricFamily(family))
 	s.T().Logf("NGINX HTTP request count total: %v", baselineMetric[0])
 
