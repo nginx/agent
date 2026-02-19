@@ -29,7 +29,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-          ref: ${{ inputs.target-branch || 'main' }}
+          # Prioritise inputs.target-branch, defaulting to PR head or current ref before falling back to 'main'.
+          # Fixes default branch resolution issues observed during Go version upgrades.
+          ref: ${{ inputs.target-branch || github.head_ref || github.ref_name || 'main' }}
 
       - name: Check Go version
         id: get-go-version
