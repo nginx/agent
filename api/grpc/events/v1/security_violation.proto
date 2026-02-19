@@ -1,0 +1,149 @@
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license
+// found in the LICENSE file in the root directory of this source tree.
+syntax = "proto3";
+package events.v1;
+
+option go_package = "events/v1";
+
+// SecurityViolationEvent represents the structured NGINX App Protect
+// security violation data
+message SecurityViolationEvent {
+    // Name of the security policy
+    string policy_name = 1;
+    // Unique support ID for the violation
+    string support_id = 2;
+    // Outcome of the request (e.g., REJECTED, PASSED)
+    RequestOutcome request_outcome = 3;
+    // Reason for the outcome
+    RequestOutcomeReason request_outcome_reason = 4;
+    // Reason for blocking exception if applicable
+    string blocking_exception_reason = 5;
+    // HTTP method used
+    string method = 6;
+    // Protocol used (e.g., HTTP/1.1)
+    string protocol = 7;
+    // X-Forwarded-For header value
+    string xff_header_value = 8;
+    // Request URI
+    string uri = 9;
+    // Full request
+    string request = 10;
+    // Indicates if the request was truncated
+    bool is_truncated = 11;
+    // Status of the request
+    RequestStatus request_status = 12;
+    // HTTP response code
+    uint32 response_code = 13;
+    // Server address
+    string server_addr = 14;
+    // Virtual server name
+    string vs_name = 15;
+    // Remote address of the client
+    string remote_addr = 16;
+    // Destination port
+    uint32 destination_port = 17;
+    // Server port
+    uint32 server_port = 18;
+    // List of violations
+    string violations = 19;
+    // List of sub-violations
+    string sub_violations = 20;
+    // Violation rating
+    uint32 violation_rating = 21;
+    // Signature set names
+    string sig_set_names = 22;
+    // Signature CVEs
+    string sig_cves = 23;
+    // Client class
+    string client_class = 24;
+    // Client application
+    string client_application = 25;
+    // Client application version
+    string client_application_version = 26;
+    // Severity of the violation
+    Severity severity = 27;
+    // Threat campaign names
+    string threat_campaign_names = 28;
+    // Bot anomalies detected
+    string bot_anomalies = 29;
+    // Bot category
+    string bot_category = 30;
+    // Enforced bot anomalies
+    string enforced_bot_anomalies = 31;
+    // Bot signature name
+    string bot_signature_name = 32;
+    // System ID
+    string system_id = 33;
+    // Display name
+    string display_name = 37;
+    // Detailed violation data
+    repeated ViolationData violations_data = 38;
+}
+
+// ViolationData represents individual violation details
+message ViolationData {
+    // Name of the violation
+    string violation_data_name = 1;
+    // Context of the violation
+    string violation_data_context = 2;
+    // Context data associated with the violation
+    ContextData violation_data_context_data = 3;
+    // Signature data for the violation
+    repeated SignatureData violation_data_signatures = 4;
+}
+
+// SignatureData represents signature data contained within each violation
+message SignatureData {
+    // Signature ID
+    uint32 sig_data_id = 1;
+    // Blocking mask
+    string sig_data_blocking_mask = 2;
+    // Buffer information
+    string sig_data_buffer = 3;
+    // Offset in the buffer
+    uint32 sig_data_offset = 4;
+    // Length of the signature match
+    uint32 sig_data_length = 5;
+}
+
+// ContextData represents the context data of the violation
+message ContextData {
+    // Name of the context
+    string context_data_name = 1;
+    // Value of the context
+    string context_data_value = 2;
+}
+
+enum RequestStatus {
+    REQUEST_STATUS_UNKNOWN = 0;
+    REQUEST_STATUS_BLOCKED = 1;
+    REQUEST_STATUS_ALERTED = 2;
+    REQUEST_STATUS_PASSED = 3;
+}
+
+enum RequestOutcome {
+    REQUEST_OUTCOME_UNKNOWN = 0;
+    REQUEST_OUTCOME_PASSED = 1;
+    REQUEST_OUTCOME_REJECTED = 2;
+}
+
+enum RequestOutcomeReason {
+    SECURITY_WAF_UNKNOWN = 0;
+    SECURITY_WAF_OK = 1;
+    SECURITY_WAF_VIOLATION = 2;
+    SECURITY_WAF_FLAGGED = 3;
+    SECURITY_WAF_VIOLATION_TRANSPARENT=4;
+}
+
+enum Severity {
+    SEVERITY_UNKNOWN = 0;
+    SEVERITY_EMERGENCY = 1;
+    SEVERITY_ALERT = 2;
+    SEVERITY_CRITICAL = 3;
+    SEVERITY_ERROR = 4;
+    SEVERITY_WARNING = 5;
+    SEVERITY_NOTICE = 6;
+    SEVERITY_INFORMATIONAL = 7;
+}
