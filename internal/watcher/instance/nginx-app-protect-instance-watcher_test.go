@@ -11,10 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/pkg/id"
 	"github.com/nginx/agent/v3/test/protos"
@@ -83,8 +82,6 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 		enforcerEngineVersionFilePath,
 	}
 
-	instancesChannel := make(chan InstanceUpdatesMessage)
-
 	nginxAppProtectInstanceWatcher := NewNginxAppProtectInstanceWatcher(
 		&config.Config{
 			Watchers: &config.Watchers{
@@ -95,22 +92,15 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 		},
 	)
 
-	go nginxAppProtectInstanceWatcher.Watch(ctx, instancesChannel)
+	go nginxAppProtectInstanceWatcher.Watch(ctx)
 
 	t.Run("Test 1: New instance", func(t *testing.T) {
-		select {
-		case instanceUpdates := <-instancesChannel:
-			assert.Len(t, instanceUpdates.InstanceUpdates.NewInstances, 1)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.UpdatedInstances)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.DeletedInstances)
-			assert.Truef(
-				t,
-				proto.Equal(instanceUpdates.InstanceUpdates.NewInstances[0], expectedInstance),
-				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.NewInstances[0],
-			)
-		case <-time.After(timeout):
-			t.Fatalf("Timed out waiting for instance updates")
-		}
+		assert.Eventually(t, func() bool { return nginxAppProtectInstanceWatcher.NginxAppProtectInstance() != nil },
+			timeout, 10*time.Millisecond)
+		assert.Eventually(t, func() bool {
+			return nginxAppProtectInstanceWatcher.NginxAppProtectInstance().GetInstanceMeta().GetInstanceId() ==
+				expectedInstance.GetInstanceMeta().GetInstanceId()
+		}, timeout, 10*time.Millisecond)
 	})
 	t.Run("Test 2: Update instance", func(t *testing.T) {
 		_, err = enforcerEngineVersionFile.WriteAt([]byte("6.113.0"), 0)
@@ -118,37 +108,17 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 
 		expectedInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo().EnforcerEngineVersion = "6.113.0"
 
-		select {
-		case instanceUpdates := <-instancesChannel:
-			assert.Len(t, instanceUpdates.InstanceUpdates.UpdatedInstances, 1)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.NewInstances)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.DeletedInstances)
-			assert.Truef(
-				t,
-				proto.Equal(instanceUpdates.InstanceUpdates.UpdatedInstances[0], expectedInstance),
-				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.UpdatedInstances[0],
-			)
-		case <-time.After(timeout):
-			t.Fatalf("Timed out waiting for instance updates")
-		}
+		assert.Eventually(t, func() bool {
+			return proto.Equal(nginxAppProtectInstanceWatcher.NginxAppProtectInstance(), expectedInstance)
+		}, timeout, 30*time.Millisecond)
 	})
 	t.Run("Test 3: Delete instance", func(t *testing.T) {
 		helpers.RemoveFileWithErrorCheck(t, versionFile.Name())
 		closeErr := versionFile.Close()
 		require.NoError(t, closeErr)
 
-		select {
-		case instanceUpdates := <-instancesChannel:
-			assert.Len(t, instanceUpdates.InstanceUpdates.DeletedInstances, 1)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.NewInstances)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.UpdatedInstances)
-			assert.Truef(
-				t,
-				proto.Equal(instanceUpdates.InstanceUpdates.DeletedInstances[0], expectedInstance),
-				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.DeletedInstances[0],
-			)
-		case <-time.After(timeout):
-			t.Fatalf("Timed out waiting for instance updates")
-		}
+		assert.Eventually(t, func() bool {
+			return nginxAppProtectInstanceWatcher.NginxAppProtectInstance() == nil
+		}, timeout, 10*time.Millisecond)
 	})
 }

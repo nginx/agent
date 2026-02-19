@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"context"
@@ -20,13 +20,13 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 )
 
-// The resource plugin listens for a writeConfigSuccessfulTopic from the file plugin after the config apply
-// files have been written. The resource plugin then, validates the config, reloads the instance and monitors the logs.
-// This is done in the resource plugin to make the file plugin usable for every type of instance.
+// The Nginx plugin listens for a writeConfigSuccessfulTopic from the file plugin after the config apply
+// files have been written. The Nginx plugin then, validates the config, reloads the instance and monitors the logs.
+// This is done in the Nginx plugin to make the file plugin usable for every type of instance.
 
-type Resource struct {
+type Nginx struct {
 	messagePipe      bus.MessagePipeInterface
-	resourceService  resourceServiceInterface
+	nginxService     nginxServiceInterface
 	agentConfig      *config.Config
 	agentConfigMutex *sync.Mutex
 }
@@ -43,98 +43,68 @@ type plusAPIErr struct {
 	Href      string      `json:"href"`
 }
 
-var _ bus.Plugin = (*Resource)(nil)
+var _ bus.Plugin = (*Nginx)(nil)
 
-func NewResource(agentConfig *config.Config) *Resource {
-	return &Resource{
+func NewNginx(agentConfig *config.Config) *Nginx {
+	return &Nginx{
 		agentConfig:      agentConfig,
 		agentConfigMutex: &sync.Mutex{},
 	}
 }
 
-func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.DebugContext(ctx, "Starting resource plugin")
+func (n *Nginx) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.DebugContext(ctx, "Starting nginx plugin")
 
-	r.messagePipe = messagePipe
-	r.resourceService = NewResourceService(ctx, r.agentConfig)
+	n.messagePipe = messagePipe
+	n.nginxService = NewNginxService(ctx, n.agentConfig)
 
 	return nil
 }
 
-func (*Resource) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing resource plugin")
+func (*Nginx) Close(ctx context.Context) error {
+	slog.InfoContext(ctx, "Closing nginx plugin")
 	return nil
 }
 
-func (*Resource) Info() *bus.Info {
+func (*Nginx) Info() *bus.Info {
 	return &bus.Info{
-		Name: "resource",
+		Name: "nginx",
 	}
 }
 
 // cyclomatic complexity 11 max is 10
 
-func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
+func (n *Nginx) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.AddInstancesTopic:
-		slog.DebugContext(ctx, "Resource plugin received add instances message")
-		instanceList, ok := msg.Data.([]*mpi.Instance)
+	case bus.ResourceUpdateTopic:
+		resourceUpdate, ok := msg.Data.(*mpi.Resource)
+
 		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.Resource", "payload",
+				msg.Data)
 
 			return
 		}
-
-		resource := r.resourceService.AddInstances(instanceList)
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
-
-		return
-	case bus.UpdatedInstancesTopic:
-		slog.DebugContext(ctx, "Resource plugin received update instances message")
-		instanceList, ok := msg.Data.([]*mpi.Instance)
-		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
-
-			return
-		}
-		resource := r.resourceService.UpdateInstances(ctx, instanceList)
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
-
-		return
-
-	case bus.DeletedInstancesTopic:
-		slog.DebugContext(ctx, "Resource plugin received delete instances message")
-		instanceList, ok := msg.Data.([]*mpi.Instance)
-		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
-
-			return
-		}
-		resource := r.resourceService.DeleteInstances(ctx, instanceList)
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
+		n.nginxService.UpdateResource(ctx, resourceUpdate)
+		slog.DebugContext(ctx, "Nginx plugin received update resource message")
 
 		return
 	case bus.WriteConfigSuccessfulTopic:
-		r.handleWriteConfigSuccessful(ctx, msg)
+		n.handleWriteConfigSuccessful(ctx, msg)
 	case bus.RollbackWriteTopic:
-		r.handleRollbackWrite(ctx, msg)
+		n.handleRollbackWrite(ctx, msg)
 	case bus.APIActionRequestTopic:
-		r.handleAPIActionRequest(ctx, msg)
+		n.handleAPIActionRequest(ctx, msg)
 	case bus.AgentConfigUpdateTopic:
-		r.handleAgentConfigUpdate(ctx, msg)
+		n.handleAgentConfigUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
 }
 
-func (*Resource) Subscriptions() []string {
+func (*Nginx) Subscriptions() []string {
 	return []string{
-		bus.AddInstancesTopic,
-		bus.UpdatedInstancesTopic,
-		bus.DeletedInstancesTopic,
+		bus.ResourceUpdateTopic,
 		bus.WriteConfigSuccessfulTopic,
 		bus.RollbackWriteTopic,
 		bus.APIActionRequestTopic,
@@ -142,19 +112,19 @@ func (*Resource) Subscriptions() []string {
 	}
 }
 
-func (r *Resource) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
-	slog.DebugContext(ctx, "Resource plugin is reconfiguring to update agent configuration")
+func (n *Nginx) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "Nginx plugin is reconfiguring to update agent configuration")
 
-	r.agentConfigMutex.Lock()
-	defer r.agentConfigMutex.Unlock()
+	n.agentConfigMutex.Lock()
+	defer n.agentConfigMutex.Unlock()
 
-	r.agentConfig = agentConfig
+	n.agentConfig = agentConfig
 
 	return nil
 }
 
-func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Resource plugin received api action request message")
+func (n *Nginx) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received api action request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 
 	if !ok {
@@ -174,17 +144,17 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 
 	switch request.ActionRequest.GetAction().(type) {
 	case *mpi.APIActionRequest_NginxPlusAction:
-		r.handleNginxPlusActionRequest(ctx, request.ActionRequest.GetNginxPlusAction(), instanceID)
+		n.handleNginxPlusActionRequest(ctx, request.ActionRequest.GetNginxPlusAction(), instanceID)
 	default:
 		slog.DebugContext(ctx, "API action request not implemented yet")
 	}
 }
 
-func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
+func (n *Nginx) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
 	correlationID := logger.CorrelationID(ctx)
-	instance := r.resourceService.Instance(instanceID)
+	instance := n.nginxService.Instance(instanceID)
 	apiAction := APIAction{
-		ResourceService: r.resourceService,
+		NginxService: n.nginxService,
 	}
 	if instance == nil {
 		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
@@ -199,7 +169,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 			instanceID,
 		)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 
 		return
 	}
@@ -217,7 +187,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 			instanceID,
 		)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 
 		return
 	}
@@ -226,37 +196,37 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
 		slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
 		resp := apiAction.HandleUpdateHTTPUpstreamsRequest(ctx, action, instance)
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
 		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
 		resp := apiAction.HandleGetHTTPUpstreamsServersRequest(ctx, action, instance)
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_UpdateStreamServers:
 		slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
 		resp := apiAction.HandleUpdateStreamServersRequest(ctx, action, instance)
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetStreamUpstreams:
 		slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
 		resp := apiAction.HandleGetStreamUpstreamsRequest(ctx, instance)
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetUpstreams:
 		slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
 		resp := apiAction.HandleGetUpstreamsRequest(ctx, instance)
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	default:
 		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
 	}
 }
 
-func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Resource plugin received write config successful message")
+func (n *Nginx) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received write config successful message")
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
 
 		return
 	}
-	configContext, err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
+	configContext, err := n.nginxService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
 		data.Error = err
 
@@ -277,8 +247,8 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 			data.InstanceID,
 		)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
 
 		return
 	}
@@ -299,18 +269,18 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 		DataPlaneResponse: dpResponse,
 	}
 
-	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ReloadSuccessfulTopic, Data: successMessage})
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ReloadSuccessfulTopic, Data: successMessage})
 }
 
-func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Resource plugin received rollback write message")
+func (n *Nginx) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received rollback write message")
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
 
 		return
 	}
-	_, err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
+	_, err := n.nginxService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
 		slog.ErrorContext(ctx, "Errors found during rollback, sending failure status", "error", err)
 
@@ -336,8 +306,8 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 			data.InstanceID,
 		)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 
 		return
 	}
@@ -353,14 +323,14 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 		data.InstanceID,
 	)
 
-	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 }
 
-func (r *Resource) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Resource plugin received agent config update message")
+func (n *Nginx) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received agent config update message")
 
-	r.agentConfigMutex.Lock()
-	defer r.agentConfigMutex.Unlock()
+	n.agentConfigMutex.Lock()
+	defer n.agentConfigMutex.Unlock()
 
 	agentConfig, ok := msg.Data.(*config.Config)
 	if !ok {
@@ -368,5 +338,5 @@ func (r *Resource) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message
 		return
 	}
 
-	r.agentConfig = agentConfig
+	n.agentConfig = agentConfig
 }

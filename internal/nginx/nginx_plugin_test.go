@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"bytes"
@@ -27,100 +27,11 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+	"github.com/nginx/agent/v3/internal/nginx/nginxfakes"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestResource_Process(t *testing.T) {
-	ctx := context.Background()
-
-	updatedInstance := &mpi.Instance{
-		InstanceConfig: protos.NginxOssInstance([]string{}).GetInstanceConfig(),
-		InstanceMeta:   protos.NginxOssInstance([]string{}).GetInstanceMeta(),
-		InstanceRuntime: &mpi.InstanceRuntime{
-			ProcessId:  56789,
-			BinaryPath: protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
-			ConfigPath: protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
-			Details:    protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetDetails(),
-		},
-	}
-
-	tests := []struct {
-		name     string
-		message  *bus.Message
-		resource *mpi.Resource
-		topic    string
-	}{
-		{
-			name: "Test 1: New Instance Topic",
-			message: &bus.Message{
-				Topic: bus.AddInstancesTopic,
-				Data: []*mpi.Instance{
-					protos.NginxOssInstance([]string{}),
-				},
-			},
-			resource: protos.HostResource(),
-			topic:    bus.ResourceUpdateTopic,
-		},
-		{
-			name: "Test 2: Update Instance Topic",
-			message: &bus.Message{
-				Topic: bus.UpdatedInstancesTopic,
-				Data: []*mpi.Instance{
-					updatedInstance,
-				},
-			},
-			resource: &mpi.Resource{
-				ResourceId: protos.HostResource().GetResourceId(),
-				Instances: []*mpi.Instance{
-					updatedInstance,
-				},
-				Info: protos.HostResource().GetInfo(),
-			},
-			topic: bus.ResourceUpdateTopic,
-		},
-		{
-			name: "Test 3: Delete Instance Topic",
-			message: &bus.Message{
-				Topic: bus.DeletedInstancesTopic,
-				Data: []*mpi.Instance{
-					updatedInstance,
-				},
-			},
-			resource: &mpi.Resource{
-				ResourceId: protos.HostResource().GetResourceId(),
-				Instances:  []*mpi.Instance{},
-				Info:       protos.HostResource().GetInfo(),
-			},
-			topic: bus.ResourceUpdateTopic,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.AddInstancesReturns(protos.HostResource())
-			fakeResourceService.UpdateInstancesReturns(test.resource)
-			fakeResourceService.DeleteInstancesReturns(test.resource)
-			messagePipe := busfakes.NewFakeMessagePipe()
-
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
-
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
-			require.NoError(t, err)
-
-			resourcePlugin.messagePipe = messagePipe
-
-			resourcePlugin.Process(ctx, test.message)
-
-			assert.Equal(t, test.topic, messagePipe.Messages()[0].Topic)
-			assert.Equal(t, test.resource, messagePipe.Messages()[0].Data)
-		})
-	}
-}
 
 func TestResource_Process_Apply(t *testing.T) {
 	ctx := context.Background()
@@ -161,12 +72,12 @@ func TestResource_Process_Apply(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.ApplyConfigReturns(&model.NginxConfigContext{}, test.applyErr)
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+			fakeNginxService.ApplyConfigReturns(&model.NginxConfigContext{}, test.applyErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
+			resourcePlugin := NewNginx(types.AgentConfig())
+			resourcePlugin.nginxService = fakeNginxService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 			require.NoError(t, err)
@@ -287,7 +198,7 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		runResourceTestHelper(t, ctx, test.name, func(fakeService *resourcefakes.FakeResourceServiceInterface) {
+		runResourceTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
 			fakeService.GetHTTPUpstreamServersReturns(test.upstreams, test.err)
 		}, test.instance, test.message, test.topic, test.err)
 	}
@@ -360,17 +271,17 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			logBuf := &bytes.Buffer{}
 			stub.StubLoggerWith(logBuf)
 
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.InstanceReturns(test.instance)
-			fakeResourceService.UpdateHTTPUpstreamServersReturnsOnCall(0, test.upstreams, []client.UpstreamServer{},
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+			fakeNginxService.InstanceReturns(test.instance)
+			fakeNginxService.UpdateHTTPUpstreamServersReturnsOnCall(0, test.upstreams, []client.UpstreamServer{},
 				[]client.UpstreamServer{}, test.err)
-			fakeResourceService.UpdateHTTPUpstreamServersReturnsOnCall(1, []client.UpstreamServer{},
+			fakeNginxService.UpdateHTTPUpstreamServersReturnsOnCall(1, []client.UpstreamServer{},
 				[]client.UpstreamServer{}, []client.UpstreamServer{}, test.err)
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
+			resourcePlugin := NewNginx(types.AgentConfig())
+			resourcePlugin.nginxService = fakeNginxService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 			require.NoError(tt, err)
@@ -463,17 +374,17 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 			logBuf := &bytes.Buffer{}
 			stub.StubLoggerWith(logBuf)
 
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.InstanceReturns(test.instance)
-			fakeResourceService.UpdateStreamServersReturnsOnCall(0, test.upstreams, []client.StreamUpstreamServer{},
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+			fakeNginxService.InstanceReturns(test.instance)
+			fakeNginxService.UpdateStreamServersReturnsOnCall(0, test.upstreams, []client.StreamUpstreamServer{},
 				[]client.StreamUpstreamServer{}, test.err)
-			fakeResourceService.UpdateStreamServersReturnsOnCall(0, test.upstreams, []client.StreamUpstreamServer{},
+			fakeNginxService.UpdateStreamServersReturnsOnCall(0, test.upstreams, []client.StreamUpstreamServer{},
 				[]client.StreamUpstreamServer{}, test.err)
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
+			resourcePlugin := NewNginx(types.AgentConfig())
+			resourcePlugin.nginxService = fakeNginxService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 			require.NoError(tt, err)
@@ -606,16 +517,16 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.GetStreamUpstreamsReturns(test.upstreams, test.err)
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+			fakeNginxService.GetStreamUpstreamsReturns(test.upstreams, test.err)
 			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
-				fakeResourceService.InstanceReturns(test.instance)
+				fakeNginxService.InstanceReturns(test.instance)
 			}
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
+			resourcePlugin := NewNginx(types.AgentConfig())
+			resourcePlugin.nginxService = fakeNginxService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 			require.NoError(t, err)
@@ -754,7 +665,7 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		runResourceTestHelper(t, ctx, test.name, func(fakeService *resourcefakes.FakeResourceServiceInterface) {
+		runResourceTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
 			fakeService.GetUpstreamsReturns(test.upstreams, test.err)
 		}, test.instance, test.message, test.topic, test.err)
 	}
@@ -799,12 +710,12 @@ func TestResource_Process_Rollback(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.ApplyConfigReturns(&model.NginxConfigContext{}, test.rollbackErr)
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+			fakeNginxService.ApplyConfigReturns(&model.NginxConfigContext{}, test.rollbackErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
+			resourcePlugin := NewNginx(types.AgentConfig())
+			resourcePlugin.nginxService = fakeNginxService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 			require.NoError(t, err)
@@ -836,12 +747,10 @@ func TestResource_Process_Rollback(t *testing.T) {
 }
 
 func TestResource_Subscriptions(t *testing.T) {
-	resourcePlugin := NewResource(types.AgentConfig())
+	resourcePlugin := NewNginx(types.AgentConfig())
 	assert.Equal(t,
 		[]string{
-			bus.AddInstancesTopic,
-			bus.UpdatedInstancesTopic,
-			bus.DeletedInstancesTopic,
+			bus.ResourceUpdateTopic,
 			bus.WriteConfigSuccessfulTopic,
 			bus.RollbackWriteTopic,
 			bus.APIActionRequestTopic,
@@ -851,19 +760,19 @@ func TestResource_Subscriptions(t *testing.T) {
 }
 
 func TestResource_Info(t *testing.T) {
-	resourcePlugin := NewResource(types.AgentConfig())
-	assert.Equal(t, &bus.Info{Name: "resource"}, resourcePlugin.Info())
+	resourcePlugin := NewNginx(types.AgentConfig())
+	assert.Equal(t, &bus.Info{Name: "nginx"}, resourcePlugin.Info())
 }
 
 func TestResource_Init(t *testing.T) {
 	ctx := context.Background()
-	resourceService := resourcefakes.FakeResourceServiceInterface{}
+	fakeNginxService := nginxfakes.FakeNginxServiceInterface{}
 
 	messagePipe := busfakes.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
-	resourcePlugin := NewResource(types.AgentConfig())
-	resourcePlugin.resourceService = &resourceService
+	resourcePlugin := NewNginx(types.AgentConfig())
+	resourcePlugin.nginxService = &fakeNginxService
 	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -873,20 +782,20 @@ func TestResource_Init(t *testing.T) {
 }
 
 //nolint:revive,lll // maximum number of arguments exceed
-func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, getUpstreamsFunc func(*resourcefakes.FakeResourceServiceInterface), instance *mpi.Instance, message *bus.Message, topic []string, err error) {
+func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, getUpstreamsFunc func(serviceInterface *nginxfakes.FakeNginxServiceInterface), instance *mpi.Instance, message *bus.Message, topic []string, err error) {
 	t.Helper()
 
 	t.Run(testName, func(tt *testing.T) {
-		fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-		getUpstreamsFunc(fakeResourceService)
+		fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
+		getUpstreamsFunc(fakeNginxService)
 
 		if instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
-			fakeResourceService.InstanceReturns(instance)
+			fakeNginxService.InstanceReturns(instance)
 		}
 
 		messagePipe := busfakes.NewFakeMessagePipe()
-		resourcePlugin := NewResource(types.AgentConfig())
-		resourcePlugin.resourceService = fakeResourceService
+		resourcePlugin := NewNginx(types.AgentConfig())
+		resourcePlugin.nginxService = fakeNginxService
 
 		registerErr := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 		require.NoError(t, registerErr)

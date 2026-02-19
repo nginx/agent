@@ -10,13 +10,14 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/id"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -38,7 +39,6 @@ var (
 type NginxAppProtectInstanceWatcher struct {
 	agentConfig             *config.Config
 	watcher                 *fsnotify.Watcher
-	instancesChannel        chan<- InstanceUpdatesMessage
 	nginxAppProtectInstance *mpi.Instance
 	filesBeingWatched       map[string]bool
 	version                 string
@@ -46,16 +46,18 @@ type NginxAppProtectInstanceWatcher struct {
 	attackSignatureVersion  string
 	threatCampaignVersion   string
 	enforcerEngineVersion   string
+	instanceMutex           sync.Mutex
 }
 
 func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProtectInstanceWatcher {
 	return &NginxAppProtectInstanceWatcher{
 		agentConfig:       agentConfig,
 		filesBeingWatched: make(map[string]bool),
+		instanceMutex:     sync.Mutex{},
 	}
 }
 
-func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesChannel chan<- InstanceUpdatesMessage) {
+func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context) {
 	monitoringFrequency := w.agentConfig.Watchers.InstanceWatcher.MonitoringFrequency
 	slog.DebugContext(
 		ctx,
@@ -70,7 +72,6 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 	}
 
 	w.watcher = watcher
-	w.instancesChannel = instancesChannel
 
 	w.watchVersionFiles(ctx)
 
@@ -96,6 +97,13 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 			slog.ErrorContext(ctx, "Unexpected error in NGINX App Protect instance watcher", "error", watcherError)
 		}
 	}
+}
+
+func (w *NginxAppProtectInstanceWatcher) NginxAppProtectInstance() *mpi.Instance {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
+	return w.nginxAppProtectInstance
 }
 
 func (w *NginxAppProtectInstanceWatcher) watchVersionFiles(ctx context.Context) {
@@ -136,6 +144,9 @@ func (w *NginxAppProtectInstanceWatcher) addWatcher(ctx context.Context, version
 }
 
 func (w *NginxAppProtectInstanceWatcher) readVersionFile(ctx context.Context, versionFile string) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	switch versionFile {
 	case versionFilePath:
 		w.version = w.readFile(ctx, versionFilePath)
@@ -160,6 +171,9 @@ func (w *NginxAppProtectInstanceWatcher) handleEvent(ctx context.Context, event 
 }
 
 func (w *NginxAppProtectInstanceWatcher) handleFileUpdateEvent(ctx context.Context, event fsnotify.Event) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	switch event.Name {
 	case versionFilePath:
 		w.version = w.readFile(ctx, event.Name)
@@ -175,6 +189,9 @@ func (w *NginxAppProtectInstanceWatcher) handleFileUpdateEvent(ctx context.Conte
 }
 
 func (w *NginxAppProtectInstanceWatcher) handleFileDeleteEvent(event fsnotify.Event) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	switch event.Name {
 	case versionFilePath:
 		w.version = ""
@@ -205,10 +222,15 @@ func (w *NginxAppProtectInstanceWatcher) checkForUpdates(ctx context.Context) {
 }
 
 func (w *NginxAppProtectInstanceWatcher) isNewInstance() bool {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	return w.nginxAppProtectInstance == nil && w.version != ""
 }
 
 func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
 	w.nginxAppProtectInstance = &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   id.Generate(versionFilePath),
@@ -233,48 +255,41 @@ func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
 	}
 
 	slog.InfoContext(ctx, "Discovered a new NGINX App Protect instance")
-
-	w.instancesChannel <- InstanceUpdatesMessage{
-		CorrelationID: logger.CorrelationIDAttr(ctx),
-		InstanceUpdates: InstanceUpdates{
-			NewInstances: []*mpi.Instance{
-				w.nginxAppProtectInstance,
-			},
-		},
-	}
 }
 
 func (w *NginxAppProtectInstanceWatcher) deleteInstance(ctx context.Context) {
-	slog.InfoContext(ctx, "NGINX App Protect instance not longer exists")
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
 
-	w.instancesChannel <- InstanceUpdatesMessage{
-		CorrelationID: logger.CorrelationIDAttr(ctx),
-		InstanceUpdates: InstanceUpdates{
-			DeletedInstances: []*mpi.Instance{
-				w.nginxAppProtectInstance,
-			},
-		},
-	}
+	slog.InfoContext(ctx, "NGINX App Protect instance not longer exists")
 	w.nginxAppProtectInstance = nil
 }
 
 func (w *NginxAppProtectInstanceWatcher) updateInstance(ctx context.Context) {
-	w.nginxAppProtectInstance.GetInstanceMeta().Version = w.version
-	runtimeInfo := w.nginxAppProtectInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
-	runtimeInfo.Release = w.release
-	runtimeInfo.AttackSignatureVersion = w.attackSignatureVersion
-	runtimeInfo.ThreatCampaignVersion = w.threatCampaignVersion
-	runtimeInfo.EnforcerEngineVersion = w.enforcerEngineVersion
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
 
-	slog.DebugContext(ctx, "NGINX App Protect instance updated")
+	instanceCopy, ok := proto.Clone(w.nginxAppProtectInstance).(*mpi.Instance)
 
-	w.instancesChannel <- InstanceUpdatesMessage{
-		CorrelationID: logger.CorrelationIDAttr(ctx),
-		InstanceUpdates: InstanceUpdates{
-			UpdatedInstances: []*mpi.Instance{
-				w.nginxAppProtectInstance,
-			},
-		},
+	if ok {
+		instanceCopy.GetInstanceMeta().Version = w.version
+		runtimeInfo := instanceCopy.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
+		if runtimeInfo == nil {
+			slog.ErrorContext(ctx, "Error updating NGINX App Protect instance runtimeInfo, instance no longer exists")
+			return
+		}
+
+		runtimeInfo.Release = w.release
+		runtimeInfo.AttackSignatureVersion = w.attackSignatureVersion
+		runtimeInfo.ThreatCampaignVersion = w.threatCampaignVersion
+		runtimeInfo.EnforcerEngineVersion = w.enforcerEngineVersion
+
+		w.nginxAppProtectInstance = instanceCopy
+
+		slog.InfoContext(ctx, "NGINX App Protect instance updated")
+	} else {
+		slog.WarnContext(ctx, "Unable to clone instance while updating instance", "instance",
+			w.NginxAppProtectInstance())
 	}
 }
 

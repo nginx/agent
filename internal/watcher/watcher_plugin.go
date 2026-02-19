@@ -35,12 +35,11 @@ type (
 		messagePipe                        bus.MessagePipeInterface
 		agentConfig                        *config.Config
 		instanceWatcherService             instanceWatcherServiceInterface
-		nginxAppProtectInstanceWatcher     *instance.NginxAppProtectInstanceWatcher
 		healthWatcherService               *health.HealthWatcherService
 		fileWatcherService                 *file.FileWatcherService
 		commandCredentialWatcherService    credentialWatcherServiceInterface
 		auxiliaryCredentialWatcherService  credentialWatcherServiceInterface
-		instanceUpdatesChannel             chan instance.InstanceUpdatesMessage
+		resourceUpdatesChannel             chan instance.ResourceUpdatesMessage
 		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
 		instanceHealthChannel              chan health.InstanceHealthMessage
 		fileUpdatesChannel                 chan file.FileUpdateMessage
@@ -55,7 +54,7 @@ type (
 	instanceWatcherServiceInterface interface {
 		Watch(
 			ctx context.Context,
-			instancesChannel chan<- instance.InstanceUpdatesMessage,
+			instancesChannel chan<- instance.ResourceUpdatesMessage,
 			nginxConfigContextChannel chan<- instance.NginxConfigContextMessage,
 		)
 		HandleNginxConfigContextUpdate(ctx context.Context, instanceID string, configContext *model.NginxConfigContext)
@@ -77,12 +76,11 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
 		agentConfig:                        agentConfig,
 		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
-		nginxAppProtectInstanceWatcher:     instance.NewNginxAppProtectInstanceWatcher(agentConfig),
 		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
 		fileWatcherService:                 file.NewFileWatcherService(agentConfig),
 		commandCredentialWatcherService:    credentials.NewCredentialWatcherService(agentConfig, model.Command),
 		auxiliaryCredentialWatcherService:  credentials.NewCredentialWatcherService(agentConfig, model.Auxiliary),
-		instanceUpdatesChannel:             make(chan instance.InstanceUpdatesMessage),
+		resourceUpdatesChannel:             make(chan instance.ResourceUpdatesMessage),
 		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
 		fileUpdatesChannel:                 make(chan file.FileUpdateMessage),
@@ -102,8 +100,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	watcherContext, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 
-	go w.nginxAppProtectInstanceWatcher.Watch(watcherContext, w.instanceUpdatesChannel)
-	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
+	go w.instanceWatcherService.Watch(watcherContext, w.resourceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
 	go w.commandCredentialWatcherService.Watch(watcherContext, w.commandCredentialUpdatesChannel)
 
@@ -249,7 +246,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			w.handleCredentialUpdate(ctx, message)
 		case message := <-w.auxiliaryCredentialUpdatesChannel:
 			w.handleCredentialUpdate(ctx, message)
-		case message := <-w.instanceUpdatesChannel:
+		case message := <-w.resourceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.handleInstanceUpdates(newCtx, message)
 		case message := <-w.nginxConfigContextChannel:
@@ -303,31 +300,12 @@ func (w *Watcher) handleCredentialUpdate(ctx context.Context, message credential
 	})
 }
 
-func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.InstanceUpdatesMessage) {
-	if len(message.InstanceUpdates.NewInstances) > 0 {
-		slog.DebugContext(newCtx, "New instances found", "instances", message.InstanceUpdates.NewInstances)
-		w.healthWatcherService.AddHealthWatcher(newCtx, message.InstanceUpdates.NewInstances)
-		w.messagePipe.Process(
-			newCtx,
-			&bus.Message{Topic: bus.AddInstancesTopic, Data: message.InstanceUpdates.NewInstances},
-		)
-	}
-	if len(message.InstanceUpdates.UpdatedInstances) > 0 {
-		slog.DebugContext(newCtx, "Instances updated", "instances", message.InstanceUpdates.UpdatedInstances)
-		w.healthWatcherService.UpdateHealthWatcher(message.InstanceUpdates.UpdatedInstances)
-		w.messagePipe.Process(
-			newCtx,
-			&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: message.InstanceUpdates.UpdatedInstances},
-		)
-	}
-	if len(message.InstanceUpdates.DeletedInstances) > 0 {
-		slog.DebugContext(newCtx, "Instances deleted", "instances", message.InstanceUpdates.DeletedInstances)
-		w.healthWatcherService.DeleteHealthWatcher(message.InstanceUpdates.
-			DeletedInstances)
-		w.messagePipe.Process(
-			newCtx,
-			&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.InstanceUpdates.DeletedInstances},
-		)
+func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.ResourceUpdatesMessage) {
+	if message.Resource != nil {
+		slog.DebugContext(newCtx, "Resource updated", "resource", message.Resource)
+		w.healthWatcherService.UpdateHealthWatcher(newCtx, message.Resource.GetInstances())
+
+		w.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: message.Resource})
 	}
 }
 
