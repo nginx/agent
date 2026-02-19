@@ -42,6 +42,15 @@ jobs:
           echo "Found $GO_VERSION"
           echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT
 
+      - name: Install tools and run make generate
+        run: |
+            make install-tools
+            echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+            export PATH=$PATH:$(go env GOPATH)/bin
+            make generate
+        env:
+            GOTOOLCHAIN: local
+
       - name: Run govulncheck
         id: govulncheck
         uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
