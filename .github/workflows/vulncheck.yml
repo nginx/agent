@@ -48,19 +48,21 @@ jobs:
           go-version: ${{ steps.get-go-version.outputs.go-version }}
           cache: true
 
+      - name: Force Go Path
+        run: |
+            # This forces the version from setup-go to the top of the PATH for all future steps
+            echo "$(go env GOROOT)/bin" >> $GITHUB_PATH
+            echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
       - name: Install tools and run make generate
         run: |
-            NEW_GO_PATH="$(go env GOROOT)/bin"
-            export PATH="$NEW_GO_PATH:$PATH"
-
             go version
 
             go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
             go install github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2
             go install github.com/bufbuild/buf/cmd/buf@v1.30.1
 
-            export PATH="$PATH:$(go env GOPATH)/bin"
-            make generate
+            make generate GO=$(which go)
         env:
             GOTOOLCHAIN: local
 
