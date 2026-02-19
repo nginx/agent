@@ -46,13 +46,14 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.get-go-version.outputs.go-version }}
-          cache: true #
+          cache: true
 
       - name: Install tools and run make generate
         run: |
+            export PATH=$(go env GOROOT)/bin:$PATH
             make install-tools
-            echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
             export PATH=$PATH:$(go env GOPATH)/bin
+            echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
             make generate
         env:
             GOTOOLCHAIN: local
