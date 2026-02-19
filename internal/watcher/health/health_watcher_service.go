@@ -20,7 +20,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . healthWatcherOperator
 
 type (
