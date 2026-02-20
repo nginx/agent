@@ -26,7 +26,9 @@ func (e *Exporter) SetLatestMetricReports(data []core.Payload) {
 	e.latestMetricReports.Data = nil
 
 	for _, report := range data {
-		e.latestMetricReports.Data = append(e.latestMetricReports.Data, report.(*proto.MetricsReport))
+		if metricReport, ok := report.(*proto.MetricsReport); ok {
+			e.latestMetricReports.Data = append(e.latestMetricReports.Data, metricReport)
+		}
 	}
 }
 
