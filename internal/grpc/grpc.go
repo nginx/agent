@@ -36,7 +36,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . GrpcConnectionInterface
 
 type (

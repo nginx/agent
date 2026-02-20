@@ -977,7 +977,7 @@ func TestResolveExtensions(t *testing.T) {
 			extension := resolveExtensions()
 			require.NotNil(t, extension)
 
-			var result []string
+			result := make([]string, 0, len(extension.HeadersSetter.Headers))
 			for _, header := range extension.HeadersSetter.Headers {
 				result = append(result, header.Value)
 			}

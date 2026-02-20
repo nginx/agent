@@ -68,7 +68,7 @@ var globFunction = func(path string) ([]string, error) {
 	return matches, nil
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . ConfigParser
 
 type (

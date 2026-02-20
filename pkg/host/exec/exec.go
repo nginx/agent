@@ -16,7 +16,7 @@ import (
 	"github.com/shirou/gopsutil/v4/host"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . ExecInterface
 type ExecInterface interface {
 	RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buffer, error)

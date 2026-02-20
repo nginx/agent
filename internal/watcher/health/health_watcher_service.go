@@ -20,7 +20,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . healthWatcherOperator
 
 type (
@@ -139,7 +139,7 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 func (hw *HealthWatcherService) health(ctx context.Context) (updatedStatuses []*mpi.InstanceHealth, isHealthDiff bool,
 ) {
 	currentHealth := make(map[string]*mpi.InstanceHealth, len(hw.watchers))
-	allStatuses := make([]*mpi.InstanceHealth, 0)
+	allStatuses := make([]*mpi.InstanceHealth, 0, len(hw.watchers))
 
 	for instanceID, watcher := range hw.watchers {
 		instanceHealth, err := watcher.Health(ctx, hw.instances[instanceID])

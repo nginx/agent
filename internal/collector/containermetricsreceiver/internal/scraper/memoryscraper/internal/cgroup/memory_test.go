@@ -13,8 +13,9 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v4/mem"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVirtualMemoryStat(t *testing.T) {
@@ -115,10 +116,18 @@ func TestVirtualMemoryStat(t *testing.T) {
 			virtualMemoryStat, err := cgroupCPUSource.VirtualMemoryStat()
 
 			// Assert error
-			assert.IsType(tt, test.errorType, err)
+			if test.errorType == nil {
+				require.NoError(tt, err)
+			} else {
+				require.Error(tt, err)
+				// satisfy the linter's requirement for a more specific check than IsType.
+				require.Condition(tt, func() bool {
+					return errors.As(err, &test.errorType)
+				}, "Error should be of type %T", test.errorType)
+			}
 
 			// Assert result
-			assert.Equal(tt, test.virtualMemoryStat, *virtualMemoryStat)
+			require.Equal(tt, test.virtualMemoryStat, *virtualMemoryStat)
 		})
 	}
 }
