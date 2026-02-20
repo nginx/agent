@@ -37,34 +37,10 @@ jobs:
       - name: Check Go version
         id: get-go-version
         run: |
-          echo "Reading from go.mod"
-          GO_VERSION=$(grep -E "^toolchain " go.mod | awk -F' ' '{print $2}' | tr -d 'go')
-          echo "Found $GO_VERSION"
-          echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT
-
-      - name: Setup Go environment
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ steps.get-go-version.outputs.go-version }}
-          cache: true
-
-      - name: Force Go Path
-        run: |
-            # This forces the version from setup-go to the top of the PATH for all future steps
-            echo "$(go env GOROOT)/bin" >> $GITHUB_PATH
-            echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Install tools and run make generate
-        run: |
-            go version
-
-            go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
-            go install github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2
-            go install github.com/bufbuild/buf/cmd/buf@v1.30.1
-
-            make generate GO=$(which go)
-        env:
-            GOTOOLCHAIN: local
+            echo "Reading from go.mod"
+            GO_VERSION=$(grep -E "^toolchain " go.mod | awk -F' ' '{print $2}' | tr -d 'go')
+            echo "Found $GO_VERSION"
+            echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT
 
       - name: Run govulncheck
         id: govulncheck
