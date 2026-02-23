@@ -8,27 +8,37 @@ package nginx
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	response "github.com/nginx/agent/v3/internal/datasource/proto"
+	"github.com/nginx/agent/v3/internal/file"
+	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
-
-	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/pkg/files"
+	"github.com/nginx/agent/v3/pkg/id"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // The Nginx plugin listens for a writeConfigSuccessfulTopic from the file plugin after the config apply
-// files have been written. The Nginx plugin then, validates the config, reloads the instance and monitors the logs.
+// files have been written. The Nginx plugin then, validates the config,
+// reloads the instance and monitors the logs.
 // This is done in the Nginx plugin to make the file plugin usable for every type of instance.
 
-type Nginx struct {
-	messagePipe      bus.MessagePipeInterface
-	nginxService     nginxServiceInterface
-	agentConfig      *config.Config
-	agentConfigMutex *sync.Mutex
+type NginxPlugin struct {
+	messagePipe        bus.MessagePipeInterface
+	nginxService       nginxServiceInterface
+	agentConfig        *config.Config
+	agentConfigMutex   *sync.Mutex
+	manifestLock       *sync.RWMutex
+	conn               grpc.GrpcConnectionInterface
+	fileManagerService file.FileManagerServiceInterface
+	serverType         model.ServerType
 }
 
 type errResponse struct {
@@ -43,38 +53,65 @@ type plusAPIErr struct {
 	Href      string      `json:"href"`
 }
 
-var _ bus.Plugin = (*Nginx)(nil)
+var _ bus.Plugin = (*NginxPlugin)(nil)
 
-func NewNginx(agentConfig *config.Config) *Nginx {
-	return &Nginx{
+func NewNginx(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
+	serverType model.ServerType, manifestLock *sync.RWMutex,
+) *NginxPlugin {
+	return &NginxPlugin{
 		agentConfig:      agentConfig,
+		conn:             grpcConnection,
+		serverType:       serverType,
+		manifestLock:     manifestLock,
 		agentConfigMutex: &sync.Mutex{},
 	}
 }
 
-func (n *Nginx) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+func (n *NginxPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	ctx = context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, n.serverType.String()),
+	)
 	slog.DebugContext(ctx, "Starting nginx plugin")
 
 	n.messagePipe = messagePipe
 	n.nginxService = NewNginxService(ctx, n.agentConfig)
+	n.fileManagerService = file.NewFileManagerService(n.conn.FileServiceClient(), n.agentConfig, n.manifestLock)
 
 	return nil
 }
 
-func (*Nginx) Close(ctx context.Context) error {
+func (n *NginxPlugin) Close(ctx context.Context) error {
+	ctx = context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, n.serverType.String()),
+	)
 	slog.InfoContext(ctx, "Closing nginx plugin")
-	return nil
+
+	return n.conn.Close(ctx)
 }
 
-func (*Nginx) Info() *bus.Info {
+func (n *NginxPlugin) Info() *bus.Info {
+	name := "nginx"
+	if n.serverType.String() == model.Auxiliary.String() {
+		name = "auxiliary-nginx"
+	}
+
 	return &bus.Info{
-		Name: "nginx",
+		Name: name,
 	}
 }
 
-// cyclomatic complexity 11 max is 10
+//nolint:revive,cyclop  // cyclomatic complexity 16 max is 12
+func (n *NginxPlugin) Process(ctx context.Context, msg *bus.Message) {
+	ctxWithMetadata := n.agentConfig.NewContextWithLabels(ctx)
+	if logger.ServerType(ctx) == "" {
+		ctxWithMetadata = context.WithValue(
+			ctxWithMetadata,
+			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, n.serverType.String()),
+		)
+	}
 
-func (n *Nginx) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ResourceUpdateTopic:
 		resourceUpdate, ok := msg.Data.(*mpi.Resource)
@@ -89,30 +126,52 @@ func (n *Nginx) Process(ctx context.Context, msg *bus.Message) {
 		slog.DebugContext(ctx, "Nginx plugin received update resource message")
 
 		return
-	case bus.WriteConfigSuccessfulTopic:
-		n.handleWriteConfigSuccessful(ctx, msg)
-	case bus.RollbackWriteTopic:
-		n.handleRollbackWrite(ctx, msg)
 	case bus.APIActionRequestTopic:
 		n.handleAPIActionRequest(ctx, msg)
-	case bus.AgentConfigUpdateTopic:
-		n.handleAgentConfigUpdate(ctx, msg)
+	case bus.ConnectionResetTopic:
+		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
+			n.handleConnectionReset(ctxWithMetadata, msg)
+		}
+	case bus.ConnectionCreatedTopic:
+		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
+			slog.DebugContext(ctxWithMetadata, "Nginx plugin received connection created message")
+			n.fileManagerService.SetIsConnected(true)
+		}
+	case bus.NginxConfigUpdateTopic:
+		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
+			n.handleNginxConfigUpdate(ctxWithMetadata, msg)
+		}
+	case bus.ConfigUploadRequestTopic:
+		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
+			n.handleConfigUploadRequest(ctxWithMetadata, msg)
+		}
+	case bus.ConfigApplyRequestTopic:
+		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
+			n.handleConfigApplyRequest(ctxWithMetadata, msg)
+		}
 	default:
-		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "NGINX plugin received message with unknown topic", "topic", msg.Topic)
 	}
 }
 
-func (*Nginx) Subscriptions() []string {
-	return []string{
-		bus.ResourceUpdateTopic,
-		bus.WriteConfigSuccessfulTopic,
-		bus.RollbackWriteTopic,
+func (n *NginxPlugin) Subscriptions() []string {
+	subscriptions := []string{
 		bus.APIActionRequestTopic,
-		bus.AgentConfigUpdateTopic,
+		bus.ConnectionResetTopic,
+		bus.ConnectionCreatedTopic,
+		bus.NginxConfigUpdateTopic,
+		bus.ConfigUploadRequestTopic,
+		bus.ResourceUpdateTopic,
 	}
+
+	if n.serverType == model.Command {
+		subscriptions = append(subscriptions, bus.ConfigApplyRequestTopic)
+	}
+
+	return subscriptions
 }
 
-func (n *Nginx) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+func (n *NginxPlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
 	slog.DebugContext(ctx, "Nginx plugin is reconfiguring to update agent configuration")
 
 	n.agentConfigMutex.Lock()
@@ -123,7 +182,81 @@ func (n *Nginx) Reconfigure(ctx context.Context, agentConfig *config.Config) err
 	return nil
 }
 
-func (n *Nginx) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
+func (n *NginxPlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received config upload request message")
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
+	if !ok {
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *mpi.ManagementPlaneRequest",
+			"payload", msg.Data,
+		)
+
+		return
+	}
+
+	configUploadRequest := managementPlaneRequest.GetConfigUploadRequest()
+
+	correlationID := logger.CorrelationID(ctx)
+
+	updatingFilesError := n.fileManagerService.ConfigUpload(ctx, configUploadRequest)
+
+	dataplaneResponse := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     id.GenerateMessageID(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Successfully updated all files",
+		},
+		InstanceId:  configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+		RequestType: mpi.DataPlaneResponse_CONFIG_UPLOAD_REQUEST,
+	}
+
+	if updatingFilesError != nil {
+		dataplaneResponse.CommandResponse.Status = mpi.CommandResponse_COMMAND_STATUS_FAILURE
+		dataplaneResponse.CommandResponse.Message = "Failed to update all files"
+		dataplaneResponse.CommandResponse.Error = updatingFilesError.Error()
+	}
+
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dataplaneResponse})
+}
+
+func (n *NginxPlugin) handleConnectionReset(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received connection reset message")
+
+	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
+		err := n.conn.Close(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Nginx plugin: unable to close connection", "error", err)
+		}
+
+		n.conn = newConnection
+
+		reconnect := n.fileManagerService.IsConnected()
+		n.fileManagerService.ResetClient(ctx, n.conn.FileServiceClient())
+		n.fileManagerService.SetIsConnected(reconnect)
+
+		slog.DebugContext(ctx, "Nginx plugin connection reset successfully")
+	}
+}
+
+func (n *NginxPlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received config update message")
+	nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
+
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
+
+		return
+	}
+
+	n.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
+}
+
+func (n *NginxPlugin) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Nginx plugin received api action request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 
@@ -150,7 +283,9 @@ func (n *Nginx) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
 	}
 }
 
-func (n *Nginx) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
+func (n *NginxPlugin) handleNginxPlusActionRequest(ctx context.Context,
+	action *mpi.NGINXPlusAction, instanceID string,
+) {
 	correlationID := logger.CorrelationID(ctx)
 	instance := n.nginxService.Instance(instanceID)
 	apiAction := APIAction{
@@ -218,125 +353,286 @@ func (n *Nginx) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NG
 	}
 }
 
-func (n *Nginx) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Nginx plugin received write config successful message")
-	data, ok := msg.Data.(*model.ConfigApplyMessage)
+func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received config apply request message")
+
+	var dataplaneResponse *mpi.DataPlaneResponse
+	correlationID := logger.CorrelationID(ctx)
+
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
+
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest", "payload", msg.Data)
+		return
+	}
+
+	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
+	if !requestOk {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
+			"payload", msg.Data)
 
 		return
 	}
-	configContext, err := n.nginxService.ApplyConfig(ctx, data.InstanceID)
-	if err != nil {
-		data.Error = err
 
+	configApplyRequest := request.ConfigApplyRequest
+	instanceID := configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()
+
+	writeStatus, err := n.fileManagerService.ConfigApply(ctx, configApplyRequest)
+
+	switch writeStatus {
+	case model.NoChange:
+		slog.DebugContext(ctx, "No changes required for config apply request")
+		dataplaneResponse = response.CreateDataPlaneResponse(correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Config apply successful, no files to change",
+				Error:   "",
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, dataplaneResponse)
+	case model.Error:
 		slog.ErrorContext(
 			ctx,
-			"Errors found during config apply, sending error status and rolling back configuration updates",
+			"Failed to apply config changes",
+			"instance_id", instanceID,
+			"error", err,
+		)
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
+
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, dataplaneResponse)
+	case model.RollbackRequired:
+		slog.ErrorContext(
+			ctx,
+			"Failed to apply config changes, rolling back",
+			"instance_id", instanceID,
 			"error", err,
 		)
 
-		dpResponse := response.CreateDataPlaneResponse(
-			data.CorrelationID,
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
 			&mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
 				Message: "Config apply failed, rolling back config",
 				Error:   err.Error(),
 			},
 			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
-			data.InstanceID,
+			instanceID,
+		)
+
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dataplaneResponse})
+
+		rollbackErr := n.fileManagerService.Rollback(ctx, instanceID)
+
+		if rollbackErr != nil {
+			applyErr := fmt.Errorf("config apply error: %w", err)
+			rbErr := fmt.Errorf("rollback error: %w", rollbackErr)
+			combinedErr := errors.Join(applyErr, rbErr)
+
+			rollbackResponse := response.CreateDataPlaneResponse(
+				correlationID,
+				&mpi.CommandResponse{
+					Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					Message: "Config apply failed, rollback failed",
+					Error:   combinedErr.Error(),
+				},
+				mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+				instanceID,
+			)
+			n.completeConfigApply(ctx, &model.NginxConfigContext{}, rollbackResponse)
+
+			return
+		}
+
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed, rollback successful",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID)
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, dataplaneResponse)
+	case model.OK:
+		slog.DebugContext(ctx, "Changes required for config apply request")
+		n.applyConfig(ctx, correlationID, instanceID)
+	}
+}
+
+func (n *NginxPlugin) applyConfig(ctx context.Context, correlationID, instanceID string) {
+	configContext, err := n.nginxService.ApplyConfig(ctx, instanceID)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Errors found during config apply, sending error status and rolling back configuration updates",
+			"error", err,
+		)
+		dpResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Config apply failed, rolling back config",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
 		)
 
 		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
+
+		n.writeRollbackConfig(ctx, correlationID, instanceID, err)
 
 		return
 	}
 
 	dpResponse := response.CreateDataPlaneResponse(
-		data.CorrelationID,
+		correlationID,
 		&mpi.CommandResponse{
 			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
 			Message: "Config apply successful",
 			Error:   "",
 		},
 		mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
-		data.InstanceID,
+		instanceID,
 	)
 
-	successMessage := &model.ReloadSuccess{
-		ConfigContext:     configContext,
-		DataPlaneResponse: dpResponse,
+	if configContext.Files != nil {
+		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")
+		updateError := n.fileManagerService.UpdateCurrentFilesOnDisk(
+			ctx,
+			files.ConvertToMapOfFiles(configContext.Files),
+			true,
+		)
+		if updateError != nil {
+			slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+		}
 	}
 
-	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ReloadSuccessfulTopic, Data: successMessage})
+	n.completeConfigApply(ctx, configContext, dpResponse)
 }
 
-func (n *Nginx) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Nginx plugin received rollback write message")
-	data, ok := msg.Data.(*model.ConfigApplyMessage)
-	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
-
+func (n *NginxPlugin) writeRollbackConfig(ctx context.Context, correlationID, instanceID string, applyErr error) {
+	slog.DebugContext(ctx, "Starting rollback of config", "instance_id", instanceID)
+	if instanceID == "" {
+		n.fileManagerService.ClearCache()
 		return
 	}
-	_, err := n.nginxService.ApplyConfig(ctx, data.InstanceID)
+
+	err := n.fileManagerService.Rollback(ctx, instanceID)
 	if err != nil {
-		slog.ErrorContext(ctx, "Errors found during rollback, sending failure status", "error", err)
+		configErr := fmt.Errorf("config apply error: %w", applyErr)
+		rbErr := fmt.Errorf("rollback error: %w", err)
+		combinedErr := errors.Join(configErr, rbErr)
 
 		rollbackResponse := response.CreateDataPlaneResponse(
-			data.CorrelationID,
+			correlationID,
 			&mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
 				Message: "Rollback failed",
 				Error:   err.Error(),
 			},
 			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
-			data.InstanceID,
+			instanceID,
 		)
 
 		applyResponse := response.CreateDataPlaneResponse(
-			data.CorrelationID,
+			correlationID,
 			&mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				Message: "Config apply failed, rollback failed",
-				Error:   data.Error.Error(),
+				Error:   combinedErr.Error(),
 			},
 			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
-			data.InstanceID,
+			instanceID,
 		)
 
 		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
-		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
+
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, applyResponse)
+
+		return
+	}
+
+	n.rollbackConfigApply(ctx, correlationID, instanceID, applyErr)
+}
+
+func (n *NginxPlugin) rollbackConfigApply(ctx context.Context, correlationID, instanceID string, applyErr error) {
+	slog.DebugContext(ctx, "Rolling back config apply, after config written", "instance_id", instanceID)
+	_, err := n.nginxService.ApplyConfig(ctx, instanceID)
+	if err != nil {
+		slog.ErrorContext(ctx, "Errors found during rollback, sending failure status", "error", err)
+
+		rollbackResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Rollback failed",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
+
+		configErr := fmt.Errorf("config apply error: %w", applyErr)
+		rbErr := fmt.Errorf("rollback error: %w", err)
+		combinedErr := errors.Join(configErr, rbErr)
+
+		applyResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed, rollback failed",
+				Error:   combinedErr.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
+
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
+
+		n.completeConfigApply(ctx, &model.NginxConfigContext{}, applyResponse)
 
 		return
 	}
 
 	applyResponse := response.CreateDataPlaneResponse(
-		data.CorrelationID,
+		correlationID,
 		&mpi.CommandResponse{
 			Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			Message: "Config apply failed, rollback successful",
-			Error:   data.Error.Error(),
+			Error:   applyErr.Error(),
 		},
 		mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
-		data.InstanceID,
+		instanceID,
 	)
 
-	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
+	n.completeConfigApply(ctx, &model.NginxConfigContext{}, applyResponse)
 }
 
-func (n *Nginx) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Nginx plugin received agent config update message")
+func (n *NginxPlugin) completeConfigApply(ctx context.Context, configContext *model.NginxConfigContext,
+	dpResponse *mpi.DataPlaneResponse,
+) {
+	n.fileManagerService.ClearCache()
+	n.enableWatchers(ctx, configContext, dpResponse.GetInstanceId())
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
+}
 
-	n.agentConfigMutex.Lock()
-	defer n.agentConfigMutex.Unlock()
-
-	agentConfig, ok := msg.Data.(*config.Config)
-	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
-		return
+func (n *NginxPlugin) enableWatchers(ctx context.Context, configContext *model.NginxConfigContext, instanceID string) {
+	enableWatcher := &model.EnableWatchers{
+		InstanceID:    instanceID,
+		ConfigContext: configContext,
 	}
 
-	n.agentConfig = agentConfig
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.EnableWatchersTopic, Data: enableWatcher})
 }
