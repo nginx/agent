@@ -55,7 +55,7 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
-        - uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
           with:
             path: |
               ~/.cache/go-build
@@ -86,7 +86,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -129,7 +129,7 @@ jobs:
           with:
             go-version-file: 'go.mod'
             cache: false
-        - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
           with:
             path: |
               ~/.cache/go-build
@@ -165,7 +165,7 @@ jobs:
           with:
             go-version-file: 'go.mod'
             cache: false
-        - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
           with:
             path: |
               ~/.cache/go-build
@@ -204,7 +204,7 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
-        - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
           with:
             path: |
               ~/.cache/go-build
@@ -252,7 +252,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -315,7 +315,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -385,7 +385,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -466,7 +466,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -490,7 +490,7 @@ jobs:
           path: build
 
       - name: Login to Docker Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ env.nginx-private-registry-url }}
           username: ${{ env.nginx-pkg-jwt }}
@@ -557,7 +557,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -637,7 +637,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -659,7 +659,7 @@ jobs:
           secrets-filter: 'docker,nginx-private-registry,nginx-pkg-jwt'
 
       - name: Login to Docker Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ env.nginx-private-registry-url }}
           username: ${{ env.nginx-pkg-jwt }}
@@ -711,7 +711,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -751,7 +751,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
 
-      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -781,7 +781,7 @@ jobs:
           secrets-filter: 'nginx-pkg'
 
       - name: Build Docker Image
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
         with:
