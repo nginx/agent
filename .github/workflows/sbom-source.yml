@@ -1,0 +1,50 @@
+name: Generate SBOM from Source Code
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Runs daily at 2:00 AM UTC
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: string
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: Create SBOM document from source code
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
+      contents: read # Needed to download artifacts
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-')}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+            fetch-tags: 'true'
+      
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+      
+      - name: Generate SBOM Document
+        id: sbom-src
+        uses: nginxinc/compliance-rules/.github/actions/sbom-source@main
+        with:
+          product-name: ${{ github.event.repository.name }}
+          release-version: ${{ github.ref_name }}
+          artifact-name: nginx-agent
+          artifactory-user: ${{ env.artifactory-user }}
+          artifactory-api-token: ${{ env.artifactory-token }}
+          az-vault-client-id: ${{ secrets.AZ_VAULT_SEC_CLIENT_ID }}
+          az-vault-tenant-id: ${{ secrets.AZ_VAULT_SEC_TENANT_ID }}
+          az-vault-subscription-id: ${{ secrets.AZ_VAULT_SEC_SUBSCRIPTION_ID }}
