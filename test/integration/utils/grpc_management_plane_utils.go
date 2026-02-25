@@ -42,7 +42,7 @@ const (
 	instanceLen      = 2
 	statusRetryCount = 3
 	retryWait        = 50 * time.Millisecond
-	retryMaxWait     = 200 * time.Millisecond
+	retryMaxWait     = 2 * time.Second
 	plusPath         = "/nginx-plus/agent"
 )
 
