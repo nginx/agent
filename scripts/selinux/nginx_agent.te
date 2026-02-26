@@ -65,6 +65,7 @@ require {
 	type fixed_disk_device_t;
 	type nvme_device_t;
 	type udev_var_run_t;
+	type cgroup_t;
 }
 
 allow nginx_agent_t bin_t:file { execute execute_no_trans };
@@ -148,3 +149,7 @@ allow nginx_agent_t fixed_disk_device_t:blk_file getattr;
 allow nginx_agent_t nvme_device_t:blk_file getattr;
 allow nginx_agent_t udev_var_run_t:dir search;
 allow nginx_agent_t udev_var_run_t:file { getattr open read };
+
+#============= nginx_agent_t ==============
+allow nginx_agent_t cgroup_t:dir search;
+allow nginx_agent_t cgroup_t:file { open read };
