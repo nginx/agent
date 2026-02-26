@@ -104,7 +104,7 @@ func TestCredentialWatcherService_addWatcher(t *testing.T) {
 }
 
 func TestCredentialWatcherService_watchFiles(t *testing.T) {
-	var files []string
+	files := make([]string, 0, 3)
 
 	ctx := context.Background()
 	cws := NewCredentialWatcherService(types.AgentConfig(), model.Command)

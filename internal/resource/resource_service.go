@@ -43,16 +43,16 @@ const (
 	unixPlusAPIFormat = "http://nginx-plus-api%s"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . resourceServiceInterface
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . logTailerOperator
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . instanceOperator
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . processOperator
 
 type resourceServiceInterface interface {
