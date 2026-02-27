@@ -1,6 +1,42 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
-  ]
+      "schedule:daily",
+      "config:recommended",
+      "docker:enableMajor",
+      ":gitSignOff"
+  ], 
+    "packageRules": [
+        {
+            "groupName": "GitHub Actions",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "patch"
+            ]
+        },
+        {
+            "groupName": "OpenTelemetry Collector",
+            "schedule": [
+                "before 3am on Tuesday"
+            ],
+            "matchPackageNames": [
+                "/opentelemetry.*collector/",
+                "/opentelemetry-collector/"
+            ]
+        },
+        {
+            "groupName": "CodeQL",
+            "matchPackageNames": [
+                "github/codeql-action"
+            ],
+            "schedule": [
+                "before 3am on Tuesday"
+            ]
+        }
+    ],
+    "rebaseWhen": "behind-base-branch",
+    "baseBranchPatterns": ["main"]
 }
