@@ -42,7 +42,6 @@ jobs:
         with:
           product-name: ${{ github.event.repository.name }}
           release-version: ${{ github.ref_name }}
-          artifact-name: nginx-agent
           artifactory-user: ${{ env.artifactory-user }}
           artifactory-api-token: ${{ env.artifactory-token }}
           az-vault-client-id: ${{ secrets.AZ_VAULT_SEC_CLIENT_ID }}
