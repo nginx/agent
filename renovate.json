@@ -20,7 +20,7 @@
         {
             "groupName": "OpenTelemetry Collector",
             "schedule": [
-                "before 3am on Tuesday"
+                "before 3am on Monday"
             ],
             "matchPackageNames": [
                 "/opentelemetry.*collector/",
@@ -33,7 +33,7 @@
                 "github/codeql-action"
             ],
             "schedule": [
-                "before 3am on Tuesday"
+                "before 3am on Monday"
             ]
         }
     ],
