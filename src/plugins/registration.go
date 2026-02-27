@@ -45,6 +45,7 @@ type OneTimeRegistration struct {
 	pipeline                      core.MessagePipeInterface
 	dataplaneSoftwareDetailsMutex sync.Mutex
 	processes                     []*core.Process
+	logOnce                       sync.Once
 }
 
 func NewOneTimeRegistration(
@@ -186,6 +187,10 @@ func (r *OneTimeRegistration) registerAgent() {
 				log.Tracef("NGINX non-master process: %d", proc.Pid)
 			}
 		}
+
+		r.logOnce.Do(func() {
+			log.Errorf("NGINX master process not found yet, waiting for NGINX to start...")
+		})
 		return fmt.Errorf("waiting for NGINX master process... ")
 	}
 	err := backoff.WaitUntil(
