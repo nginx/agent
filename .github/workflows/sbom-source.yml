@@ -43,7 +43,7 @@ jobs:
           product-name: ${{ github.event.repository.name }}
           release-version: ${{ github.ref_name }}
           artifactory-user: ${{ env.artifactory-user }}
-          artifactory-api-token: ${{ env.artifactory-token }}
+          artifactory-token: ${{ env.artifactory-token }}
           az-vault-client-id: ${{ secrets.AZ_VAULT_SEC_CLIENT_ID }}
           az-vault-tenant-id: ${{ secrets.AZ_VAULT_SEC_TENANT_ID }}
           az-vault-subscription-id: ${{ secrets.AZ_VAULT_SEC_SUBSCRIPTION_ID }}
