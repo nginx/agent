@@ -6,9 +6,7 @@
 package bus
 
 const (
-	AddInstancesTopic                = "add-instances"
 	UpdatedInstancesTopic            = "updated-instances"
-	DeletedInstancesTopic            = "deleted-instances"
 	ResourceUpdateTopic              = "resource-update"
 	NginxConfigUpdateTopic           = "nginx-config-update"
 	InstanceHealthTopic              = "instance-health"
@@ -19,11 +17,7 @@ const (
 	ConnectionResetTopic             = "connection-reset"
 	ConfigApplyRequestTopic          = "config-apply-request"
 	WriteConfigSuccessfulTopic       = "write-config-successful"
-	ReloadSuccessfulTopic            = "reload-successful"
 	EnableWatchersTopic              = "enable-watchers"
-	ConfigApplyFailedTopic           = "config-apply-failed"
-	ConfigApplyCompleteTopic         = "config-apply-complete"
-	RollbackWriteTopic               = "rollback-write"
 	DataPlaneHealthRequestTopic      = "data-plane-health-request"
 	DataPlaneHealthResponseTopic     = "data-plane-health-response"
 	APIActionRequestTopic            = "api-action-request"

@@ -166,7 +166,7 @@ message FileMeta {
     // The hash of the file contents sha256, hex encoded
     string hash = 2;
     // Last modified time of the file (created time if never modified)
-    google.protobuf.Timestamp modified_time = 3 [(buf.validate.field).timestamp.lt_now = true];
+    google.protobuf.Timestamp modified_time = 3;
     // The permission set associated with a particular file
     string permissions = 4 [(buf.validate.field).string.pattern = "0[0-7]{3}"];
     // The size of the file in bytes
