@@ -12,6 +12,10 @@ on:
     branches:
       - main
       - dev-v2
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 # Declare default permissions as read only.
 permissions: read-all
