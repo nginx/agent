@@ -1407,7 +1407,7 @@ func resolveExtensions() Extensions {
 
 func updateHeaders(headers []Header) []Header {
 	var err error
-	newHeaders := []Header{}
+	newHeaders := make([]Header, 0, len(headers))
 
 	for _, header := range headers {
 		value := header.Value

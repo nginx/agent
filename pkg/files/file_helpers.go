@@ -16,6 +16,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/cert"
@@ -120,7 +121,7 @@ func FileMode(mode string) os.FileMode {
 // GenerateConfigVersion returns a unique config version for a set of files.
 // The config version is calculated by joining the file hashes together and generating a unique ID.
 func GenerateConfigVersion(fileSlice []*mpi.File) string {
-	var hashes string
+	var sb strings.Builder
 
 	files := make([]*mpi.File, len(fileSlice))
 	copy(files, fileSlice)
@@ -129,10 +130,10 @@ func GenerateConfigVersion(fileSlice []*mpi.File) string {
 	})
 
 	for _, file := range files {
-		hashes += file.GetFileMeta().GetHash()
+		sb.WriteString(file.GetFileMeta().GetHash())
 	}
 
-	return GenerateHash([]byte(hashes))
+	return GenerateHash([]byte(sb.String()))
 }
 
 // GenerateHash returns the hash value of a file's contents.
