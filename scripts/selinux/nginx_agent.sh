@@ -46,8 +46,6 @@ make -f /usr/share/selinux/devel/Makefile nginx_agent.pp || exit
 sepolicy manpage -p . -d nginx_agent_t
 # Fixing the file context on /usr/bin/nginx-agent
 /sbin/restorecon -F -R -v /usr/bin/nginx-agent
-# Fixing the file context on /var/log/nginx-agent
-/sbin/restorecon -F -R -v /var/log/nginx-agent
 # Generate a rpm package for the newly generated policy
 
 pwd=$(pwd)
