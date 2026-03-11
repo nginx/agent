@@ -3,18 +3,16 @@
 
 %define relabel_files() \
 restorecon -R /usr/bin/nginx-agent; \
-restorecon -R /var/log/nginx-agent; \
-restorecon -R /etc/nginx-agent; \
 
-%define selinux_policyver 3.13.1-268
+%define selinux_policyver 3.14.3-139
 
 Name:   nginx_agent_selinux
 Version:	1.0
 Release:	1%{?dist}
 Summary:	SELinux policy module for nginx_agent
 
-Group:	System Environment/Base
-License:	GPLv2+
+Group:	System Environment/Base		
+License:	GPLv2+	
 # This is an example. You will need to change it.
 URL:		http://HOSTNAME
 Source0:	nginx_agent.pp
@@ -25,7 +23,6 @@ Source2:	nginx_agent_selinux.8
 Requires: policycoreutils, libselinux-utils
 Requires(post): selinux-policy-base >= %{selinux_policyver}, policycoreutils
 Requires(postun): policycoreutils
-Requires(post): nginx-agent
 BuildArch: noarch
 
 %description
@@ -68,5 +65,6 @@ exit 0
 
 
 %changelog
-* Mon Nov 15 2021 YOUR NAME <YOUR@EMAILADDRESS> 1.0-1
+* Mon Mar  2 2026 YOUR NAME <YOUR@EMAILADDRESS> 1.0-1
 - Initial version
+
