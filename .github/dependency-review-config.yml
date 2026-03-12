@@ -1,0 +1,22 @@
+allow_licenses:
+  - Apache-1.1
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - BSL-1.0
+  - ISC
+  - MIT
+  - MPL-2.0
+  - NCSA
+  - OpenSSL
+  - Python-2.0
+  - X11
+  - CC0-1.0
+  - CC-BY-4.0
+  - LicenseRef-scancode-google-patent-license-golang
+allow-dependencies-licenses:
+  - 'pkg:githubactions/fossas/fossa-action'
+  - 'pkg:githubactions/opentofu/setup-opentofu'
+  - 'pkg:golang/github.com/shoenig/go-m1cpu'
+  - 'pkg:pypi/pytest-metadata'
+comment-summary-in-pr: on-failure
