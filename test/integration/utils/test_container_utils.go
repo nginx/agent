@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types/container"
@@ -200,7 +201,12 @@ func LogAndTerminateContainers(
 
 	tb.Log(logs)
 	if expectNoErrorsInLogs {
-		assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
+		for _, line := range strings.Split(logs, "\n") {
+			if strings.Contains(line, "level=ERROR") &&
+				!strings.Contains(line, "NGINX master process not found yet, waiting for NGINX to start...") {
+				assert.Fail(tb, "agent log file contains logs at error level", line)
+			}
+		}
 	}
 
 	err = agentContainer.Terminate(ctx)
