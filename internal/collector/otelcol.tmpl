@@ -179,7 +179,7 @@ processors:
 
 exporters:
 {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
-  otlp/{{$index}}:
+  otlp_grpc/{{$index}}:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
     {{- if .Compression }}
     compression: {{ .Compression }}
