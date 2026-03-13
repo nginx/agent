@@ -1,5 +1,5 @@
 exporters:
-  otlp/default:
+  otlp_grpc/default:
     endpoint: 127.0.0.1:9091
     retry_on_failure:
       enabled: true
@@ -52,7 +52,7 @@ service:
   pipelines:
     metrics/default:
       exporters:
-      - otlp/default
+      - otlp_grpc/default
       processors:
       - batch/default_metrics
       - resource/default

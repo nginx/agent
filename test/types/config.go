@@ -143,7 +143,7 @@ func AgentConfig() *config.Config {
 					"default": {
 						Receivers:  []string{"host_metrics"},
 						Processors: []string{"batch/default"},
-						Exporters:  []string{"otlp/default"},
+						Exporters:  []string{"otlp_grpc/default"},
 					},
 				},
 			},

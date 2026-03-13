@@ -35,7 +35,7 @@ processors:
   logsgzip/default: {}
 
 exporters:
-  otlp/default:
+  otlp_grpc/default:
     endpoint: "127.0.0.1:9091"
     timeout: 10s
     retry_on_failure:
@@ -61,4 +61,4 @@ service:
         - batch/default_metrics
         - resource/default
       exporters:
-        - otlp/default
+        - otlp_grpc/default
