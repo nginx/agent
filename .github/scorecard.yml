@@ -1,0 +1,17 @@
+annotations:
+  # Ignore test Dockerfiles that use dynamic base images (ARG BASE_IMAGE)
+  # These are intentionally unpinned for test flexibility across multiple OS versions
+  - checks:
+      - pinned-dependencies
+    reasons:
+      - reason: test-data
+        annotation: "Test Dockerfiles use dynamic ARG BASE_IMAGE for multi-platform/multi-OS testing"
+    path:
+      - "test/docker/nginx-official-image/apk/Dockerfile"
+      - "test/docker/nginx-official-image/deb/Dockerfile"
+      - "test/docker/nginx-oss/apk/Dockerfile"
+      - "test/docker/nginx-oss/deb/Dockerfile"
+      - "test/docker/nginx-oss/rpm/Dockerfile"
+      - "test/docker/nginx-plus/deb/Dockerfile"
+      - "test/docker/nginx-plus-and-nap/deb/Dockerfile"
+
