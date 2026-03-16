@@ -272,7 +272,7 @@ func TestAgentHasNoErrorLogs(t *testing.T, agentContainer testcontainers.Contain
 	if semverRe.MatchString(string(agentLogContent)) {
 		assert.Fail(t, "failed log content for semver value passed to Agent")
 	}
-	
+
 	for _, line := range strings.Split(string(agentLogContent), "\n") {
 		if strings.Contains(line, "level=error") &&
 			!strings.Contains(line, "NGINX master process not found yet, waiting for NGINX to start...") {
