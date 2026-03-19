@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/sanity-io/litter v1.5.5
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	go.uber.org/atomic v1.11.0
 	google.golang.org/grpc v1.79.3
 )
