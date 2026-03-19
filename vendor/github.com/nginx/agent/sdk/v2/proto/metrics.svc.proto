@@ -1,0 +1,17 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "events/event.proto";
+import "google/protobuf/empty.proto";
+import "metrics.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents a metrics service which is responsible for ingesting high volume metrics and events
+service MetricsService {
+  // A client-to-server streaming RPC to deliver high volume metrics reports.
+  rpc Stream(stream MetricsReport) returns (google.protobuf.Empty) {}
+
+  // A client-to-server streaming RPC to deliver high volume event reports.
+  rpc StreamEvents(stream f5.nginx.agent.sdk.events.EventReport) returns (google.protobuf.Empty) {}
+}

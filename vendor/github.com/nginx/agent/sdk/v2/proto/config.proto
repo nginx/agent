@@ -1,0 +1,25 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "common.proto";
+import "gogo.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents a config report
+message ConfigReport {
+  // Provides metadata information associated with the message
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta"];
+  // List of NGINX config descriptors
+  repeated ConfigDescriptor configs = 2 [(gogoproto.jsontag) = "configs"];
+}
+
+// Represents a config descriptor
+message ConfigDescriptor {
+  // System ID
+  string system_id = 1 [(gogoproto.jsontag) = "system_id"];
+  // NGINX ID
+  string nginx_id = 2 [(gogoproto.jsontag) = "nginx_id"];
+  // Config file checksum
+  string checksum = 3 [(gogoproto.jsontag) = "checksum"];
+}

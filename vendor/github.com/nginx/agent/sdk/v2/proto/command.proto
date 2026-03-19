@@ -1,0 +1,232 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "agent.proto";
+import "common.proto";
+import "config.proto";
+import "dp_software_details.proto";
+import "events/event.proto";
+import "gogo.proto";
+import "host.proto";
+import "nap.proto";
+import "nginx.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents a command message, which is used for communication between the management server and the agent.
+message Command {
+  // Provides metadata information associated with the command
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta"];
+  // Command type enum
+  enum CommandType {
+    // All commands default to normal
+    NORMAL = 0;
+    // The download type is used when sending NginxConfig from the management server to the agent.
+    // It is used to instruct the agent to download the NGINX config from the management server.
+    DOWNLOAD = 1;
+    // The upload type is used when sending NginxConfig from the agent to the management server.
+    // It is used to instruct the agent to upload the NGINX config from the agent.
+    // This will be implemented in a future release.
+    UPLOAD = 2;
+  }
+  // Used to determine the type of command
+  CommandType type = 2 [(gogoproto.jsontag) = "type"];
+
+  oneof data {
+    // Common command status response
+    CommandStatusResponse cmd_status = 3 [(gogoproto.jsontag) = "cmd_status"];
+
+    // Used by the management server to notify the agent to download or upload NGINX configuration.
+    NginxConfig nginx_config = 4 [(gogoproto.jsontag) = "nginx_config"];
+
+    // Response sent to indicate if a NGINX config apply was successful or not
+    NginxConfigResponse nginx_config_response = 5 [(gogoproto.jsontag) = "nginx_config_response"];
+
+    // Agent connect request that is sent from the agent to the management server to initialize registration
+    AgentConnectRequest agent_connect_request = 6 [(gogoproto.jsontag) = "agent_connect_request"];
+
+    // Agent connect response that is sent from the management server to the agent to finalize registration
+    AgentConnectResponse agent_connect_response = 7 [(gogoproto.jsontag) = "agent_connect_response"];
+
+    // Agent config request that is sent by the agent to the management server to request agent configuration
+    AgentConfigRequest agent_config_request = 8 [(gogoproto.jsontag) = "agent_config_request"];
+
+    // Agent Config is sent by the management server to the agent when is receives an AgentConfigRequest from the agent
+    AgentConfig agent_config = 9 [(gogoproto.jsontag) = "agent_config"];
+
+    // Dataplane status is sent by the agent to the management server to report the information like the health of the system
+    DataplaneStatus dataplane_status = 11 [(gogoproto.jsontag) = "dataplane_status"];
+
+    // Reports events the agent is aware of like the start/stop of the agent, NGINX config applies, etc.
+    f5.nginx.agent.sdk.events.EventReport event_report = 12 [(gogoproto.jsontag) = "event_report"];
+
+    // Provides details of additional software running on the dataplane
+    DataplaneSoftwareDetails dataplane_software_details = 13 [(gogoproto.jsontag) = "dataplane_software_details"];
+
+    // Provides details of any changes on the dataplane
+    DataplaneUpdate dataplane_update = 14 [(gogoproto.jsontag) = "dataplane_update"];
+  }
+}
+
+// Represents a command status response
+message CommandStatusResponse {
+  // Command status enum
+  enum CommandStatus {
+    // Unknown status of command
+    CMD_UNKNOWN = 0;
+    // Command was successful
+    CMD_OK = 1;
+    // Command failed
+    CMD_ERROR = 2;
+  }
+
+  // Command error code enum
+  enum CommandErrorCode {
+    // No Error (This is the default value)
+    ERR_OK = 0;
+    // Unknown error
+    ERR_UNKNOWN = 1;
+  }
+
+  // Command status
+  CommandStatus status = 1 [(gogoproto.jsontag) = "status"];
+  // Error code
+  CommandErrorCode error_code = 2 [(gogoproto.jsontag) = "error_code"];
+  // Provides a user friendly message to describe the response
+  string message = 3 [(gogoproto.jsontag) = "message"];
+  // Provides an error message of why the command failed
+  string error = 4 [(gogoproto.jsontag) = "error"];
+}
+
+// Represents a dataplane status, which is used by the agent to periodically report the status of NGINX, agent activities and other dataplane software activities.
+message DataplaneStatus {
+  // System ID
+  string system_id = 1 [(gogoproto.jsontag) = "system_id"];
+  // List of NGINX details. This field will be moving to DataplaneSoftwareDetails in a future release.
+  repeated NginxDetails details = 2 [(gogoproto.jsontag) = "details"];
+  // Host information
+  HostInfo host = 3 [(gogoproto.jsontag) = "host"];
+  // List of NGINX health information. This field will be moving to DataplaneSoftwareHealth in a future release.
+  repeated NginxHealth healths = 5 [(gogoproto.jsontag) = "healths"];
+  // List of software details. This includes details about NGINX and any other software installed in the system that the agent is interested in.
+  repeated DataplaneSoftwareDetails dataplane_software_details = 6 [(gogoproto.jsontag) = "dataplane_software_details"];
+  // List of software health statues. This includes the health of NGINX and any other software installed in the system that the agent is interested in.
+  repeated DataplaneSoftwareHealth dataplane_software_healths = 7 [(gogoproto.jsontag) = "dataplane_software_healths"];
+  // List of activity statuses. Reports on the status of activities that the agent is currently executing.
+  repeated AgentActivityStatus agent_activity_status = 8 [(gogoproto.jsontag) = "agent_activity_status"];
+}
+
+// Represent an agent activity status
+message AgentActivityStatus {
+  oneof Status {
+    // NGINX configuration status
+    NginxConfigStatus nginx_config_status = 1 [(gogoproto.jsontag) = "nginx_config_status"];
+  }
+}
+
+// Represents a NGINX configuration status
+message NginxConfigStatus {
+  // CorrelationID is an ID used by the producer of the message to track the flow of events
+  string correlation_id = 1 [(gogoproto.jsontag) = "correlation_id"];
+  // Provides a status for the NGINX configuration
+  Status status = 2 [(gogoproto.jsontag) = "status"];
+  // Provides a user friendly message to describe the current state of the NGINX configuration.
+  string message = 3 [(gogoproto.jsontag) = "message"];
+  // NGINX ID
+  string nginx_id = 4 [(gogoproto.jsontag) = "nginx_id"];
+
+  // NGINX configuration status enum
+  enum Status {
+    // The configuration is still in the process of being applied.
+    PENDING = 0;
+    // The configuration has being successfully applied.
+    OK = 1;
+    // The configuration has failed to be applied
+    ERROR = 2;
+  }
+}
+
+// Represents a dataplane software health
+message DataplaneSoftwareHealth {
+  oneof health {
+    // Health of NGINX instance
+    NginxHealth nginx_health = 1 [(gogoproto.jsontag) = "nginx_health"];
+    // Health of App Protect WAF
+    AppProtectWAFHealth app_protect_waf_health = 2 [(gogoproto.jsontag) = "app_protect_waf_health"];
+  }
+}
+
+// Represents a dataplane update
+message DataplaneUpdate {
+  // Host information
+  HostInfo host = 1 [(gogoproto.jsontag) = "host"];
+  // List of software details. This includes details about NGINX and any other software installed in the system that the agent is interested in.
+  repeated DataplaneSoftwareDetails dataplane_software_details = 2 [(gogoproto.jsontag) = "dataplane_software_details"];
+}
+
+// Represents a download request
+message DownloadRequest {
+  // Metadata information
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta"];
+}
+
+// Represents a NGINX config response
+message NginxConfigResponse {
+  // Command status
+  CommandStatusResponse status = 1 [(gogoproto.jsontag) = "status"];
+  // NGINX config action
+  NginxConfigAction action = 2 [(gogoproto.jsontag) = "action"];
+  // NGINX config description
+  ConfigDescriptor config_data = 3 [(gogoproto.jsontag) = "config_data"];
+}
+
+// Represents an upload status
+message UploadStatus {
+  // Transfer status enum
+  enum TransferStatus {
+    // Unknown status
+    UNKNOWN = 0;
+    // Upload was successful
+    OK = 1;
+    // Upload failed
+    FAILED = 2;
+  }
+  // Metadata information
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta"];
+  // Transfer status
+  TransferStatus status = 2 [(gogoproto.jsontag) = "status"];
+  // Provides an error message of why the upload failed
+  string reason = 3 [(gogoproto.jsontag) = "reason"];
+}
+
+// Represents a data chunck
+message DataChunk {
+  oneof chunk {
+    // Chunk header
+    ChunkedResourceHeader header = 1 [(gogoproto.jsontag) = "header"];
+    // Chunk data
+    ChunkedResourceChunk data = 2 [(gogoproto.jsontag) = "data"];
+  }
+}
+
+// Represents a chunked resource Header
+message ChunkedResourceHeader {
+  // Metadata information
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta"];
+  // Number of chunks expected in the transfer
+  int32 chunks = 2 [(gogoproto.jsontag) = "chunks"];
+  // Chunk checksum
+  string checksum = 3 [(gogoproto.jsontag) = "checksum"];
+  // Chunk size
+  int32 chunk_size = 4 [(gogoproto.jsontag) = "chunk_size"];
+}
+
+// Represents a chunked resource chunk
+message ChunkedResourceChunk {
+  // Metadata information
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta"];
+  // Chunk ID
+  int32 chunk_id = 2 [(gogoproto.jsontag) = "chunk_id"];
+  // Chunk data
+  bytes data = 3 [(gogoproto.jsontag) = "data"];
+}

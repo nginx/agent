@@ -1,0 +1,60 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "common.proto";
+import "gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents a metric report
+message MetricsReport {
+  // Metric type enum
+  enum Type {
+    // System metric type
+    SYSTEM = 0;
+    // NGINX instance metric type
+    INSTANCE = 1;
+    // Agent metric type
+    AGENT = 2;
+    // Cache zone metric type
+    CACHE_ZONE = 3;
+    // Upstreams metric type
+    UPSTREAMS = 4;
+  }
+  // Provides meta information about the metrics
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta"];
+  // Type of metrics
+  Type type = 2 [(gogoproto.jsontag) = "type"];
+  // List of stats entities
+  repeated StatsEntity data = 3 [(gogoproto.jsontag) = "data"];
+}
+
+// Represents a simple metric
+message SimpleMetric {
+  // Metric name
+  string name = 1 [(gogoproto.jsontag) = "name"];
+  // Metric value
+  double value = 2 [(gogoproto.jsontag) = "value"];
+}
+
+// Represents a dimension which is a dimensional attribute used when classifying and categorizing data
+message Dimension {
+  // Dimension name
+  string name = 1 [(gogoproto.jsontag) = "name"];
+  // Dimension value
+  string value = 2 [(gogoproto.jsontag) = "value"];
+}
+
+// Represents a stats entity which is a timestamped entry for dimensions and metrics
+message StatsEntity {
+  // Timestamp defines the time of stats entity creation
+  google.protobuf.Timestamp timestamp = 1;
+  // DEPRECATED
+  reserved 2;
+  reserved "metrics";
+  // List of dimensions
+  repeated Dimension dimensions = 3 [(gogoproto.jsontag) = "dimensions"];
+  // List of metrics
+  repeated SimpleMetric simplemetrics = 4 [(gogoproto.jsontag) = "simplemetrics"];
+}

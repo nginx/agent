@@ -1,0 +1,110 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "gogo.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents the host system information
+message HostInfo {
+  // NGINX Agent version
+  string agent = 1 [(gogoproto.jsontag) = "agent"];
+  // Host boot time
+  uint64 boot = 2 [(gogoproto.jsontag) = "boot"];
+  // Hostname
+  string hostname = 3 [(gogoproto.jsontag) = "hostname"];
+  // Display Name
+  string display_name = 4 [(gogoproto.jsontag) = "display_name"];
+  // OS type (e.g. freebsd, linux, etc)
+  string os_type = 5 [(gogoproto.jsontag) = "os-type"];
+  // Host UUID
+  string uuid = 6 [(gogoproto.jsontag) = "uuid"];
+  // The native cpu architecture queried at runtime, as returned by `uname -a` or empty string in case of error
+  string uname = 7 [(gogoproto.jsontag) = "uname"];
+  // List of disk partitions
+  repeated DiskPartition partitons = 8 [(gogoproto.jsontag) = "disk_partitions"];
+  // Network information
+  Network network = 9 [(gogoproto.jsontag) = "network"];
+  // List of CPU processor information
+  repeated CpuInfo processor = 10 [(gogoproto.jsontag) = "processor"];
+  // Release Information
+  ReleaseInfo release = 11 [(gogoproto.jsontag) = "release"];
+  // List of tags
+  repeated string tags = 12 [(gogoproto.jsontag) = "tags"];
+  // List of directories that the NGINX Agent is allowed to access on the host
+  string agent_accessible_dirs = 13 [(gogoproto.jsontag) = "agent_accessible_dirs"];
+}
+
+// Represents a disk partition
+message DiskPartition {
+  // Mount point location
+  string mount_point = 1 [(gogoproto.jsontag) = "mountpoint"];
+  // Device file path
+  string device = 2 [(gogoproto.jsontag) = "device"];
+  // File system type (e.g. hfs, swap, etc)
+  string fs_type = 3 [(gogoproto.jsontag) = "fstype"];
+}
+
+// Represents a network
+message Network {
+  // List of network interfaces
+  repeated NetworkInterface interfaces = 1 [(gogoproto.jsontag) = "interfaces"];
+  // Default network name
+  string default = 2 [(gogoproto.jsontag) = "default"];
+}
+
+// Represents a network interface
+message NetworkInterface {
+  // MAC address
+  string mac = 1 [(gogoproto.jsontag) = "mac"];
+  // List of IPV6 addresses
+  repeated Address ipv6 = 2 [(gogoproto.jsontag) = "ipv6"];
+  // List of IPV4 addresses
+  repeated Address ipv4 = 3 [(gogoproto.jsontag) = "ipv4"];
+  // Name of network interface
+  string name = 4 [(gogoproto.jsontag) = "name"];
+}
+
+// Represents an IP address
+message Address {
+  // Prefix length
+  int64 prefixlen = 1 [(gogoproto.jsontag) = "prefixlen"];
+  // Netmask
+  string netmask = 2 [(gogoproto.jsontag) = "netmask"];
+  // IP Address
+  string address = 3 [(gogoproto.jsontag) = "address"];
+}
+
+// Represents CPU information
+message CpuInfo {
+  // Model of CPU
+  string model = 1 [(gogoproto.jsontag) = "model"];
+  // Number of cores
+  int32 cores = 2 [(gogoproto.jsontag) = "cores"];
+  // CPU architecture
+  string architecture = 3 [(gogoproto.jsontag) = "architecture"];
+  // CPU clock speed in MHz
+  double mhz = 4 [(gogoproto.jsontag) = "mhz"];
+  // Hypervisor (e.g. VMWare, KVM, etc.)
+  string hypervisor = 5 [(gogoproto.jsontag) = "hypervisor"];
+  // Total number of CPUs
+  int32 cpus = 6 [(gogoproto.jsontag) = "cpus"];
+  // Type of hypervisor (e.g guest or host)
+  string virtualization = 7 [(gogoproto.jsontag) = "virtualization"];
+  // Map of caches with names as the keys and size in bytes as the values
+  map<string, string> cache = 8 [(gogoproto.jsontag) = "cache"];
+}
+
+// Represents release information
+message ReleaseInfo {
+  // OS type (e.g. freebsd, linux, etc)
+  string codename = 1 [(gogoproto.jsontag) = "codename"];
+  // OS name (e.g. ubuntu, linuxmint, etc)
+  string id = 2 [(gogoproto.jsontag) = "id"];
+  // OS family (e.g. debian, rhel)
+  string name = 3 [(gogoproto.jsontag) = "name"];
+  // Version of the OS kernel
+  string version_id = 4 [(gogoproto.jsontag) = "version_id"];
+  // Version of the OS
+  string version = 5 [(gogoproto.jsontag) = "version"];
+}
