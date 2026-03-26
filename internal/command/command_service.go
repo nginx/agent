@@ -497,12 +497,13 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 		if cs.isValidRequest(ctx, request) {
 			switch request.GetRequest().(type) {
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
+				cs.requestsInProgress[request.GetMessageMeta().GetCorrelationId()] = request
 				cs.queueConfigApplyRequests(ctx, request)
 			default:
+				cs.requestsInProgress[request.GetMessageMeta().GetCorrelationId()] = request
 				cs.subscribeChannel <- request
 			}
 
-			cs.requestsInProgress[request.GetMessageMeta().GetCorrelationId()] = request
 		}
 
 		return nil
