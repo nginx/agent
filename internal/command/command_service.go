@@ -465,7 +465,7 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			switch request.GetRequest().(type) {
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
 				slog.ErrorContext(ctx, "Received Config Apply message", "number_of_files", len(request.GetConfigApplyRequest().GetOverview().GetFiles()))
-				time.Sleep(8 * time.Minute)
+				time.Sleep(12 * time.Minute)
 				slog.ErrorContext(ctx, "Finished sleeping after receiving Config Apply message")
 				cs.queueConfigApplyRequests(ctx, request)
 			default:
