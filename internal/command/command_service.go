@@ -539,7 +539,7 @@ func (cs *CommandService) queueConfigApplyRequests(ctx context.Context, request 
 		cs.configApplyRequestQueueMutex.Unlock()
 
 		slog.ErrorContext(ctx, "Received Config Apply message", "number_of_files", len(request.GetConfigApplyRequest().GetOverview().GetFiles()))
-		time.Sleep(12 * time.Minute)
+		time.Sleep(2 * time.Minute)
 		slog.ErrorContext(ctx, "Finished sleeping after receiving Config Apply message")
 
 		cs.subscribeChannel <- request
