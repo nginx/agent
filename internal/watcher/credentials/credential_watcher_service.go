@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	monitoringInterval = 5 * time.Second
+	monitoringInterval = 20 * time.Minute
 )
 
 var emptyEvent = fsnotify.Event{
@@ -184,7 +184,7 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 
 			return
 		}
-		slog.DebugContext(ctx, "Credential watcher has detected changes")
+		slog.InfoContext(ctx, "Credential watcher has detected changes")
 		ch <- CredentialUpdateMessage{
 			CorrelationID:  logger.CorrelationIDAttr(newCtx),
 			ServerType:     cws.serverType,
