@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -463,6 +464,9 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 		if cs.isValidRequest(ctx, request) {
 			switch request.GetRequest().(type) {
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
+				slog.ErrorContext(ctx, "Received Config Apply message", "number_of_files", len(request.GetConfigApplyRequest().GetOverview().GetFiles()))
+				time.Sleep(60 * time.Second)
+				slog.ErrorContext(ctx, "Finished sleeping after receiving Config Apply message")
 				cs.queueConfigApplyRequests(ctx, request)
 			default:
 				cs.subscribeChannel <- request
