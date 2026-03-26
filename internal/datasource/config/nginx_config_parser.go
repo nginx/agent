@@ -74,6 +74,7 @@ var globFunction = func(path string) ([]string, error) {
 type (
 	NginxConfigParser struct {
 		agentConfig *config.Config
+		docker0IP   string
 	}
 )
 
@@ -101,9 +102,55 @@ type createAPIDetailsParams struct {
 }
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
+	docker0IP := getDocker0IP()
+	if docker0IP != "" {
+		slog.Debug("Running in a docker environment, docker0 interface IP address found",
+			slog.String("docker0_ip", docker0IP))
+	}
 	return &NginxConfigParser{
 		agentConfig: agentConfig,
+		docker0IP:   docker0IP,
 	}
+}
+
+// getDocker0IP discovers the docker0 interface IP address
+// Returns empty string if docker0 interface is not found
+func getDocker0IP() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+
+	for _, iface := range ifaces {
+		if iface.Name != "docker0" {
+			continue
+		}
+
+		return getIPv4Address(iface)
+	}
+
+	return ""
+}
+
+func getIPv4Address(iface net.Interface) string {
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return ""
+	}
+
+	for _, addr := range addrs {
+		ipNet, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+
+		ipv4 := ipNet.IP.To4()
+		if ipv4 != nil {
+			return ipv4.String()
+		}
+	}
+
+	return ""
 }
 
 func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
@@ -364,6 +411,10 @@ func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string
 
 		ip := net.ParseIP(host)
 		if ip.IsLoopback() || strings.EqualFold(host, "localhost") {
+			return matches[1]
+		}
+
+		if ncp.docker0IP != "" && strings.EqualFold(host, ncp.docker0IP) {
 			return matches[1]
 		}
 	}
