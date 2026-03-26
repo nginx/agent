@@ -518,7 +518,7 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 			"Trying create connection rpc", errorMsg), "error", err)
 		_, connectionErr := cs.CreateConnection(ctx, cs.resource)
 		if connectionErr != nil {
-			slog.ErrorContext(ctx, "Unable to create connection", "error", err)
+			slog.ErrorContext(ctx, "Unable to create connection", "error", connectionErr)
 		}
 
 		return nil
@@ -531,13 +531,20 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 
 func (cs *CommandService) queueConfigApplyRequests(ctx context.Context, request *mpi.ManagementPlaneRequest) {
 	cs.configApplyRequestQueueMutex.Lock()
-	defer cs.configApplyRequestQueueMutex.Unlock()
 
 	instanceID := request.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId()
 	cs.configApplyRequestQueue[instanceID] = append(cs.configApplyRequestQueue[instanceID], request)
 	if len(cs.configApplyRequestQueue[instanceID]) == 1 && !cs.connectionResetInProgress.Load() {
+		cs.configApplyRequestQueueMutex.Unlock()
+
+		slog.ErrorContext(ctx, "Received Config Apply message", "number_of_files", len(request.GetConfigApplyRequest().GetOverview().GetFiles()))
+		time.Sleep(12 * time.Minute)
+		slog.ErrorContext(ctx, "Finished sleeping after receiving Config Apply message")
+
 		cs.subscribeChannel <- request
 	} else {
+		cs.configApplyRequestQueueMutex.Unlock()
+		
 		slog.DebugContext(
 			ctx,
 			"Config apply request is already in progress, queuing new config apply request",
