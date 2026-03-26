@@ -166,14 +166,9 @@ processors:
     send_batch_max_size: {{ $batch.SendBatchMaxSize }}
 {{- end }}
 {{- end }}
-{{- if ne .Processors.SecurityViolations nil }}
-{{- range $key, $value := .Processors.SecurityViolations }}
-  securityviolations/{{$key}}: {}
-{{- end }}
-{{- end }}
-{{- if ne .Processors.LogsGzip nil }}
-{{ range $key, $value := .Processors.LogsGzip }}
-  logsgzip/{{$key}}: {}
+{{- if ne .Processors.SecurityViolationsFilter nil }}
+{{- range $key, $value := .Processors.SecurityViolationsFilter }}
+  securityviolationsfilter/{{$key}}: {}
 {{- end }}
 {{- end }}
 

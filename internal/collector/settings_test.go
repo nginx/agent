@@ -66,6 +66,9 @@ func TestTemplateWrite(t *testing.T) {
 			},
 		},
 	}
+	cfg.Collector.Processors.SecurityViolationsFilter = map[string]*config.SecurityViolationsFilter{
+		"default": {},
+	}
 
 	cfg.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
@@ -198,7 +201,7 @@ func TestTemplateWrite(t *testing.T) {
 	cfg.Collector.Pipelines.Logs = make(map[string]*config.Pipeline)
 	cfg.Collector.Pipelines.Logs["default"] = &config.Pipeline{
 		Receivers:  []string{"tcplog/default"},
-		Processors: []string{"resource/default", "batch/default"},
+		Processors: []string{"securityviolationsfilter/default", "resource/default", "batch/default"},
 		Exporters:  []string{"otlp/default", "debug"},
 	}
 

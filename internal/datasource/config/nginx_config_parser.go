@@ -107,6 +107,7 @@ func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 		slog.Debug("Running in a docker environment, docker0 interface IP address found",
 			slog.String("docker0_ip", docker0IP))
 	}
+
 	return &NginxConfigParser{
 		agentConfig: agentConfig,
 		docker0IP:   docker0IP,
