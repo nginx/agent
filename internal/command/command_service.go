@@ -284,7 +284,7 @@ func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandSe
 	start := time.Now()
 
 	for len(cs.requestsInProgress) > 0 {
-		if time.Since(start) >= cs.agentConfig.Client.Grpc.ConnectionResetTimeout {
+		if time.Since(start) >= 13 * time.Minute {
 			slog.WarnContext(
 				ctx,
 				"Timeout reached while waiting for in-progress requests to complete",
@@ -297,7 +297,7 @@ func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandSe
 		slog.InfoContext(
 			ctx,
 			"Waiting for in-progress requests to complete before updating command service gRPC client",
-			"max_wait_time", cs.agentConfig.Client.Grpc.ConnectionResetTimeout,
+			"max_wait_time", 13 * time.Minute,
 			"number_of_requests_in_progress", len(cs.requestsInProgress),
 		)
 
