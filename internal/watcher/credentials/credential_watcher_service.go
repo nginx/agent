@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	monitoringInterval = 20 * time.Minute
+	monitoringInterval = 5 * time.Second
 )
 
 var emptyEvent = fsnotify.Event{
