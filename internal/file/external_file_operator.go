@@ -21,6 +21,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/pkg/files"
 )
 
 type ExternalFileOperator struct {
@@ -50,6 +51,7 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 	var contentToWrite []byte
 	var downloadErr, updateError error
 	var headers DownloadHeader
+	var hash string
 
 	contentToWrite, headers, downloadErr = efo.downloadFileContent(ctx, fileAction.File)
 
@@ -92,6 +94,12 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 	if writeErr != nil {
 		return fmt.Errorf("failed to write downloaded content to temp file %s: %w", filePath, writeErr)
 	}
+
+	hash = files.GenerateHash(contentToWrite)
+	slog.InfoContext(ctx, "Successfully downloaded external file",
+		"event_tag", externalFileEventTag,
+		"location", location,
+		"hash", hash)
 
 	return nil
 }
