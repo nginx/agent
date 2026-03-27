@@ -41,6 +41,8 @@ const (
 	dirPerm     = 0o755
 	filePerm    = 0o600
 	executePerm = 0o111
+	// externalFileEventTag is used for internal event generation
+	externalFileEventTag = "ID-1310"
 )
 
 type DownloadHeader struct {
@@ -651,6 +653,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) (actionEr
 	return actionError
 }
 
+//nolint:revive // adding error logs increased cog. complexity
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Context) (updateError error) {
 	var downloadFiles []*model.FileCache
 	for _, fileAction := range fms.fileActions {
@@ -674,7 +677,15 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 
 			switch fileAction.Action {
 			case model.ExternalFile:
-				return fms.externalFileOperator.DownloadExternalFile(errGroupCtx, fileAction, tempFilePath)
+				err := fms.externalFileOperator.DownloadExternalFile(errGroupCtx, fileAction, tempFilePath)
+				if err != nil {
+					slog.ErrorContext(ctx, "Failed to download external file",
+						"event_tag", externalFileEventTag,
+						"location", fileAction.File.GetExternalDataSource().GetLocation(),
+						"err", err)
+				}
+
+				return err
 			case model.Add, model.Update:
 				slog.DebugContext(
 					errGroupCtx,
