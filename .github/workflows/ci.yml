@@ -105,9 +105,9 @@ jobs:
       contents: read
       security-events: write # for reporting vulnerabilities via code-scanning API
     with:
-      # Use PR head branch (the feature branch) when running from a pull_request event.
-      # Fallback to github.head_ref (sanity) or ref name for other contexts.
-      target-branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref_name }}
+      # Use PR head SHA for pull requests (supports PRs from forks).
+      # Fallback to ref name for other contexts.
+      target-branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
 
   unit-test:
     name: Unit Tests
