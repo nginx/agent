@@ -50,7 +50,10 @@ jobs:
             go-version-file: 'go.mod'
             cache: false
         - name: Download Go modules
-          run: go mod download
+          run: |
+            for i in 1 2 3; do
+              go mod download && break || sleep 5
+            done
         - name: Setup Build Environment
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
@@ -201,7 +204,10 @@ jobs:
             go-version-file: 'go.mod'
             cache: false
         - name: Download Go modules
-          run: go mod download
+          run: |
+            for i in 1 2 3; do
+              go mod download && break || sleep 5
+            done
         - name: Setup Build Environment
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
