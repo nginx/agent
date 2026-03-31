@@ -51,7 +51,6 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 	var contentToWrite []byte
 	var downloadErr, updateError error
 	var headers DownloadHeader
-	var hash string
 
 	contentToWrite, headers, downloadErr = efo.downloadFileContent(ctx, fileAction.File)
 
@@ -95,7 +94,7 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 		return fmt.Errorf("failed to write downloaded content to temp file %s: %w", filePath, writeErr)
 	}
 
-	hash = files.GenerateHash(contentToWrite)
+	hash := files.GenerateHash(contentToWrite)
 	slog.InfoContext(ctx, "Successfully downloaded external file",
 		"event_tag", externalFileEventTag,
 		"location", location,
