@@ -29,10 +29,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-          # For a pull_request event use the PR head branch (github.head_ref)
-          # to this ensures vulncheck runs against the feature branch.
-          # Otherwise, fall back to inputs.target-branch, github.ref_name, then 'main'.
-          ref: ${{ (github.event_name == 'pull_request' && github.head_ref) || inputs.target-branch || github.ref_name || 'main' }}
+          # Use inputs.target-branch which can be a branch name or SHA.
+          # Falls back to github.ref_name or 'main' if not provided.
+          ref: ${{ inputs.target-branch || github.ref_name || 'main' }}
 
       - name: Check Go version
         id: get-go-version
