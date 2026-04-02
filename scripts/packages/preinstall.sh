@@ -21,6 +21,8 @@ NO_COLOUR='\033[0m'
 
 AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
 AGENT_DYNAMIC_CONFIG_FILE=${AGENT_DYNAMIC_CONFIG_FILE:-"/var/lib/nginx-agent/agent-dynamic.conf"}
+AGENT_LIB_DIR=${AGENT_LIB_DIR:-"/var/lib/nginx-agent"}
+AGENT_CONFIG_BACKUP=${AGENT_LIB_DIR}/nginx-agent.conf.preupgrade
 
 #
 # Functions
@@ -40,6 +42,20 @@ ensure_sudo() {
         echo "Sudo permissions detected"
     else
         err_exit "No sudo permission detected, please run as sudo"
+    fi
+}
+
+is_rhel_family() {
+    printf "%s\n" "$ID" "$ID_LIKE" | grep -Eq '\brhel\b|\bcentos\b|\bol\b|\balmalinux\b|\brocky\b|\bamzn\b' 2>/dev/null
+}
+
+get_installed_version() {
+    INSTALLED_VERSION=""
+    INSTALLED_MAJOR=""
+    if command -v nginx-agent >/dev/null 2>&1; then
+        INSTALLED_VERSION=$(nginx-agent -v 2>/dev/null || true)
+        # expected form: "nginx-agent version v3.x.y-..." - extract leading major
+        INSTALLED_MAJOR=$(printf "%s" "$INSTALLED_VERSION" | sed -n 's/^.*version v\([0-9]\+\).*$/\1/p' || true)
     fi
 }
 
@@ -149,5 +165,17 @@ command:
 {
     title
     ensure_sudo
+    # Preserve existing config before package files are replaced/upgraded
+    # Only do this on RHEL-family systems and only for V3->V3 upgrades.
+    get_installed_version
+    if is_rhel_family && [ -n "${INSTALLED_MAJOR}" ] && [ "${INSTALLED_MAJOR}" -eq 3 ] && [ -f "${AGENT_CONFIG_FILE}" ]; then
+        mkdir -p "${AGENT_LIB_DIR}" || true
+        if [ ! -f "${AGENT_CONFIG_BACKUP}" ]; then
+            echo "Backing up existing config to ${AGENT_CONFIG_BACKUP}"
+            cp -a "${AGENT_CONFIG_FILE}" "${AGENT_CONFIG_BACKUP}" || true
+        fi
+        # record installed version for postinstall to decide V3->V3
+        printf "%s" "${INSTALLED_VERSION}" > "${AGENT_LIB_DIR}/nginx-agent.preupgrade.version" 2>/dev/null || true
+    fi
     update_config_file
 }

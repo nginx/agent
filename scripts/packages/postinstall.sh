@@ -180,6 +180,36 @@ summary() {
     echo "----------------------------------------------------------------------"
 }
 
+restore_config_if_missing() {
+    # If the config file is missing after installation (e.g. removed by
+    # package cleanup during upgrade), restore the pre-upgrade backup if one
+    # exists. This is a minimal, safe recovery to avoid losing admin changes.
+    AGENT_LIB_DIR="/var/lib/nginx-agent/"
+    AGENT_ETC_DIR="/etc/nginx-agent"
+    PREBACKUP="${AGENT_LIB_DIR}/nginx-agent.conf.preupgrade"
+    PREV_VER_FILE="${AGENT_LIB_DIR}/nginx-agent.preupgrade.version"
+    AGENT_GROUP="nginx-agent"
+
+    is_rhel_family() {
+        printf "%s\n" "$ID" "$ID_LIKE" | grep -Eq '\brhel\b|\bcentos\b|\bol\b|\balmalinux\b|\brocky\b|\bamzn\b' 2>/dev/null
+    }
+
+    # Only attempt restore on RHEL-family systems and only for V3->V3 upgrades.
+    # V2->V3 migration is handled by update_config_file() in preinstall and should not be overridden.
+    PREV_MAJOR=""
+    if [ -f "${PREV_VER_FILE}" ]; then
+        PREV_MAJOR=$(sed -n 's/^.*version v\([0-9]\+\).*$/\1/p' "${PREV_VER_FILE}" 2>/dev/null || true)
+    fi
+
+    if is_rhel_family && [ "${PREV_MAJOR}" = "3" ] && [ ! -f "${AGENT_ETC_DIR}/nginx-agent.conf" ] && [ -f "${PREBACKUP}" ]; then
+        printf "PostInstall: Restoring missing nginx-agent config from %s (prev major=%s)\n" "${PREBACKUP}" "${PREV_MAJOR}"
+        mkdir -p "${AGENT_ETC_DIR}" || true
+        cp -a "${PREBACKUP}" "${AGENT_ETC_DIR}/nginx-agent.conf" || true
+        chown root:${AGENT_GROUP} "${AGENT_ETC_DIR}/nginx-agent.conf" || true
+        chmod 0640 "${AGENT_ETC_DIR}/nginx-agent.conf" || true
+    fi
+}
+
 #
 # Main body of the script
 #
@@ -192,5 +222,6 @@ summary() {
     update_user_groups
     update_unit_file
     restart_agent_if_required
+    restore_config_if_missing
     summary
 }
