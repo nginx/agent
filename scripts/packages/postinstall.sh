@@ -182,8 +182,7 @@ summary() {
 
 restore_config_if_missing() {
     # If the config file is missing after installation (e.g. removed by
-    # package cleanup during upgrade), restore the pre-upgrade backup if one
-    # exists. This is a minimal, safe recovery to avoid losing admin changes.
+    # package cleanup during upgrade), restore the pre-upgrade backup if one exists.
     AGENT_LIB_DIR="/var/lib/nginx-agent/"
     AGENT_ETC_DIR="/etc/nginx-agent"
     PREBACKUP="${AGENT_LIB_DIR}/nginx-agent.conf.preupgrade"

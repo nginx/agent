@@ -54,7 +54,6 @@ get_installed_version() {
     INSTALLED_MAJOR=""
     if command -v nginx-agent >/dev/null 2>&1; then
         INSTALLED_VERSION=$(nginx-agent -v 2>/dev/null || true)
-        # expected form: "nginx-agent version v3.x.y-..." - extract leading major
         INSTALLED_MAJOR=$(printf "%s" "$INSTALLED_VERSION" | sed -n 's/^.*version v\([0-9]\+\).*$/\1/p' || true)
     fi
 }

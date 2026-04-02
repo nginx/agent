@@ -54,8 +54,7 @@ case "$ID" in
             stop_agent_systemd
             disable_agent_systemd
             systemd_daemon_reload
-            # Only purge data if the package is truly absent after this scriptlet runs.
-            # During upgrades, rpm -q will still find the package, so cleanup is skipped.
+            # Data should not be delete during upgrades, rpm -q will find the package, so cleanup is skipped.
             if ! command -v rpm >/dev/null 2>&1 || ! rpm -q nginx-agent >/dev/null 2>&1; then
                 full_cleanup
             fi
