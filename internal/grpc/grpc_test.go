@@ -434,6 +434,7 @@ func Test_tlsConfig(t *testing.T) {
 				require.NotEmpty(t, c.Certificates)
 				require.Equal(t, "foobar", c.ServerName, "wrong servername")
 				require.True(t, c.InsecureSkipVerify, "InsecureSkipVerify not set")
+				require.Equal(t, []string{"h2"}, c.NextProtos, "NextProtos must include h2 for ALPN")
 			},
 		},
 		"Test 2: CA only config should use CA": {
@@ -446,6 +447,7 @@ func Test_tlsConfig(t *testing.T) {
 				require.False(t, x509.NewCertPool().Equal(c.RootCAs),
 					"CertPool shouldn't be empty, valid CA cert was specified")
 				require.False(t, c.InsecureSkipVerify, "InsecureSkipVerify should not be set")
+				require.Equal(t, []string{"h2"}, c.NextProtos, "NextProtos must include h2 for ALPN")
 			},
 		},
 		"Test 3: incorrect CA should not error": {

@@ -396,6 +396,7 @@ func tlsConfigForCredentials(c *config.TLSConfig) (*tls.Config, error) {
 		MinVersion:         tls.VersionTLS12,
 		ServerName:         c.ServerName,
 		InsecureSkipVerify: c.SkipVerify,
+		NextProtos:         []string{"h2"},
 	}
 
 	if err := appendRootCAs(tlsConfig, c.Ca); err != nil {
