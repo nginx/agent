@@ -50,7 +50,10 @@ jobs:
             go-version-file: 'go.mod'
             cache: false
         - name: Download Go modules
-          run: go mod download
+          run: |
+            for i in 1 2 3; do
+              go mod download && break || sleep 5
+            done
         - name: Setup Build Environment
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
@@ -105,9 +108,9 @@ jobs:
       contents: read
       security-events: write # for reporting vulnerabilities via code-scanning API
     with:
-      # Use PR head branch (the feature branch) when running from a pull_request event.
-      # Fallback to github.head_ref (sanity) or ref name for other contexts.
-      target-branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref_name }}
+      # Use PR head SHA for pull requests (supports PRs from forks).
+      # Fallback to ref name for other contexts.
+      target-branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
 
   unit-test:
     name: Unit Tests
@@ -201,7 +204,10 @@ jobs:
             go-version-file: 'go.mod'
             cache: false
         - name: Download Go modules
-          run: go mod download
+          run: |
+            for i in 1 2 3; do
+              go mod download && break || sleep 5
+            done
         - name: Setup Build Environment
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
