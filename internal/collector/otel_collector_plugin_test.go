@@ -422,8 +422,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
-	conf.Collector.Processors.LogsGzip = nil
-	conf.Collector.Processors.SecurityViolations = nil
+	conf.Collector.Processors.SecurityViolationsFilter = nil
 	conf.Collector.Exporters.OtlpExporters = nil
 	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
@@ -476,7 +475,6 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 					Batch:     nil,
 					Attribute: nil,
 					Resource:  nil,
-					LogsGzip:  nil,
 				},
 				collector.config.Collector.Processors)
 		})
@@ -747,8 +745,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
-	conf.Collector.Processors.LogsGzip = nil
-	conf.Collector.Processors.SecurityViolations = nil
+	conf.Collector.Processors.SecurityViolationsFilter = nil
 	collector, err := NewCollector(conf)
 	require.NoError(t, err)
 
@@ -930,8 +927,7 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
-	conf.Collector.Processors.LogsGzip = nil
-	conf.Collector.Processors.SecurityViolations = nil
+	conf.Collector.Processors.SecurityViolationsFilter = nil
 	collector, err := NewCollector(conf)
 	require.NoError(t, err)
 

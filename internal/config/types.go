@@ -188,11 +188,11 @@ type (
 
 	// OTel Collector Processors configuration.
 	Processors struct {
-		Attribute          map[string]*Attribute          `yaml:"attribute"          mapstructure:"attribute"`
-		Resource           map[string]*Resource           `yaml:"resource"           mapstructure:"resource"`
-		Batch              map[string]*Batch              `yaml:"batch"              mapstructure:"batch"`
-		LogsGzip           map[string]*LogsGzip           `yaml:"logsgzip"           mapstructure:"logsgzip"`
-		SecurityViolations map[string]*SecurityViolations `yaml:"securityviolations" mapstructure:"securityviolations"`
+		Attribute map[string]*Attribute `yaml:"attribute" mapstructure:"attribute"`
+		Resource  map[string]*Resource  `yaml:"resource"  mapstructure:"resource"`
+		Batch     map[string]*Batch     `yaml:"batch"     mapstructure:"batch"`
+		//nolint:lll // long field name and tags are required here
+		SecurityViolationsFilter map[string]*SecurityViolationsFilter `yaml:"securityviolationsfilter" mapstructure:"securityviolationsfilter"`
 	}
 
 	Attribute struct {
@@ -221,8 +221,7 @@ type (
 		Timeout          time.Duration `yaml:"timeout"             mapstructure:"timeout"`
 	}
 
-	LogsGzip           struct{}
-	SecurityViolations struct{}
+	SecurityViolationsFilter struct{}
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
