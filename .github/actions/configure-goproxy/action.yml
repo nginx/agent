@@ -17,8 +17,10 @@ runs:
           echo "No Artifactory secrets available - using direct GOPROXY"
           GOPROXY_VALUE="direct"
         else
-          echo "Development mode - using dev Artifactory"
-          GOPROXY_VALUE="https://${{ env.artifactory-user }}:${{ env.artifactory-token }}@${{ env.artifactory-url-dev }}"
+          echo "No Artifactory secrets available - using direct GOPROXY"
+          GOPROXY_VALUE="direct"
+#          echo "Development mode - using dev Artifactory"
+#          GOPROXY_VALUE="https://${{ env.artifactory-user }}:${{ env.artifactory-token }}@${{ env.artifactory-url-dev }}"
         fi
         echo "GOPROXY=${GOPROXY_VALUE}" >> $GITHUB_ENV
-    
+
