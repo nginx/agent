@@ -23,16 +23,17 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       security-events: write # for reporting vulnerabilities via code-scanning API
+    env:
+      GOPROXY: "https://proxy.golang.org,direct"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
-          # For a pull_request event use the PR head branch (github.head_ref)
-          # to this ensures vulncheck runs against the feature branch.
-          # Otherwise, fall back to inputs.target-branch, github.ref_name, then 'main'.
-          ref: ${{ (github.event_name == 'pull_request' && github.head_ref) || inputs.target-branch || github.ref_name || 'main' }}
+          # Use inputs.target-branch which can be a branch name or SHA.
+          # Falls back to github.ref_name or 'main' if not provided.
+          ref: ${{ inputs.target-branch || github.ref_name || 'main' }}
 
       - name: Check Go version
         id: get-go-version
@@ -42,8 +43,18 @@ jobs:
           echo "Found $GO_VERSION"
           echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT
 
+      - name: Setup Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ steps.get-go-version.outputs.go-version }}
+          check-latest: true
+          cache: true
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
       - name: Run govulncheck
         id: govulncheck
-        uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
-        with:
-          go-version-input: ${{ steps.get-go-version.outputs.go-version }}
+        run: |
+          # Scan only non-test packages to avoid false positives from test-only dependencies
+          govulncheck -scan=symbol $(go list ./... | grep -v '/test/')
