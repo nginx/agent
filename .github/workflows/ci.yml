@@ -50,7 +50,10 @@ jobs:
             go-version-file: 'go.mod'
             cache: false
         - name: Download Go modules
-          run: go mod download
+          run: |
+            for i in 1 2 3; do
+              go mod download && break || sleep 5
+            done
         - name: Setup Build Environment
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
@@ -95,7 +98,7 @@ jobs:
       - name: Lint Go
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
         with:
-          version: v2.4.0
+          version: v2.10.0
           skip-cache: true
 
   vulnerability-scan:
@@ -105,7 +108,9 @@ jobs:
       contents: read
       security-events: write # for reporting vulnerabilities via code-scanning API
     with:
-      target-branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
+      # Use PR head SHA for pull requests (supports PRs from forks).
+      # Fallback to ref name for other contexts.
+      target-branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
 
   unit-test:
     name: Unit Tests
@@ -199,7 +204,10 @@ jobs:
             go-version-file: 'go.mod'
             cache: false
         - name: Download Go modules
-          run: go mod download
+          run: |
+            for i in 1 2 3; do
+              go mod download && break || sleep 5
+            done
         - name: Setup Build Environment
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
@@ -214,7 +222,7 @@ jobs:
           run: |
               make clean local-deb-package local-rpm-package local-apk-package
         - name: Upload Artifacts
-          uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+          uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
           with:
             name: nginx-agent-unsigned-snapshots
             path: build
@@ -259,7 +267,7 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -322,7 +330,7 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -392,7 +400,7 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -484,7 +492,7 @@ jobs:
           secrets-filter: 'docker,nginx-private-registry,nginx-pkg'
 
       - name: Download Packages
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -564,7 +572,7 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -644,7 +652,7 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -759,7 +767,7 @@ jobs:
           key: ${{ runner.os }}-go-
 
       - name: Download Packages
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -805,7 +813,7 @@ jobs:
           echo "$results"
 
       - name: Upload Load Test Results
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: load-test-results
           path: benchmarks.json
