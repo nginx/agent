@@ -35,7 +35,7 @@ jobs:
             fetch-tags: 'true'
 
         - name: Get Secrets from Azure Key Vault
-          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -117,7 +117,7 @@ jobs:
     steps:
         - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         - name: Get Secrets from Azure Key Vault
-          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-')&& !startsWith(github.head_ref, 'renovate/') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -153,7 +153,7 @@ jobs:
     steps:
         - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         - name: Get Secrets from Azure Key Vault
-          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -186,7 +186,7 @@ jobs:
           with:
             fetch-tags: 'true'
         - name: Get Secrets from Azure Key Vault
-          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -240,7 +240,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -303,7 +303,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -351,7 +351,7 @@ jobs:
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
     runs-on: ubuntu-22.04
     permissions:
       id-token: write # for OIDC authentication
@@ -373,7 +373,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -423,7 +423,7 @@ jobs:
   official-plus-image-integration-tests:
     name: Integration Tests - Official Plus Images
     needs: build-unsigned-snapshot
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
     runs-on: ubuntu-22.04
     permissions:
       id-token: write # for OIDC authentication
@@ -453,7 +453,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -476,7 +476,7 @@ jobs:
           key: ${{ runner.os }}-go-
 
       - name: Sync NGINX Plus License
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -523,7 +523,7 @@ jobs:
   oss-metrics-tests:
     name: Metrics Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
     runs-on: ubuntu-22.04
     permissions:
       id-token: write # for OIDC authentication
@@ -545,7 +545,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -595,7 +595,7 @@ jobs:
   plus-metrics-tests:
     name: Metrics Integration Tests - Official Plus Images
     needs: build-unsigned-snapshot
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
     runs-on: ubuntu-22.04
     permissions:
       id-token: write # for OIDC authentication
@@ -625,7 +625,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -651,7 +651,7 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Sync NGINX Plus License
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -699,7 +699,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -740,7 +740,7 @@ jobs:
 
   load-tests:
     name: Load Tests
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
     permissions:
       id-token: write # for OIDC authentication
       contents: write # Needed for pushing benchmark results to github branch
@@ -773,7 +773,7 @@ jobs:
         run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
 
       - name: Get Secrets from Azure Key Vault
-        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}

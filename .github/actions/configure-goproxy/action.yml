@@ -12,6 +12,7 @@ runs:
         [[ -z "${{ env.artifactory-token }}" ]] || \
         [[ -z "${{ env.artifactory-url-dev }}" ]] || \
         [[ "${{ github.event.pull_request.head.repo.fork }}" == 'true' ]] ||
+        [[ "${{ startsWith(github.head_ref, 'renovate/')}}" == 'true' ]] ||
         [[ "${{ startsWith(github.head_ref, 'dependabot-')}}" == 'true' ]] ; then
           echo "No Artifactory secrets available - using direct GOPROXY"
           GOPROXY_VALUE="direct"
