@@ -120,7 +120,7 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 func (hw *HealthWatcherService) health(ctx context.Context) (updatedStatuses []*mpi.InstanceHealth, isHealthDiff bool,
 ) {
 	currentHealth := make(map[string]*mpi.InstanceHealth, len(hw.instances))
-	allStatuses := make([]*mpi.InstanceHealth, len(hw.instances)
+	allStatuses := make([]*mpi.InstanceHealth, 0, len(hw.instances))
 
 	for instanceID := range hw.instances {
 		instanceHealth, err := hw.watcher.Health(ctx, hw.instances[instanceID])

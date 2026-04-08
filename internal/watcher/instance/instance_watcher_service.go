@@ -212,8 +212,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
 	}
 
-	instancesToParse := make([]*mpi.Instance, 0, len(instanceUpdates.UpdatedInstances)+
-		len(instanceUpdates.NewInstances))
+	instancesToParse := make([]*mpi.Instance, 0, len(instanceUpdates.UpdatedInstances))
 	instancesToParse = append(instancesToParse, instanceUpdates.UpdatedInstances...)
 
 	for _, newInstance := range instancesToParse {
