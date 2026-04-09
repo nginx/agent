@@ -191,6 +191,42 @@ summary() {
     create_run_dir
     update_user_groups
     update_unit_file
+
+    # If the config file is missing after installation (e.g. removed by package cleanup during upgrade), 
+    # restore the pre-upgrade backup if one exists.
+    PREBACKUP="${AGENT_LIB_DIR}/nginx-agent.conf.preupgrade"
+
+    is_rhel_family() {
+        printf "%s\n" "$ID" "$ID_LIKE" | grep -Eq '\brhel\b|\bcentos\b|\bol\b|\balmalinux\b|\brocky\b|\bamzn\b' 2>/dev/null
+    }
+    
+    is_rpm_based() {
+        printf "%s\n" "$ID" "$ID_LIKE" | grep -Eq '\brhel\b|\bcentos\b|\bol\b|\balmalinux\b|\brocky\b|\bamzn\b|\boraclelinux\b' 2>/dev/null
+    }
+
+    PREV_VER_FILE="${AGENT_LIB_DIR}/nginx-agent.preupgrade.version"
+    PREV_MAJOR=""
+    if [ -f "${PREV_VER_FILE}" ]; then
+        PREV_MAJOR=$(sed -n 's/^.*version v\([0-9]\+\).*$/\1/p' "${PREV_VER_FILE}" || true)
+    fi
+    
+    # Restore config on RPM-based systems for V3→V3 upgrades
+    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ ! -f "${AGENT_ETC_DIR}/nginx-agent.conf" ] && [ -f "${PREBACKUP}" ]; then
+        printf "PostInstall: Restoring missing nginx-agent config from %s (prev major=%s) on RPM system\n" "${PREBACKUP}" "${PREV_MAJOR}"
+        mkdir -p "${AGENT_ETC_DIR}" || true
+        cp -a "${PREBACKUP}" "${AGENT_ETC_DIR}/nginx-agent.conf" || true
+        chown root:${AGENT_GROUP} "${AGENT_ETC_DIR}/nginx-agent.conf" || true
+        chmod 0640 "${AGENT_ETC_DIR}/nginx-agent.conf" || true
+    fi
+    
+    # Restore manifest file if missing
+    MANIFEST_BACKUP="${AGENT_LIB_DIR}/manifest.json.preupgrade"
+    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ ! -f "${AGENT_LIB_DIR}/manifest.json" ] && [ -f "${MANIFEST_BACKUP}" ]; then
+        printf "PostInstall: Restoring missing manifest from %s (prev major=%s) on RPM system\n" "${MANIFEST_BACKUP}" "${PREV_MAJOR}"
+        mkdir -p "${AGENT_LIB_DIR}" || true
+        cp -a "${MANIFEST_BACKUP}" "${AGENT_LIB_DIR}/manifest.json" || true
+    fi
+
     restart_agent_if_required
     summary
 }
