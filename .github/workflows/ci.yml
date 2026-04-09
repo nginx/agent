@@ -45,7 +45,7 @@ jobs:
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-        - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -58,7 +58,7 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
-        - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
           with:
             path: |
               ~/.cache/go-build
@@ -85,11 +85,11 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
@@ -98,7 +98,7 @@ jobs:
       - name: Lint Go
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
         with:
-          version: v2.10.0
+          version: v2.11.4
           skip-cache: true
 
   vulnerability-scan:
@@ -130,11 +130,11 @@ jobs:
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-        - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
           with:
             go-version-file: 'go.mod'
             cache: false
-        - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
           with:
             path: |
               ~/.cache/go-build
@@ -143,7 +143,7 @@ jobs:
         - name: Run Unit Tests
           run: make unit-test
         - name: Uplaod Test Coverage
-          uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+          uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
           with:
             files: ./build/test/coverage.out
             token: ${{ secrets.CODECOV_TOKEN }}
@@ -166,11 +166,11 @@ jobs:
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-        - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
           with:
             go-version-file: 'go.mod'
             cache: false
-        - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
           with:
             path: |
               ~/.cache/go-build
@@ -199,7 +199,7 @@ jobs:
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-        - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -212,7 +212,7 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
-        - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
           with:
             path: |
               ~/.cache/go-build
@@ -256,18 +256,18 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -319,18 +319,18 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -389,18 +389,18 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -470,11 +470,11 @@ jobs:
 
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
@@ -492,7 +492,7 @@ jobs:
           secrets-filter: 'docker,nginx-private-registry,nginx-pkg'
 
       - name: Download Packages
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -561,18 +561,18 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -641,18 +641,18 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Download Packages
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -715,11 +715,11 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cache/go-build
@@ -729,7 +729,7 @@ jobs:
         run: |
           make performance-test
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1.20.7
+        uses: benchmark-action/github-action-benchmark@a60cea5bc7b49e15c1f58f411161f99e0df48372 # v1.22.0
         with:
           name: Compare Benchmark Results
           tool: 'go'
