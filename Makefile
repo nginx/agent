@@ -89,7 +89,7 @@ else
 endif
 
 SELECTED_PACKAGE = $(DEB_PACKAGE)
-ifeq ($(OS_RELEASE),redhatenterprise)
+ifeq (,$(filter $(OS_RELEASE),redhatenterprise ol))
 	SELECTED_PACKAGE = $(RPM_PACKAGE)
 else ifeq ($(OS_RELEASE),alpine)
 	SELECTED_PACKAGE = $(APK_PACKAGE)
