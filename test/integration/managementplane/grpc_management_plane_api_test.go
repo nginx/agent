@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	network2 "github.com/moby/moby/api/types/network"
 	"github.com/nginx/agent/v3/test/integration/utils"
 
 	"github.com/go-resty/resty/v2"
@@ -33,7 +34,10 @@ func (s *ConfigApplyTestSuite) TestGrpc_Test1_Reconnection() {
 	s.Require().NoError(err)
 	ports, err := utils.MockManagementPlaneGrpcContainer.Ports(s.ctx)
 	s.Require().NoError(err)
-	utils.MockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+
+	port, err := network2.ParsePort("9093/tcp")
+	s.Require().NoError(err)
+	utils.MockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports[port][0].HostPort)
 
 	currentID := utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.Equal(s.nginxInstanceID, currentID)
