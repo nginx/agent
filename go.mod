@@ -10,7 +10,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/gabriel-vasile/mimetype v1.4.8
+	github.com/gabriel-vasile/mimetype v1.4.13
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/goccy/go-yaml v1.18.0
 	github.com/google/go-cmp v0.7.0
