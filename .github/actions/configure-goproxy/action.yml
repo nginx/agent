@@ -15,10 +15,10 @@ runs:
         [[ "${{ startsWith(github.head_ref, 'renovate/')}}" == 'true' ]] ||
         [[ "${{ startsWith(github.head_ref, 'dependabot-')}}" == 'true' ]] ; then
           echo "No Artifactory secrets available - using direct GOPROXY"
-          GOPROXY_VALUE="GOPROXY=https://proxy.golang.org,direct"
+          GOPROXY_VALUE="proxy.golang.org,direct"
         else
           echo "No Artifactory secrets available - using direct GOPROXY"
-          GOPROXY_VALUE="GOPROXY=https://proxy.golang.org,direct"
+          GOPROXY_VALUE="proxy.golang.org,direct"
         fi
         echo "GOPROXY=${GOPROXY_VALUE}" >> $GITHUB_ENV
 
