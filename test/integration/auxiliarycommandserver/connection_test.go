@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	network2 "github.com/moby/moby/api/types/network"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/integration/utils"
@@ -83,7 +84,10 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test2_Reconnection() {
 	s.Require().NoError(err)
 	ports, err := utils.AuxiliaryMockManagementPlaneGrpcContainer.Ports(ctx)
 	s.Require().NoError(err)
-	utils.AuxiliaryMockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9096/tcp"][0].HostPort)
+
+	port, err := network2.ParsePort("9096/tcp")
+	s.Require().NoError(err)
+	utils.AuxiliaryMockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports[port][0].HostPort)
 
 	currentID := utils.VerifyConnection(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.Equal(originalID, currentID)
