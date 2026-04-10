@@ -20,7 +20,7 @@ permissions:
 
 env:
   NFPM_VERSION: 'v2.35.3'
-  GOPROXY: "direct"
+  GOPROXY: "https://proxy.golang.org,direct"
 
 jobs:
   cache-dependencies:
