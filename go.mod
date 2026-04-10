@@ -2,10 +2,10 @@ module github.com/nginx/agent/v3
 
 go 1.25.0
 
-toolchain go1.25.8
+toolchain go1.25.9
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1
 	buf.build/go/protovalidate v1.0.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/fsnotify/fsnotify v1.9.0
@@ -42,7 +42,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.141.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.67.4
+	github.com/prometheus/common v0.67.5
 	github.com/shirou/gopsutil/v4 v4.26.3
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
@@ -87,7 +87,7 @@ require (
 	go.uber.org/zap v1.27.1
 	golang.org/x/mod v0.32.0
 	golang.org/x/sync v0.19.0
-	google.golang.org/protobuf v1.36.10
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -376,7 +376,7 @@ require (
 require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.84
+	github.com/nginxinc/nginx-go-crossplane v0.4.87
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/samber/slog-gin v1.17.2
 	github.com/spf13/cobra v1.10.2
