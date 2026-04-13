@@ -211,18 +211,18 @@ summary() {
     fi
     
     # Restore config on RPM-based systems for V3→V3 upgrades
-    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ ! -f "${AGENT_ETC_DIR}/nginx-agent.conf" ] && [ -f "${PREBACKUP}" ]; then
-        printf "PostInstall: Restoring missing nginx-agent config from %s (prev major=%s) on RPM system\n" "${PREBACKUP}" "${PREV_MAJOR}"
+    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ -f "${PREBACKUP}" ]; then
+        printf "PostInstall: Restoring nginx-agent config from %s (prev major=%s) on RPM system\n" "${PREBACKUP}" "${PREV_MAJOR}"
         mkdir -p "${AGENT_ETC_DIR}" || true
         cp -a "${PREBACKUP}" "${AGENT_ETC_DIR}/nginx-agent.conf" || true
         chown root:${AGENT_GROUP} "${AGENT_ETC_DIR}/nginx-agent.conf" || true
         chmod 0640 "${AGENT_ETC_DIR}/nginx-agent.conf" || true
     fi
     
-    # Restore manifest file if missing
+    # Restore manifest file
     MANIFEST_BACKUP="${AGENT_LIB_DIR}/manifest.json.preupgrade"
-    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ ! -f "${AGENT_LIB_DIR}/manifest.json" ] && [ -f "${MANIFEST_BACKUP}" ]; then
-        printf "PostInstall: Restoring missing manifest from %s (prev major=%s) on RPM system\n" "${MANIFEST_BACKUP}" "${PREV_MAJOR}"
+    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ -f "${MANIFEST_BACKUP}" ]; then
+        printf "PostInstall: Restoring manifest from %s (prev major=%s) on RPM system\n" "${MANIFEST_BACKUP}" "${PREV_MAJOR}"
         mkdir -p "${AGENT_LIB_DIR}" || true
         cp -a "${MANIFEST_BACKUP}" "${AGENT_LIB_DIR}/manifest.json" || true
     fi
