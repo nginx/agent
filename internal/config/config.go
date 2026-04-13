@@ -228,7 +228,7 @@ func addDefaultPipelines(collector *Collector) {
 	if _, ok := collector.Pipelines.Logs[DefaultPipeline]; !ok {
 		collector.Pipelines.Logs[DefaultPipeline] = &Pipeline{
 			Receivers:  []string{"tcplog/nginx_app_protect"},
-			Processors: []string{"logsgzip/default", "batch/default_logs"},
+			Processors: []string{"securityviolationsfilter/default", "batch/default_logs"},
 			Exporters:  []string{"otlp_grpc/default"},
 		}
 	}
@@ -318,18 +318,11 @@ func addDefaultProcessors(collector *Collector) {
 		}
 	}
 
-	if collector.Processors.LogsGzip == nil {
-		collector.Processors.LogsGzip = make(map[string]*LogsGzip)
+	if collector.Processors.SecurityViolationsFilter == nil {
+		collector.Processors.SecurityViolationsFilter = make(map[string]*SecurityViolationsFilter)
 	}
-	if _, ok := collector.Processors.LogsGzip["default"]; !ok {
-		collector.Processors.LogsGzip["default"] = &LogsGzip{}
-	}
-
-	if collector.Processors.SecurityViolations == nil {
-		collector.Processors.SecurityViolations = make(map[string]*SecurityViolations)
-	}
-	if _, ok := collector.Processors.SecurityViolations["default"]; !ok {
-		collector.Processors.SecurityViolations["default"] = &SecurityViolations{}
+	if _, ok := collector.Processors.SecurityViolationsFilter["default"]; !ok {
+		collector.Processors.SecurityViolationsFilter["default"] = &SecurityViolationsFilter{}
 	}
 }
 

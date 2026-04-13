@@ -1282,10 +1282,7 @@ func createConfig() *Config {
 						},
 					},
 				},
-				LogsGzip: map[string]*LogsGzip{
-					"default": {},
-				},
-				SecurityViolations: map[string]*SecurityViolations{"default": {}},
+				SecurityViolationsFilter: map[string]*SecurityViolationsFilter{"default": {}},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: map[string]*OtlpReceiver{
@@ -1369,7 +1366,7 @@ func createConfig() *Config {
 				Logs: map[string]*Pipeline{
 					"default": {
 						Receivers:  []string{"tcplog/nginx_app_protect"},
-						Processors: []string{"logsgzip/default", "batch/default_logs"},
+						Processors: []string{"securityviolationsfilter/default", "batch/default_logs"},
 						Exporters:  []string{"otlp_grpc/default"},
 					},
 				},
@@ -1471,7 +1468,7 @@ func createDefaultCollectorConfig() *Collector {
 					Timeout:          DefCollectorLogsBatchProcessorTimeout,
 				},
 			},
-			LogsGzip: map[string]*LogsGzip{
+			SecurityViolationsFilter: map[string]*SecurityViolationsFilter{
 				"default": {},
 			},
 		},

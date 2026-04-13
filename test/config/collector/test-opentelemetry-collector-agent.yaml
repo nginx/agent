@@ -72,6 +72,7 @@ processors:
     send_batch_size: 1000
     timeout: 30s
     send_batch_max_size: 1000
+  securityviolationsfilter/default: {}
 
 exporters:
   otlp_grpc/default:
@@ -139,6 +140,7 @@ service:
       receivers:
         - tcplog/default
       processors:
+        - securityviolationsfilter/default
         - resource/default
         - batch/default
       exporters:
