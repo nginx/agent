@@ -15,7 +15,7 @@ exporters:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
-  otlphttp:
+  otlp_http:
     endpoint: http://loki:3100/otlp
 
 processors:
@@ -42,4 +42,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [resource, batch]
-      exporters: [otlphttp]
+      exporters: [otlp_http]
