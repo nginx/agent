@@ -326,6 +326,12 @@ func (fms *FileManagerService) ConfigUpload(ctx context.Context, configUploadReq
 	errGroup, errGroupCtx := errgroup.WithContext(ctx)
 	errGroup.SetLimit(fms.agentConfig.Client.Grpc.MaxParallelFileOperations)
 
+	err := fms.checkAllowedDirectory(uploadFiles)
+
+	if err != nil {
+		return err
+	}
+
 	for _, file := range uploadFiles {
 		errGroup.Go(func() error {
 			err := fms.fileServiceOperator.UpdateFile(
