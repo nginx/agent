@@ -202,7 +202,7 @@ func TestTemplateWrite(t *testing.T) {
 	cfg.Collector.Pipelines.Logs["default"] = &config.Pipeline{
 		Receivers:  []string{"tcplog/default"},
 		Processors: []string{"securityviolationsfilter/default", "resource/default", "batch/default"},
-		Exporters:  []string{"otpl_grpc/default", "debug"},
+		Exporters:  []string{"otlp_grpc/default", "debug"},
 	}
 
 	require.NotNil(t, cfg)
