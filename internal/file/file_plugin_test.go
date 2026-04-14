@@ -272,7 +272,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 
 	agentConfig := types.AgentConfig()
-	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, fileMeta.Name)
+	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, fileMeta.GetName())
 
 	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	err := filePlugin.Init(ctx, messagePipe)
@@ -359,7 +359,8 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		dataPlaneResponse.GetCommandResponse().GetStatus(),
 	)
-	assert.Equal(t, "open /unknown/file.conf: no such file or directory", dataPlaneResponse.GetCommandResponse().GetError())
+	assert.Equal(t, "open /unknown/file.conf: no such file or directory",
+		dataPlaneResponse.GetCommandResponse().GetError())
 }
 
 func TestFilePlugin_Process_ConfigUploadRequestTopic_AllowedDirFailure(t *testing.T) {
@@ -418,7 +419,8 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_AllowedDirFailure(t *testin
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		dataPlaneResponse.GetCommandResponse().GetStatus(),
 	)
-	assert.Equal(t, "file not in allowed directories /not_allowed_dir/file.conf", dataPlaneResponse.GetCommandResponse().GetError())
+	assert.Equal(t, "file not in allowed directories /not_allowed_dir/file.conf",
+		dataPlaneResponse.GetCommandResponse().GetError())
 }
 
 func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
