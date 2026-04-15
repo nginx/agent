@@ -105,6 +105,12 @@ func writeCollectorConfig(conf *config.Collector) error {
 		addDefaultResourceProcessor(conf.Pipelines.Logs)
 	}
 
+	for _, pipeline := range conf.Pipelines.Metrics {
+		if i := slices.Index(pipeline.Exporters, "otlp/default"); i != -1 {
+			pipeline.Exporters[i] = "otlp_grpc/default"
+		}
+	}
+
 	otelcolTemplate, templateErr := template.New(otelTemplatePath).Parse(otelcolTemplate)
 	if templateErr != nil {
 		return templateErr
