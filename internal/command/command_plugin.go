@@ -49,7 +49,7 @@ type (
 		subscribeChannel  chan *mpi.ManagementPlaneRequest
 		commandServerType model.ServerType
 		subscribeMutex    sync.Mutex
-		agentConfigMutex  sync.Mutex
+		agentConfigMutex  sync.RWMutex
 	}
 )
 
@@ -108,7 +108,7 @@ func (cp *CommandPlugin) Info() *bus.Info {
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Processing command")
-	ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
+	ctxWithMetadata := cp.getConfig().NewContextWithLabels(ctx)
 
 	if logger.ServerType(ctxWithMetadata) == "" {
 		ctxWithMetadata = context.WithValue(
@@ -155,6 +155,13 @@ func (cp *CommandPlugin) Reconfigure(ctx context.Context, agentConfig *config.Co
 	err := cp.commandService.Reconfigure(ctx, agentConfig)
 
 	return err
+}
+
+func (cp *CommandPlugin) getConfig() *config.Config {
+	cp.agentConfigMutex.RLock()
+	defer cp.agentConfigMutex.RUnlock()
+
+	return cp.config
 }
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
@@ -283,7 +290,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	slog.DebugContext(ctx, "Command plugin received connection reset message")
 
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
-		ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
+		ctxWithMetadata := cp.getConfig().NewContextWithLabels(ctx)
 		cp.subscribeMutex.Lock()
 		defer cp.subscribeMutex.Unlock()
 
@@ -340,7 +347,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 					cp.handleInvalidRequest(newCtx, message, "Config apply failed",
 						message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId())
 
-					return
+					continue
 				}
 				slog.InfoContext(ctx, "Received management plane config apply request")
 				cp.handleConfigApplyRequest(newCtx, message)
@@ -355,7 +362,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 					cp.handleInvalidRequest(newCtx, message, "API action failed",
 						message.GetActionRequest().GetInstanceId())
 
-					return
+					continue
 				}
 				slog.InfoContext(ctx, "Received management plane action request")
 				cp.handleAPIActionRequest(newCtx, message)
@@ -366,7 +373,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 						"command_server_type", cp.commandServerType.String())
 					cp.handleInvalidRequest(newCtx, message, "Updating agent config failed", "")
 
-					return
+					continue
 				}
 
 				cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: message})
@@ -378,13 +385,14 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 }
 
 func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mpi.ManagementPlaneRequest) {
-	if cp.config.IsFeatureEnabled(pkgConfig.FeatureAPIAction) {
+	cfg := cp.getConfig()
+	if cfg.IsFeatureEnabled(pkgConfig.FeatureAPIAction) {
 		cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.APIActionRequestTopic, Data: message})
 	} else {
 		slog.WarnContext(
 			ctx,
 			"API action feature disabled. Unable to process API action request",
-			"request", message, "enabled_features", cp.config.Features,
+			"request", message, "enabled_features", cfg.Features,
 		)
 
 		err := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
@@ -403,13 +411,14 @@ func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mp
 }
 
 func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
-	if cp.config.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
+	cfg := cp.getConfig()
+	if cfg.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
 		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: message})
 	} else {
 		slog.WarnContext(
 			newCtx,
 			"Configuration feature disabled. Unable to process config apply request",
-			"request", message, "enabled_features", cp.config.Features,
+			"request", message, "enabled_features", cfg.Features,
 		)
 
 		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
@@ -428,13 +437,14 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 }
 
 func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
-	if cp.config.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
+	cfg := cp.getConfig()
+	if cfg.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
 		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
 	} else {
 		slog.WarnContext(
 			newCtx,
 			"Configuration feature disabled. Unable to process config upload request",
-			"request", message, "enabled_features", cp.config.Features,
+			"request", message, "enabled_features", cfg.Features,
 		)
 
 		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
