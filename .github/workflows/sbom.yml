@@ -45,5 +45,6 @@ jobs:
           binary-name: binaries/nginx_agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}
           product-name: nginx-agent
           release-version: ${{ inputs.packageVersion }}
-          az-vault-client-id: ${{ env.az_vault_sec_client_id }}
-          az-vault-tenant-id: ${{ env.az_vault_sec_tenant_id }}
+          az-vault-client-id: ${{ secrets.AZ_VAULT_SEC_CLIENT_ID }}
+          az-vault-tenant-id: ${{ secrets.AZ_VAULT_SEC_TENANT_ID }}
+          az-vault-name: ${{ secrets.AZ_VAULT_SEC_NAME }}
