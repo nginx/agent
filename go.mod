@@ -270,7 +270,6 @@ require (
 	github.com/splunk/stef/go/otel v0.0.8 // indirect
 	github.com/splunk/stef/go/pdata v0.0.8 // indirect
 	github.com/splunk/stef/go/pkg v0.0.8 // indirect
-	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tilinna/clock v1.1.0 // indirect
@@ -382,7 +381,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.88
 	github.com/prometheus/client_golang v1.23.2 // indirect
-	github.com/samber/slog-gin v1.17.2
+	github.com/samber/slog-gin v1.21.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/vardius/message-bus v1.1.5
