@@ -657,12 +657,6 @@ func registerClientFlags(fs *flag.FlagSet) {
 		"File chunk size in bytes.",
 	)
 
-	fs.Duration(
-		ClientGRPCConnectionResetTimeoutKey,
-		DefGRPCConnectionResetTimeout,
-		"Duration to wait for in-progress management plane requests to complete before resetting the gRPC connection.",
-	)
-
 	fs.Uint32(
 		ClientGRPCMaxFileSizeKey,
 		DefMaxFileSize,
@@ -1174,7 +1168,6 @@ func resolveClient() *Client {
 			FileChunkSize:             viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
 			ResponseTimeout:           viperInstance.GetDuration(ClientGRPCResponseTimeoutKey),
 			MaxParallelFileOperations: viperInstance.GetInt(ClientGRPCMaxParallelFileOperationsKey),
-			ConnectionResetTimeout:    viperInstance.GetDuration(ClientGRPCConnectionResetTimeoutKey),
 		},
 		Backoff: &BackOff{
 			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),

@@ -85,7 +85,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		Resource: resource,
 	}
 
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
@@ -147,7 +147,7 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 		InstanceHealths: instanceHealths,
 	}
 
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
@@ -167,7 +167,7 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error {
 	slog.DebugContext(ctx, "Sending data plane response", "response", response)
 
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
@@ -194,7 +194,7 @@ func (cs *CommandService) Reconfigure(ctx context.Context, agentConfig *config.C
 
 // Subscribe to the Management Plane for incoming commands.
 func (cs *CommandService) Subscribe(ctx context.Context) {
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	commonSettings := &config.BackOff{
 		InitialInterval:     cfg.Client.Backoff.InitialInterval,
 		MaxInterval:         cfg.Client.Backoff.MaxInterval,
@@ -249,7 +249,7 @@ func (cs *CommandService) CreateConnection(
 		Resource: resource,
 	}
 
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	commonSettings := &config.BackOff{
 		InitialInterval:     cfg.Client.Backoff.InitialInterval,
 		MaxInterval:         cfg.Client.Backoff.MaxInterval,
@@ -354,15 +354,15 @@ func (cs *CommandService) handleConfigApplyResponse(
 	cs.configApplyRequestQueue[instanceID] = cs.configApplyRequestQueue[instanceID][indexOfConfigApplyRequest+1:]
 	slog.DebugContext(ctx, "Removed config apply requests from queue", "queue", cs.configApplyRequestQueue[instanceID])
 
-	var pending *mpi.ManagementPlaneRequest
+	var nextPendingRequest *mpi.ManagementPlaneRequest
 	if len(cs.configApplyRequestQueue[instanceID]) > 0 {
-		pending = cs.configApplyRequestQueue[instanceID][len(cs.configApplyRequestQueue[instanceID])-1]
+		nextPendingRequest = cs.configApplyRequestQueue[instanceID][len(cs.configApplyRequestQueue[instanceID])-1]
 	}
 
 	cs.configApplyRequestQueueMutex.Unlock()
 
 	// Send responses for the earlier queued requests outside the lock.
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	for _, req := range requestsToRespond {
 		newResponse := &mpi.DataPlaneResponse{
 			MessageMeta: &mpi.MessageMeta{
@@ -392,8 +392,8 @@ func (cs *CommandService) handleConfigApplyResponse(
 		}
 	}
 
-	if pending != nil && !cs.connectionResetInProgress.Load() {
-		cs.subscribeChannel <- pending
+	if nextPendingRequest != nil && !cs.connectionResetInProgress.Load() {
+		cs.subscribeChannel <- nextPendingRequest
 	}
 
 	return nil
@@ -404,7 +404,7 @@ func (cs *CommandService) dataPlaneHealthCallback(
 	ctx context.Context,
 	request *mpi.UpdateDataPlaneHealthRequest,
 ) func() (*mpi.UpdateDataPlaneHealthResponse, error) {
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	return func() (*mpi.UpdateDataPlaneHealthResponse, error) {
 		slog.DebugContext(ctx, "Sending data plane health update request", "request", request)
 
@@ -594,7 +594,7 @@ func (cs *CommandService) connectCallback(
 	ctx context.Context,
 	request *mpi.CreateConnectionRequest,
 ) func() (*mpi.CreateConnectionResponse, error) {
-	cfg := cs.getAgentConfig()
+	cfg := cs.config()
 	return func() (*mpi.CreateConnectionResponse, error) {
 		grpcCtx, cancel := context.WithTimeout(ctx, cfg.Client.Grpc.ResponseTimeout)
 		defer cancel()
@@ -614,7 +614,7 @@ func (cs *CommandService) connectCallback(
 	}
 }
 
-func (cs *CommandService) getAgentConfig() *config.Config {
+func (cs *CommandService) config() *config.Config {
 	cs.agentConfigMutex.RLock()
 	defer cs.agentConfigMutex.RUnlock()
 

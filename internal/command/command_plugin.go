@@ -42,7 +42,7 @@ type (
 
 	CommandPlugin struct {
 		messagePipe       bus.MessagePipeInterface
-		config            *config.Config
+		agentConfig       *config.Config
 		subscribeCancel   context.CancelFunc
 		conn              grpc.GrpcConnectionInterface
 		commandService    commandService
@@ -57,7 +57,7 @@ func NewCommandPlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnec
 	commandServerType model.ServerType,
 ) *CommandPlugin {
 	return &CommandPlugin{
-		config:            agentConfig,
+		agentConfig:       agentConfig,
 		conn:              grpcConnection,
 		subscribeChannel:  make(chan *mpi.ManagementPlaneRequest),
 		commandServerType: commandServerType,
@@ -72,7 +72,7 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 	slog.DebugContext(newCtx, "Starting command plugin")
 
 	cp.messagePipe = messagePipe
-	cp.commandService = NewCommandService(cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
+	cp.commandService = NewCommandService(cp.conn.CommandServiceClient(), cp.agentConfig, cp.subscribeChannel)
 
 	go cp.monitorSubscribeChannel(newCtx)
 
@@ -108,7 +108,7 @@ func (cp *CommandPlugin) Info() *bus.Info {
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Processing command")
-	ctxWithMetadata := cp.getConfig().NewContextWithLabels(ctx)
+	ctxWithMetadata := cp.config().NewContextWithLabels(ctx)
 
 	if logger.ServerType(ctxWithMetadata) == "" {
 		ctxWithMetadata = context.WithValue(
@@ -151,17 +151,17 @@ func (cp *CommandPlugin) Reconfigure(ctx context.Context, agentConfig *config.Co
 	cp.agentConfigMutex.Lock()
 	defer cp.agentConfigMutex.Unlock()
 
-	cp.config = agentConfig
+	cp.agentConfig = agentConfig
 	err := cp.commandService.Reconfigure(ctx, agentConfig)
 
 	return err
 }
 
-func (cp *CommandPlugin) getConfig() *config.Config {
+func (cp *CommandPlugin) config() *config.Config {
 	cp.agentConfigMutex.RLock()
 	defer cp.agentConfigMutex.RUnlock()
 
-	return cp.config
+	return cp.agentConfig
 }
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
@@ -290,7 +290,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	slog.DebugContext(ctx, "Command plugin received connection reset message")
 
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
-		ctxWithMetadata := cp.getConfig().NewContextWithLabels(ctx)
+		ctxWithMetadata := cp.config().NewContextWithLabels(ctx)
 		cp.subscribeMutex.Lock()
 		defer cp.subscribeMutex.Unlock()
 
@@ -385,7 +385,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 }
 
 func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mpi.ManagementPlaneRequest) {
-	cfg := cp.getConfig()
+	cfg := cp.config()
 	if cfg.IsFeatureEnabled(pkgConfig.FeatureAPIAction) {
 		cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.APIActionRequestTopic, Data: message})
 	} else {
@@ -411,7 +411,7 @@ func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mp
 }
 
 func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
-	cfg := cp.getConfig()
+	cfg := cp.config()
 	if cfg.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
 		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: message})
 	} else {
@@ -437,7 +437,7 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 }
 
 func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
-	cfg := cp.getConfig()
+	cfg := cp.config()
 	if cfg.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
 		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
 	} else {
