@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.9
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1
 	buf.build/go/protovalidate v1.1.3
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/fsnotify/fsnotify v1.9.0
@@ -16,7 +16,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
-	github.com/leodido/go-syslog/v4 v4.3.0
+	github.com/leodido/go-syslog/v4 v4.4.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/moby/moby/api v1.54.1
 	github.com/moby/moby/client v0.4.0
@@ -379,9 +379,9 @@ require (
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.87
+	github.com/nginxinc/nginx-go-crossplane v0.4.88
 	github.com/prometheus/client_golang v1.23.2 // indirect
-	github.com/samber/slog-gin v1.17.2
+	github.com/samber/slog-gin v1.21.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/vardius/message-bus v1.1.5
