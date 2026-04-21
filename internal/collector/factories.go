@@ -7,10 +7,9 @@ package collector
 
 import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
-	"github.com/nginx/agent/v3/internal/collector/logsgzipprocessor"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxreceiver"
-	"github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor"
+	"github.com/nginx/agent/v3/internal/collector/securityviolationsfilterprocessor"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension"
@@ -109,9 +108,8 @@ func createProcessorFactories() map[component.Type]processor.Factory {
 		memorylimiterprocessor.NewFactory(),
 		redactionprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
-		securityviolationsprocessor.NewFactory(),
+		securityviolationsfilterprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
-		logsgzipprocessor.NewFactory(),
 	}
 
 	processors := make(map[component.Type]processor.Factory)
