@@ -23,6 +23,7 @@ import (
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 	"google.golang.org/grpc"
 
+	network2 "github.com/moby/moby/api/types/network"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -143,7 +144,11 @@ func SetupMockManagementPlaneGrpc(ctx context.Context, tb testing.TB, containerN
 	ports, err := MockManagementPlaneGrpcContainer.Ports(ctx)
 	require.NoError(tb, err)
 
-	MockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+	port, err := network2.ParsePort("9093/tcp")
+	if err != nil {
+		tb.Logf("Error parsing port for mock management grpc server %v", err)
+	}
+	MockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports[port][0].HostPort)
 	tb.Logf("Mock management API server running on %s", MockManagementPlaneAPIAddress)
 }
 
@@ -161,7 +166,11 @@ func setupAuxiliaryMockManagementPlaneGrpc(ctx context.Context, tb testing.TB,
 	ports, err := AuxiliaryMockManagementPlaneGrpcContainer.Ports(ctx)
 	require.NoError(tb, err)
 
-	AuxiliaryMockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9096/tcp"][0].HostPort)
+	port, err := network2.ParsePort("9096/tcp")
+	if err != nil {
+		tb.Logf("Error parsing port for mock auxiliary grpc server %v", err)
+	}
+	AuxiliaryMockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports[port][0].HostPort)
 	tb.Logf("Auxiliary mock management API server running on %s", AuxiliaryMockManagementPlaneAPIAddress)
 }
 
