@@ -679,6 +679,20 @@ func registerClientFlags(fs *flag.FlagSet) {
 		DefClientFileDownloadTimeout,
 		"Timeout value in seconds, for downloading a file during a config apply.",
 	)
+
+	// Deprecated fields
+	markFieldDeprecated(
+		fs,
+		ClientGRPCConnectionResetTimeoutKey,
+		"gRPC connection reset timeout is deprecated and no longer supported",
+	)
+}
+
+func markFieldDeprecated(fs *flag.FlagSet, field, message string) {
+	err := fs.MarkDeprecated(field, message)
+	if err != nil {
+		slog.Error("Failed to deprecate field", "field", field)
+	}
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {

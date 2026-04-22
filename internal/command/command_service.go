@@ -44,6 +44,7 @@ type (
 		configApplyRequestQueueMutex sync.Mutex
 		resourceMutex                sync.Mutex
 		agentConfigMutex             sync.RWMutex
+		createConnectinoInProgress   sync.Mutex
 	}
 )
 
@@ -220,61 +221,11 @@ func (cs *CommandService) CreateConnection(
 	ctx context.Context,
 	resource *mpi.Resource,
 ) (resp *mpi.CreateConnectionResponse, err error) {
-	correlationID := logger.CorrelationID(ctx)
-	if len(resource.GetInstances()) <= 1 {
-		slog.InfoContext(ctx, "No Data Plane Instance found")
-	}
-
-	if cs.isConnected.Load() {
-		return nil, errors.New("command service already connected")
-	}
-
-	if !cs.isConnected.CompareAndSwap(false, true) {
-		// Another goroutine won the race and is establishing the connection.
-		return nil, errors.New("command service already connected")
-	}
-	// If the gRPC call below fails, roll back so callers can retry.
-	defer func() {
-		if err != nil {
-			cs.isConnected.Store(false)
-		}
-	}()
-
-	request := &mpi.CreateConnectionRequest{
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     id.GenerateMessageID(),
-			CorrelationId: correlationID,
-			Timestamp:     timestamppb.Now(),
-		},
-		Resource: resource,
-	}
-
-	cfg := cs.config()
-	commonSettings := &config.BackOff{
-		InitialInterval:     cfg.Client.Backoff.InitialInterval,
-		MaxInterval:         cfg.Client.Backoff.MaxInterval,
-		MaxElapsedTime:      createConnectionMaxElapsedTime,
-		RandomizationFactor: cfg.Client.Backoff.RandomizationFactor,
-		Multiplier:          cfg.Client.Backoff.Multiplier,
-	}
-
-	slog.DebugContext(ctx, "Sending create connection request", "request", request)
-	resp, err = backoff.RetryWithData(
-		cs.connectCallback(ctx, request),
-		backoffHelpers.Context(ctx, commonSettings),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	slog.InfoContext(ctx, "Connection created", "response", resp)
-	slog.InfoContext(ctx, "Agent connected")
-
 	cs.resourceMutex.Lock()
-	defer cs.resourceMutex.Unlock()
 	cs.resource = resource
+	cs.resourceMutex.Unlock()
 
-	return resp, nil
+	return cs.createConnectionCall(ctx)
 }
 
 func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandServiceClient) error {
@@ -287,13 +238,64 @@ func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandSe
 
 	cs.isConnected.Store(false)
 
-	resp, err := cs.CreateConnection(ctx, cs.resource)
+	resp, err := cs.createConnectionCall(ctx)
 	if err != nil {
 		return err
 	}
 	slog.InfoContext(ctx, "Successfully sent create connection request", "response", resp)
 
 	return nil
+}
+
+func (cs *CommandService) createConnectionCall(ctx context.Context) (*mpi.CreateConnectionResponse, error) {
+	cs.createConnectinoInProgress.Lock()
+	defer cs.createConnectinoInProgress.Unlock()
+	cs.resourceMutex.Lock()
+	defer cs.resourceMutex.Unlock()
+
+	correlationID := logger.CorrelationID(ctx)
+	if len(cs.resource.GetInstances()) <= 1 {
+		slog.InfoContext(ctx, "No Data Plane Instance found")
+	}
+
+	if cs.isConnected.Load() {
+		return nil, errors.New("command service already connected")
+	}
+
+	request := &mpi.CreateConnectionRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     id.GenerateMessageID(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		Resource: cs.resource,
+	}
+
+	cfg := cs.config()
+	commonSettings := &config.BackOff{
+		InitialInterval:     cfg.Client.Backoff.InitialInterval,
+		MaxInterval:         cfg.Client.Backoff.MaxInterval,
+		MaxElapsedTime:      createConnectionMaxElapsedTime,
+		RandomizationFactor: cfg.Client.Backoff.RandomizationFactor,
+		Multiplier:          cfg.Client.Backoff.Multiplier,
+	}
+
+	slog.DebugContext(ctx, "Sending create connection request", "request", request)
+	resp, err := backoff.RetryWithData(
+		cs.connectCallback(ctx, request),
+		backoffHelpers.Context(ctx, commonSettings),
+	)
+	if err != nil {
+		cs.isConnected.Store(false)
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "Connection created", "response", resp)
+	slog.InfoContext(ctx, "Agent connected")
+
+	cs.isConnected.Store(true)
+
+	return resp, nil
 }
 
 // Retry callback for sending a data plane response to the Management Plane.
@@ -454,10 +456,9 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			var err error
 			cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 			if err != nil {
-				subscribeErr := cs.handleSubscribeError(ctx, err, "create subscribe client")
 				cs.subscribeClientMutex.Unlock()
 
-				return subscribeErr
+				return cs.handleSubscribeError(ctx, err, "create subscribe client")
 			}
 
 			if cs.subscribeClient == nil {
@@ -497,7 +498,7 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 	slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s. "+
 		"Trying create connection rpc again", errorMsg), "error", err)
 
-	_, connectionErr := cs.CreateConnection(ctx, cs.resource)
+	_, connectionErr := cs.createConnectionCall(ctx)
 	if connectionErr != nil {
 		slog.ErrorContext(ctx, "Unable to create connection", "error", connectionErr)
 	}
