@@ -98,7 +98,7 @@ jobs:
 
       - name: Azure Upload
         if: ${{ inputs.uploadAzure == true }}
-        uses: azure/CLI@9f7ce6f37c31b777ec6c6b6d1dfe7db79f497956 # v2.2.0
+        uses: azure/CLI@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             echo "Uploading tarball... nginx-agent/release-${{ inputs.pkgVersion }}/nginx-agent.tar.gz"
