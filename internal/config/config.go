@@ -657,6 +657,12 @@ func registerClientFlags(fs *flag.FlagSet) {
 		"File chunk size in bytes.",
 	)
 
+	fs.Duration(
+		ClientGRPCConnectionResetTimeoutKey,
+		DefGRPCConnectionResetTimeout,
+		"Duration to wait for in-progress management plane requests to complete before resetting the gRPC connection.",
+	)
+
 	fs.Uint32(
 		ClientGRPCMaxFileSizeKey,
 		DefMaxFileSize,
@@ -684,14 +690,14 @@ func registerClientFlags(fs *flag.FlagSet) {
 	markFieldDeprecated(
 		fs,
 		ClientGRPCConnectionResetTimeoutKey,
-		"gRPC connection reset timeout is deprecated and no longer supported",
+		"this field is no longer supported",
 	)
 }
 
 func markFieldDeprecated(fs *flag.FlagSet, field, message string) {
 	err := fs.MarkDeprecated(field, message)
 	if err != nil {
-		slog.Error("Failed to deprecate field", "field", field)
+		slog.Error("Failed to deprecate field", "field", field, "error", err)
 	}
 }
 
