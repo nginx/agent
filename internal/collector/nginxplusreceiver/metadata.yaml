@@ -23,329 +23,315 @@ resource_attributes:
 
 attributes:
   nginx.cache.name:
-    description: "The name of the cache."
+    description: The name of the cache.
     type: string
   nginx.cache.outcome:
-    description: "The outcome for an attempt to fetch content from NGINX's cache"
+    description: The outcome for an attempt to fetch content from NGINX's cache
     type: string
     enum:
-      - "BYPASS"
-      - "EXPIRED"
-      - "HIT"
-      - "MISS"
-      - "REVALIDATED"
-      - "STALE"
-      - "UPDATING"
+      - BYPASS
+      - EXPIRED
+      - HIT
+      - MISS
+      - REVALIDATED
+      - STALE
+      - UPDATING
   nginx.connections.outcome:
-    description: "The outcome of a connection"
+    description: The outcome of a connection
     type: string
     enum:
-      - "ACCEPTED"
-      - "ACTIVE"
-      - "HANDLED"
-      - "READING"
-      - "WRITING"
-      - "WAITING"
-      - "DROPPED"
-      - "IDLE"
+      - ACCEPTED
+      - ACTIVE
+      - HANDLED
+      - READING
+      - WRITING
+      - WAITING
+      - DROPPED
+      - IDLE
   nginx.health_check:
-    description: "The state received from a health check."
+    description: The state received from a health check.
     type: string
     enum:
-      - "UNHEALTHY"
-      - "FAIL"
+      - UNHEALTHY
+      - FAIL
   nginx.io.direction:
-    description: "The direction of byte traffic."
+    description: The direction of byte traffic.
     type: string
     enum:
-      - "receive"
-      - "transmit"
+      - receive
+      - transmit
   nginx.limit_conn.outcome:
-    description: "The outcome for attempting to establish a connection to an endpoint that has a limit_conn directive configured."
+    description: The outcome for attempting to establish a connection to an endpoint that has a limit_conn directive configured.
     type: string
     enum:
-      - "PASSED"
-      - "REJECTED"
-      - "REJECTED_DRY_RUN"
+      - PASSED
+      - REJECTED
+      - REJECTED_DRY_RUN
   nginx.limit_req.outcome:
-    description: "The outcome for attempting to establish a connection to an endpoint that has a limit_req directive configured."
+    description: The outcome for attempting to establish a connection to an endpoint that has a limit_req directive configured.
     type: string
     enum:
-      - "PASSED"
-      - "REJECTED"
-      - "REJECTED_DRY_RUN"
-      - "DELAYED"
-      - "DELAYED_DRY_RUN"
+      - PASSED
+      - REJECTED
+      - REJECTED_DRY_RUN
+      - DELAYED
+      - DELAYED_DRY_RUN
   nginx.peer.address:
-    description: "The address of the peer."
+    description: The address of the peer.
     type: string
   nginx.peer.name:
-    description: "The name of the peer."
+    description: The name of the peer.
     type: string
   nginx.peer.state:
-    description: "The current state of an upstream peer."
+    description: The current state of an upstream peer.
     type: string
     enum:
-      - "CHECKING"
-      - "DOWN"
-      - "DRAINING"
-      - "UNAVAILABLE"
-      - "UNHEALTHY"
-      - "UP"
+      - CHECKING
+      - DOWN
+      - DRAINING
+      - UNAVAILABLE
+      - UNHEALTHY
+      - UP
   nginx.slab.slot.allocation.result:
-    description: "Result of an attempt to allocate memory to a slab slot."
+    description: Result of an attempt to allocate memory to a slab slot.
     type: string
     enum:
-      - "FAILURE"
-      - "SUCCESS"
+      - FAILURE
+      - SUCCESS
   nginx.slab.slot.limit:
-    description: "The upper limit for a slab slot, used as the identifier for the slot."
+    description: The upper limit for a slab slot, used as the identifier for the slot.
     type: int
   nginx.ssl.handshake.reason:
-    description: "The reason for a SSL handshake failure."
+    description: The reason for a SSL handshake failure.
     type: string
     enum:
-      - "NO_COMMON_PROTOCOL"
-      - "NO_COMMON_CIPHER"
-      - "TIMEOUT"
-      - "CERT_REJECTED"
+      - NO_COMMON_PROTOCOL
+      - NO_COMMON_CIPHER
+      - TIMEOUT
+      - CERT_REJECTED
   nginx.ssl.status:
-    description: "The status of a SSL handshake."
+    description: The status of a SSL handshake.
     type: string
     enum:
-      - "FAILED"
-      - "REUSE"
+      - FAILED
+      - REUSE
   nginx.ssl.verify_failure.reason:
-    description: "The reason for a SSL certificate verification failure."
+    description: The reason for a SSL certificate verification failure.
     type: string
     enum:
-      - "NO_CERT"
-      - "EXPIRED_CERT"
-      - "REVOKED_CERT"
-      - "HOSTNAME_MISMATCH"
-      - "OTHER"
+      - NO_CERT
+      - EXPIRED_CERT
+      - REVOKED_CERT
+      - HOSTNAME_MISMATCH
+      - OTHER
   nginx.status_range:
-    description: "A status code range or bucket for a HTTP response's status code."
+    description: A status code range or bucket for a HTTP response's status code.
     type: string
     enum:
-      - "1xx"
-      - "2xx"
-      - "3xx"
-      - "4xx"
-      - "5xx"
+      - 1xx
+      - 2xx
+      - 3xx
+      - 4xx
+      - 5xx
   nginx.upstream.name:
-    description: "The name of the upstream block."
+    description: The name of the upstream block.
     type: string
   nginx.zone.name:
-    description: "The name of the shared memory zone."
+    description: The name of the shared memory zone.
     type: string
   nginx.zone.type:
-    description: "The type of shared memory zone, depending on what block it was defined in the NGINX configuration."
+    description: The type of shared memory zone, depending on what block it was defined in the NGINX configuration.
     type: string
     enum:
-      - "SERVER"
-      - "LOCATION"
+      - SERVER
+      - LOCATION
 metrics:
-  nginx.config.reloads:
-    enabled: true
-    description: "The total number of NGINX config reloads."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "reloads"
-  nginx.http.connections:
-    enabled: true
-    description: "The total number of connections."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "connections"
-    attributes:  
-      - nginx.connections.outcome
-  nginx.http.connection.count:
-    enabled: true
-    description: "The current number of connections."
-    gauge:
-      value_type: int
-    unit: "connections"
-    attributes:  
-      - nginx.connections.outcome
-  nginx.http.request.count:
-    enabled: true
-    description: "The total number of client requests received, since the last collection interval."
-    gauge:
-      value_type: int
-    unit: "requests"
-    attributes:  
-      - nginx.zone.name  
-      - nginx.zone.type
   nginx.cache.bytes_read:
     enabled: true
-    description: "The total number of bytes read from the cache or proxied server."
+    description: The total number of bytes read from the cache or proxied server.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "bytes"
-    attributes:  
-      - nginx.cache.name  
-      - nginx.cache.outcome
-  nginx.cache.responses:
-    enabled: true
-    description: "The total number of responses read from the cache or proxied server."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "responses"
+    unit: bytes
     attributes:  
       - nginx.cache.name  
       - nginx.cache.outcome
   nginx.cache.memory.limit:
     enabled: true
-    description: "The limit on the maximum size of the cache specified in the configuration."
+    description: The limit on the maximum size of the cache specified in the configuration.
     gauge:
       value_type: int
-    unit: "bytes"
+    unit: bytes
     attributes:  
       - nginx.cache.name
   nginx.cache.memory.usage:
     enabled: true
-    description: "The current size of the cache."
+    description: The current size of the cache.
     gauge:
       value_type: int
-    unit: "bytes"
+    unit: bytes
     attributes:  
       - nginx.cache.name
-  nginx.http.limit_conn.requests:
+  nginx.cache.responses:
     enabled: true
-    description: "The total number of connections to an endpoint with a limit_conn directive."
+    description: The total number of responses read from the cache or proxied server.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "connections"
+    unit: responses
+    attributes:  
+      - nginx.cache.name  
+      - nginx.cache.outcome
+  nginx.config.reloads:
+    enabled: true
+    description: The total number of NGINX config reloads.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: reloads
+  nginx.http.connection.count:
+    enabled: true
+    description: The current number of connections.
+    gauge:
+      value_type: int
+    unit: connections
+    attributes:  
+      - nginx.connections.outcome
+  nginx.http.connections:
+    enabled: true
+    description: The total number of connections.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: connections
+    attributes:  
+      - nginx.connections.outcome
+  nginx.http.limit_conn.requests:
+    enabled: true
+    description: The total number of connections to an endpoint with a limit_conn directive.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: connections
     attributes:  
       - nginx.limit_conn.outcome  
       - nginx.zone.name
   nginx.http.limit_req.requests:
     enabled: true
-    description: "The total number of requests to an endpoint with a limit_req directive."
+    description: The total number of requests to an endpoint with a limit_req directive.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
+    unit: requests
     attributes:  
       - nginx.limit_req.outcome  
       - nginx.zone.name
-  nginx.http.request.io:
+  nginx.http.request.count:
     enabled: true
-    description: "The total number of HTTP byte IO."
-    sum:
+    description: The total number of client requests received, since the last collection interval.
+    gauge:
       value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "bytes"
+    unit: requests
     attributes:  
-      - nginx.io.direction  
       - nginx.zone.name  
       - nginx.zone.type
   nginx.http.request.discarded:
     enabled: true
-    description: "The total number of requests completed without sending a response."
+    description: The total number of requests completed without sending a response.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
+    unit: requests
     attributes:  
+      - nginx.zone.name  
+      - nginx.zone.type
+  nginx.http.request.io:
+    enabled: true
+    description: The total number of HTTP byte IO.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: bytes
+    attributes:  
+      - nginx.io.direction  
       - nginx.zone.name  
       - nginx.zone.type
   nginx.http.request.processing.count:
     enabled: true
-    description: "The number of client requests that are currently being processed."
+    description: The number of client requests that are currently being processed.
     gauge:
       value_type: int
-    unit: "requests"
+    unit: requests
     attributes:  
       - nginx.zone.name  
       - nginx.zone.type
   nginx.http.requests:
     enabled: true
-    description: "The total number of client requests received, since NGINX was last started or reloaded."
+    description: The total number of client requests received, since NGINX was last started or reloaded.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
-    attributes:  
-      - nginx.zone.name  
-      - nginx.zone.type
-  nginx.http.responses:
-    enabled: true
-    description: "The total number of HTTP responses sent to clients."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "responses"
+    unit: requests
     attributes:  
       - nginx.zone.name  
       - nginx.zone.type
   nginx.http.response.count:
     enabled: true
-    description: "The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range."
+    description: The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.
     gauge:
       value_type: int
-    unit: "responses"
+    unit: responses
     attributes:  
       - nginx.status_range  
       - nginx.zone.name  
       - nginx.zone.type
   nginx.http.response.status:
     enabled: true
-    description: "The total number of responses since NGINX was last started or reloaded, grouped by status code range."
+    description: The total number of responses since NGINX was last started or reloaded, grouped by status code range.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "responses"
+    unit: responses
     attributes:  
       - nginx.status_range  
       - nginx.zone.name  
       - nginx.zone.type
-  nginx.http.upstream.keepalive.count:
+  nginx.http.responses:
     enabled: true
-    description: "The current number of idle keepalive connections per HTTP upstream."
-    gauge:
-      value_type: int
-    unit: "connections"
-    attributes:  
-      - nginx.upstream.name  
-      - nginx.zone.name
-  nginx.http.upstream.peer.io:
-    enabled: true
-    description: "The total number of byte IO per HTTP upstream peer."
+    description: The total number of HTTP responses sent to clients.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "bytes"
+    unit: responses
     attributes:  
-      - nginx.io.direction  
-      - nginx.peer.address  
-      - nginx.peer.name  
+      - nginx.zone.name  
+      - nginx.zone.type
+  nginx.http.upstream.keepalive.count:
+    enabled: true
+    description: The current number of idle keepalive connections per HTTP upstream.
+    gauge:
+      value_type: int
+    unit: connections
+    attributes:  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.http.upstream.peer.connection.count:
     enabled: true
-    description: "The average number of active connections per HTTP upstream peer."
+    description: The average number of active connections per HTTP upstream peer.
     gauge:
       value_type: int
-    unit: "connections"
+    unit: connections
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -353,22 +339,22 @@ metrics:
       - nginx.zone.name
   nginx.http.upstream.peer.count:
     enabled: true
-    description: "The current count of peers on the HTTP upstream grouped by state."
+    description: The current count of peers on the HTTP upstream grouped by state.
     gauge:
       value_type: int
-    unit: "peers"
+    unit: peers
     attributes:  
       - nginx.peer.state  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.http.upstream.peer.fails:
     enabled: true
-    description: "The total number of unsuccessful attempts to communicate with the HTTP upstream peer."
+    description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "attempts"
+    unit: attempts
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -376,10 +362,10 @@ metrics:
       - nginx.zone.name
   nginx.http.upstream.peer.header.time:
     enabled: true
-    description: "The average time to get the response header from the HTTP upstream peer."
+    description: The average time to get the response header from the HTTP upstream peer.
     gauge:
       value_type: int
-    unit: "ms"
+    unit: ms
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -387,26 +373,40 @@ metrics:
       - nginx.zone.name
   nginx.http.upstream.peer.health_checks:
     enabled: true
-    description: "The total number of health check requests made to a HTTP upstream peer."
+    description: The total number of health check requests made to a HTTP upstream peer.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
+    unit: requests
     attributes:  
       - nginx.health_check  
       - nginx.peer.address  
       - nginx.peer.name  
       - nginx.upstream.name  
       - nginx.zone.name
-  nginx.http.upstream.peer.requests:
+  nginx.http.upstream.peer.io:
     enabled: true
-    description: "The total number of client requests forwarded to the HTTP upstream peer."
+    description: The total number of byte IO per HTTP upstream peer.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
+    unit: bytes
+    attributes:  
+      - nginx.io.direction  
+      - nginx.peer.address  
+      - nginx.peer.name  
+      - nginx.upstream.name  
+      - nginx.zone.name
+  nginx.http.upstream.peer.requests:
+    enabled: true
+    description: The total number of client requests forwarded to the HTTP upstream peer.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: requests
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -414,10 +414,10 @@ metrics:
       - nginx.zone.name
   nginx.http.upstream.peer.response.time:
     enabled: true
-    description: "The average time to get the full response from the HTTP upstream peer."
+    description: The average time to get the full response from the HTTP upstream peer.
     gauge:
       value_type: int
-    unit: "ms"
+    unit: ms
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -425,234 +425,220 @@ metrics:
       - nginx.zone.name
   nginx.http.upstream.peer.responses:
     enabled: true
-    description: "The total number of responses obtained from the HTTP upstream peer grouped by status range."
+    description: The total number of responses obtained from the HTTP upstream peer grouped by status range.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "responses"
+    unit: responses
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
       - nginx.status_range  
       - nginx.upstream.name  
       - nginx.zone.name
-  nginx.http.upstream.peer.unavailables:
-    enabled: true
-    description: "The total number of times the server became unavailable for client requests ('unavail')."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "requests"
-    attributes:  
-      - nginx.peer.address  
-      - nginx.peer.name  
-      - nginx.upstream.name  
-      - nginx.zone.name
   nginx.http.upstream.peer.state:
     enabled: true
-    description: "Current state of an upstream peer in deployment."
+    description: Current state of an upstream peer in deployment.
     gauge:
       value_type: int
-    unit: "is_deployed"
+    unit: is_deployed
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
       - nginx.peer.state  
       - nginx.upstream.name  
       - nginx.zone.name
+  nginx.http.upstream.peer.unavailables:
+    enabled: true
+    description: The total number of times the server became unavailable for client requests ('unavail').
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: requests
+    attributes:  
+      - nginx.peer.address  
+      - nginx.peer.name  
+      - nginx.upstream.name  
+      - nginx.zone.name
   nginx.http.upstream.queue.limit:
     enabled: true
-    description: "The maximum number of requests that can be in the queue at the same time."
+    description: The maximum number of requests that can be in the queue at the same time.
     gauge:
       value_type: int
-    unit: "requests"
+    unit: requests
     attributes:  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.http.upstream.queue.overflows:
     enabled: true
-    description: "The total number of requests rejected due to the queue overflow."
+    description: The total number of requests rejected due to the queue overflow.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "responses"
+    unit: responses
     attributes:  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.http.upstream.queue.usage:
     enabled: true
-    description: "The current number of requests in the queue."
+    description: The current number of requests in the queue.
     gauge:
       value_type: int
-    unit: "requests"
+    unit: requests
     attributes:  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.http.upstream.zombie.count:
     enabled: true
-    description: "The current number of upstream peers removed from the group but still processing active client requests."
+    description: The current number of upstream peers removed from the group but still processing active client requests.
     gauge:
       value_type: int
-    unit: "is_deployed"
+    unit: is_deployed
     attributes:  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.slab.page.free:
     enabled: true
-    description: "The current number of free memory pages."
+    description: The current number of free memory pages.
     gauge:
       value_type: int
-    unit: "pages"
+    unit: pages
     attributes:  
       - nginx.zone.name
   nginx.slab.page.limit:
     enabled: true
-    description: "The total number of memory pages (free and used)."
+    description: The total number of memory pages (free and used).
     gauge:
       value_type: int
-    unit: "pages"
+    unit: pages
     attributes:  
       - nginx.zone.name
   nginx.slab.page.usage:
     enabled: true
-    description: "The current number of used memory pages."
+    description: The current number of used memory pages.
     gauge:
       value_type: int
-    unit: "pages"
+    unit: pages
     attributes:  
       - nginx.zone.name
   nginx.slab.page.utilization:
     enabled: true
-    description: "The current percentage of used memory pages."
+    description: The current percentage of used memory pages.
     gauge:
       value_type: int
-    unit: "pages"
+    unit: pages
     attributes:  
-      - nginx.zone.name
-  nginx.slab.slot.usage:
-    enabled: true
-    description: "The current number of used memory slots."
-    gauge:
-      value_type: int
-    unit: "slots"
-    attributes:  
-      - nginx.slab.slot.limit  
-      - nginx.zone.name
-  nginx.slab.slot.free:
-    enabled: true
-    description: "The current number of free memory slots."
-    gauge:
-      value_type: int
-    unit: "slots"
-    attributes:  
-      - nginx.slab.slot.limit  
       - nginx.zone.name
   nginx.slab.slot.allocations:
     enabled: true
-    description: "The number of attempts to allocate memory of specified size."
+    description: The number of attempts to allocate memory of specified size.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "allocations"
+    unit: allocations
     attributes:  
       - nginx.slab.slot.allocation.result  
       - nginx.slab.slot.limit  
       - nginx.zone.name
-  nginx.ssl.handshakes:
+  nginx.slab.slot.free:
     enabled: true
-    description: "The total number of SSL handshakes."
+    description: The current number of free memory slots.
+    gauge:
+      value_type: int
+    unit: slots
+    attributes:  
+      - nginx.slab.slot.limit  
+      - nginx.zone.name
+  nginx.slab.slot.usage:
+    enabled: true
+    description: The current number of used memory slots.
+    gauge:
+      value_type: int
+    unit: slots
+    attributes:  
+      - nginx.slab.slot.limit  
+      - nginx.zone.name
+  nginx.ssl.certificate.verify_failures:
+    enabled: true
+    description: The total number of SSL certificate verification failures.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "handshakes"
+    unit: certificates
+    attributes:  
+      - nginx.ssl.verify_failure.reason
+  nginx.ssl.handshakes:
+    enabled: true
+    description: The total number of SSL handshakes.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: handshakes
     attributes:  
       - nginx.ssl.handshake.reason  
       - nginx.ssl.status
-  nginx.ssl.certificate.verify_failures:
-    enabled: true
-    description: "The total number of SSL certificate verification failures."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "certificates"
-    attributes:  
-      - nginx.ssl.verify_failure.reason
-  nginx.stream.io:
-    enabled: true
-    description: "The total number of Stream byte IO."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "bytes"
-    attributes:  
-      - nginx.io.direction  
-      - nginx.zone.name
   nginx.stream.connection.accepted:
     enabled: true
-    description: "The total number of connections accepted from clients."
+    description: The total number of connections accepted from clients.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "connections"
+    unit: connections
     attributes:  
       - nginx.zone.name
   nginx.stream.connection.discarded:
     enabled: true
-    description: "Total number of connections completed without creating a session."
+    description: Total number of connections completed without creating a session.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "connections"
+    unit: connections
     attributes:  
       - nginx.zone.name
   nginx.stream.connection.processing.count:
     enabled: true
-    description: "The number of client connections that are currently being processed."
+    description: The number of client connections that are currently being processed.
     gauge:
       value_type: int
-    unit: "connections"
+    unit: connections
     attributes:  
+      - nginx.zone.name
+  nginx.stream.io:
+    enabled: true
+    description: The total number of Stream byte IO.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: bytes
+    attributes:  
+      - nginx.io.direction  
       - nginx.zone.name
   nginx.stream.session.status:
     enabled: true
-    description: "The total number of completed sessions."
+    description: The total number of completed sessions.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "sessions"
+    unit: sessions
     attributes:  
       - nginx.status_range  
       - nginx.zone.name
-  nginx.stream.upstream.peer.io:
-    enabled: true
-    description: "The total number of Stream Upstream Peer byte IO."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "bytes"
-    attributes:  
-      - nginx.io.direction  
-      - nginx.peer.address  
-      - nginx.peer.name  
-      - nginx.upstream.name  
-      - nginx.zone.name
   nginx.stream.upstream.peer.connection.count:
     enabled: true
-    description: "The current number of Stream Upstream Peer connections."
+    description: The current number of Stream Upstream Peer connections.
     gauge:
       value_type: int
-    unit: "connections"
+    unit: connections
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -660,10 +646,10 @@ metrics:
       - nginx.zone.name
   nginx.stream.upstream.peer.connection.time:
     enabled: true
-    description: "The average time to connect to the stream upstream peer."
+    description: The average time to connect to the stream upstream peer.
     gauge:
       value_type: int
-    unit: "ms"
+    unit: ms
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -671,12 +657,12 @@ metrics:
       - nginx.zone.name
   nginx.stream.upstream.peer.connections:
     enabled: true
-    description: "The total number of client connections forwarded to this stream upstream peer."
+    description: The total number of client connections forwarded to this stream upstream peer.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "connections"
+    unit: connections
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -684,70 +670,60 @@ metrics:
       - nginx.zone.name
   nginx.stream.upstream.peer.count:
     enabled: true
-    description: "The current number of stream upstream peers grouped by state."
+    description: The current number of stream upstream peers grouped by state.
     gauge:
       value_type: int
-    unit: "peers"
+    unit: peers
     attributes:  
       - nginx.peer.state  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.stream.upstream.peer.fails:
     enabled: true
-    description: "The total number of unsuccessful attempts to communicate with the stream upstream peer."
+    description: The total number of unsuccessful attempts to communicate with the stream upstream peer.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "attempts"
+    unit: attempts
     attributes:  
       - nginx.peer.address  
       - nginx.upstream.name  
       - nginx.zone.name
   nginx.stream.upstream.peer.health_checks:
     enabled: true
-    description: "The total number of health check requests made to the stream upstream peer."
+    description: The total number of health check requests made to the stream upstream peer.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
+    unit: requests
     attributes:  
       - nginx.health_check  
       - nginx.peer.address  
       - nginx.peer.name  
       - nginx.upstream.name  
       - nginx.zone.name
-  nginx.stream.upstream.peer.response.time:
+  nginx.stream.upstream.peer.io:
     enabled: true
-    description: "The average time to receive the last byte of data for the stream upstream peer."
-    gauge:
-      value_type: int
-    unit: "ms"
-    attributes:  
-      - nginx.peer.address  
-      - nginx.peer.name  
-      - nginx.upstream.name  
-      - nginx.zone.name
-  nginx.stream.upstream.peer.ttfb.time:
-    enabled: true
-    description: "The average time to receive the first byte of data for the stream upstream peer."
-    gauge:
-      value_type: int
-    unit: "ms"
-    attributes:  
-      - nginx.peer.address  
-      - nginx.peer.name  
-      - nginx.upstream.name  
-      - nginx.zone.name
-  nginx.stream.upstream.peer.unavailables:
-    enabled: true
-    description: "How many times the server became unavailable for client connections (state 'unavail') due to the number of unsuccessful attempts reaching the max_fails threshold."
+    description: The total number of Stream Upstream Peer byte IO.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
+    unit: bytes
+    attributes:  
+      - nginx.io.direction  
+      - nginx.peer.address  
+      - nginx.peer.name  
+      - nginx.upstream.name  
+      - nginx.zone.name
+  nginx.stream.upstream.peer.response.time:
+    enabled: true
+    description: The average time to receive the last byte of data for the stream upstream peer.
+    gauge:
+      value_type: int
+    unit: ms
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
@@ -755,24 +731,48 @@ metrics:
       - nginx.zone.name
   nginx.stream.upstream.peer.state:
     enabled: true
-    description: "Current state of upstream peers in deployment."
+    description: Current state of upstream peers in deployment.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "deployments"
+    unit: deployments
     attributes:  
       - nginx.peer.address  
       - nginx.peer.name  
       - nginx.peer.state  
       - nginx.upstream.name  
       - nginx.zone.name
-  nginx.stream.upstream.zombie.count:
+  nginx.stream.upstream.peer.ttfb.time:
     enabled: true
-    description: "The current number of peers removed from the group but still processing active client connections."
+    description: The average time to receive the first byte of data for the stream upstream peer.
     gauge:
       value_type: int
-    unit: "deployments"
+    unit: ms
+    attributes:  
+      - nginx.peer.address  
+      - nginx.peer.name  
+      - nginx.upstream.name  
+      - nginx.zone.name
+  nginx.stream.upstream.peer.unavailables:
+    enabled: true
+    description: How many times the server became unavailable for client connections (state 'unavail') due to the number of unsuccessful attempts reaching the max_fails threshold.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: requests
+    attributes:  
+      - nginx.peer.address  
+      - nginx.peer.name  
+      - nginx.upstream.name  
+      - nginx.zone.name
+  nginx.stream.upstream.zombie.count:
+    enabled: true
+    description: The current number of peers removed from the group but still processing active client connections.
+    gauge:
+      value_type: int
+    unit: deployments
     attributes:  
       - nginx.upstream.name  
       - nginx.zone.name

@@ -64,7 +64,11 @@ func (z TestError) Error() string {
 func Test_GrpcConnection(t *testing.T) {
 	ctx := context.Background()
 
-	conn, err := NewGrpcConnection(ctx, types.AgentConfig(), types.AgentConfig().Command)
+	agentCfg := types.AgentConfig()
+	agentCfg.Command.TLS = nil // No TLS, use default insecure credentials
+	agentCfg.Command.Auth = nil
+
+	conn, err := NewGrpcConnection(ctx, agentCfg, agentCfg.Command)
 
 	require.NoError(t, err)
 	assert.NotNil(t, conn)
@@ -147,7 +151,7 @@ func Test_GetDialOptions(t *testing.T) {
 					TLS:    types.AgentConfig().Command.TLS,
 				},
 			},
-			expected:    7,
+			expected:    6,
 			createCerts: false,
 		},
 		{
@@ -160,6 +164,25 @@ func Test_GetDialOptions(t *testing.T) {
 				},
 			},
 			expected:    8,
+			createCerts: false,
+		},
+		{
+			name: "Test 7: TLS configured with invalid certs - no default fallback, token still added",
+			agentConfig: &config.Config{
+				Client: types.AgentConfig().Client,
+				Command: &config.Command{
+					Server: types.AgentConfig().Command.Server,
+					Auth:   types.AgentConfig().Command.Auth,
+					TLS: &config.TLSConfig{
+						Cert:       "nonexistent.cert",
+						Key:        "nonexistent.key",
+						Ca:         "nonexistent.ca",
+						SkipVerify: false,
+						ServerName: "test-server",
+					},
+				},
+			},
+			expected:    7,
 			createCerts: false,
 		},
 	}

@@ -239,18 +239,20 @@ func DialOptions(agentConfig *config.Config, commandConfig *config.Command, reso
 func addTransportCredentials(commandConfig *config.Command, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
 	transportCredentials, err := transportCredentials(commandConfig)
 	if err != nil {
-		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
-			"default transport credentials", "error", err)
-		opts = append(opts,
-			grpc.WithTransportCredentials(defaultCredentials),
-		)
+		if commandConfig.TLS != nil {
+			slog.Error("Unable to add transport credentials to gRPC dial, "+
+				"failed to parse configuration: ", "error", err)
+
+			return opts, false
+		}
+
+		slog.Debug("No TLS configured, Adding default transport credentials to gRPC dial options")
+		opts = append(opts, grpc.WithTransportCredentials(defaultCredentials))
 
 		return opts, true
 	}
-	slog.Debug("Adding transport credentials to gRPC dial options")
-	opts = append(opts,
-		grpc.WithTransportCredentials(transportCredentials),
-	)
+
+	opts = append(opts, grpc.WithTransportCredentials(transportCredentials))
 
 	return opts, false
 }
