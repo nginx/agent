@@ -25,7 +25,7 @@ env:
 jobs:
   cache-dependencies:
     name: Cache Dependencies
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     if: github.ref == 'refs/heads/main'
@@ -69,7 +69,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     steps:
@@ -114,7 +114,7 @@ jobs:
 
   unit-test:
     name: Unit Tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     steps:
@@ -150,7 +150,7 @@ jobs:
 
   race-condition-test:
     name: Unit tests with race condition detection
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     steps:
@@ -181,7 +181,7 @@ jobs:
 
   build-unsigned-snapshot:
     name: Build Unsigned Snapshot
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     steps:
@@ -231,7 +231,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     needs: build-unsigned-snapshot
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     strategy:
@@ -294,7 +294,7 @@ jobs:
   upgrade-tests:
     name: Upgrade Tests
     needs: build-unsigned-snapshot
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     strategy:
@@ -360,7 +360,7 @@ jobs:
     name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     strategy:
@@ -432,7 +432,7 @@ jobs:
     name: Integration Tests - Official Plus Images
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     strategy:
@@ -532,7 +532,7 @@ jobs:
     name: Metrics Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     strategy:
@@ -604,7 +604,7 @@ jobs:
     name: Metrics Integration Tests - Official Plus Images
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # for OIDC authentication
     strategy:
@@ -699,7 +699,7 @@ jobs:
 
   performance-tests:
     name: Performance Tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: build-unsigned-snapshot
     permissions:
       id-token: write # for OIDC authentication

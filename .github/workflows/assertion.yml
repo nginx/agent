@@ -23,7 +23,7 @@ permissions:
 jobs:
   build-assertion-document:
     name: Create Assertion Document
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
       id-token: write # for OIDC authentication
