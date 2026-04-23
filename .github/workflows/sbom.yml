@@ -18,7 +18,7 @@ permissions:
 jobs:
   generate-sbom:
     name: Create SBOM Document for Agent Go binary
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
       id-token: write # for OIDC authentication
