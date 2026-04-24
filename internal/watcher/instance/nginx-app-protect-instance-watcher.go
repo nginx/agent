@@ -87,10 +87,6 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context) {
 			}
 
 			return
-		case <-instanceWatcherTicker.C:
-			// Need to keep watching directories in case NAP gets installed a while after NGINX Agent is started
-			w.watchVersionFiles(ctx)
-			w.checkForUpdates(ctx)
 		case event := <-w.watcher.Events:
 			w.handleEvent(ctx, event)
 		case watcherError := <-w.watcher.Errors:
@@ -206,19 +202,30 @@ func (w *NginxAppProtectInstanceWatcher) handleFileDeleteEvent(event fsnotify.Ev
 	}
 }
 
-func (w *NginxAppProtectInstanceWatcher) checkForUpdates(ctx context.Context) {
+func (w *NginxAppProtectInstanceWatcher) checkForAppProtectUpdates(ctx context.Context) (instance *mpi.Instance) {
 	// If a version file is discovered for the first time we treat that as a new instance
 	if w.isNewInstance() {
 		w.createInstance(ctx)
+		slog.InfoContext(ctx, "New NAP instance created")
+
+		return w.nginxAppProtectInstance
 	} else if w.nginxAppProtectInstance != nil {
 		// If a version file disappears then we assume that NGINX App Protect is uninstalled
 		if w.version == "" {
 			w.deleteInstance(ctx)
+			slog.InfoContext(ctx, "Deleted NAP instance")
+
+			return w.nginxAppProtectInstance
 			// If any version changes then we update the instance metadata
 		} else if w.haveVersionsChanged() {
 			w.updateInstance(ctx)
+			slog.InfoContext(ctx, "Updated NAP instance")
+
+			return w.nginxAppProtectInstance
 		}
 	}
+
+	return nil
 }
 
 func (w *NginxAppProtectInstanceWatcher) isNewInstance() bool {

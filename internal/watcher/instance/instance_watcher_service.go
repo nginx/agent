@@ -132,6 +132,7 @@ func (iw *InstanceWatcherService) Watch(
 			return
 		case <-instanceWatcherTicker.C:
 			if iw.enabled.Load() {
+				iw.nginxAppProtectInstanceWatcher.watchVersionFiles(ctx)
 				iw.checkForUpdates(ctx)
 			} else {
 				slog.DebugContext(ctx, "Skipping check for instance updates, instance watcher is disabled")
@@ -248,8 +249,10 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		}
 	}
 
-	if iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance() != nil {
-		slog.DebugContext(ctx, "Adding nginx app protect instance to instance list")
+	appProtectInstance := iw.nginxAppProtectInstanceWatcher.checkForAppProtectUpdates(ctx)
+
+	if appProtectInstance != nil {
+		slog.DebugContext(ctx, "Adding nginx app protect instance to updated instance list")
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances,
 			iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance())
 	}
