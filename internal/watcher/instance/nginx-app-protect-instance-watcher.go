@@ -87,6 +87,9 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context) {
 			}
 
 			return
+		case <-instanceWatcherTicker.C:
+			// Need to keep watching directories in case NAP gets installed a while after NGINX Agent is started
+			w.watchVersionFiles(ctx)
 		case event := <-w.watcher.Events:
 			w.handleEvent(ctx, event)
 		case watcherError := <-w.watcher.Errors:

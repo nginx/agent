@@ -132,7 +132,6 @@ func (iw *InstanceWatcherService) Watch(
 			return
 		case <-instanceWatcherTicker.C:
 			if iw.enabled.Load() {
-				iw.nginxAppProtectInstanceWatcher.watchVersionFiles(ctx)
 				iw.checkForUpdates(ctx)
 			} else {
 				slog.DebugContext(ctx, "Skipping check for instance updates, instance watcher is disabled")
