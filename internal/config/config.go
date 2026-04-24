@@ -685,6 +685,20 @@ func registerClientFlags(fs *flag.FlagSet) {
 		DefClientFileDownloadTimeout,
 		"Timeout value in seconds, for downloading a file during a config apply.",
 	)
+
+	// Deprecated fields
+	markFieldDeprecated(
+		fs,
+		ClientGRPCConnectionResetTimeoutKey,
+		"this field is no longer supported",
+	)
+}
+
+func markFieldDeprecated(fs *flag.FlagSet, field, message string) {
+	err := fs.MarkDeprecated(field, message)
+	if err != nil {
+		slog.Error("Failed to deprecate field", "field", field, "error", err)
+	}
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -1174,7 +1188,6 @@ func resolveClient() *Client {
 			FileChunkSize:             viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
 			ResponseTimeout:           viperInstance.GetDuration(ClientGRPCResponseTimeoutKey),
 			MaxParallelFileOperations: viperInstance.GetInt(ClientGRPCMaxParallelFileOperationsKey),
-			ConnectionResetTimeout:    viperInstance.GetDuration(ClientGRPCConnectionResetTimeoutKey),
 		},
 		Backoff: &BackOff{
 			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),
