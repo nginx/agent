@@ -1617,11 +1617,11 @@ const file_mpi_v1_files_proto_rawDesc = "" +
 	"\x0fGetFileResponse\x120\n" +
 	"\bcontents\x18\x01 \x01(\v2\x14.mpi.v1.FileContentsR\bcontents\"*\n" +
 	"\fFileContents\x12\x1a\n" +
-	"\bcontents\x18\x01 \x01(\fR\bcontents\"\xa2\x02\n" +
+	"\bcontents\x18\x01 \x01(\fR\bcontents\"\x98\x02\n" +
 	"\bFileMeta\x12\x1c\n" +
 	"\x04name\x18\x01 \x01(\tB\b\xbaH\x05r\x03:\x01/R\x04name\x12\x12\n" +
-	"\x04hash\x18\x02 \x01(\tR\x04hash\x12I\n" +
-	"\rmodified_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\b\xbaH\x05\xb2\x01\x028\x01R\fmodifiedTime\x122\n" +
+	"\x04hash\x18\x02 \x01(\tR\x04hash\x12?\n" +
+	"\rmodified_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\fmodifiedTime\x122\n" +
 	"\vpermissions\x18\x04 \x01(\tB\x10\xbaH\rr\v2\t0[0-7]{3}R\vpermissions\x12\x12\n" +
 	"\x04size\x18\x05 \x01(\x03R\x04size\x12D\n" +
 	"\x10certificate_meta\x18\x06 \x01(\v2\x17.mpi.v1.CertificateMetaH\x00R\x0fcertificateMetaB\v\n" +

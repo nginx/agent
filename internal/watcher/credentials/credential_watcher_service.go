@@ -184,7 +184,7 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 
 			return
 		}
-		slog.DebugContext(ctx, "Credential watcher has detected changes")
+		slog.InfoContext(newCtx, "Credential watcher has detected changes")
 		ch <- CredentialUpdateMessage{
 			CorrelationID:  logger.CorrelationIDAttr(newCtx),
 			ServerType:     cws.serverType,
