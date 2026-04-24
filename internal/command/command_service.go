@@ -238,11 +238,11 @@ func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandSe
 
 	cs.isConnected.Store(false)
 
-	resp, err := cs.createConnectionCall(ctx)
+	_, err := cs.createConnectionCall(ctx)
 	if err != nil {
 		return err
 	}
-	slog.InfoContext(ctx, "Successfully sent create connection request", "response", resp)
+	slog.InfoContext(ctx, "Finished updating command service client and re-establishing connection")
 
 	return nil
 }

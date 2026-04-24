@@ -287,7 +287,7 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
 	var subscribeCtx context.Context
-	slog.DebugContext(ctx, "Command plugin received connection reset message")
+	slog.InfoContext(ctx, "Command plugin received connection reset message")
 
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
 		ctxWithMetadata := cp.config().NewContextWithLabels(ctx)
@@ -302,10 +302,10 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 
 		// Once the command service is updated, we close the old connection
-		slog.DebugContext(ctx, "Canceling Subscribe after connection reset")
+		slog.InfoContext(ctx, "Canceling old subscribe stream after connection reset")
 		if cp.subscribeCancel != nil {
 			cp.subscribeCancel()
-			slog.DebugContext(ctxWithMetadata, "Successfully canceled subscribe after connection reset")
+			slog.InfoContext(ctxWithMetadata, "Successfully canceled old subscribe stream after connection reset")
 		}
 
 		connectionErr := cp.conn.Close(ctx)
@@ -314,11 +314,11 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 
 		cp.conn = newConnection
-		slog.DebugContext(ctxWithMetadata, "Starting new subscribe after connection reset")
+		slog.InfoContext(ctxWithMetadata, "Starting new subscribe stream after connection reset")
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctxWithMetadata)
 		go cp.commandService.Subscribe(subscribeCtx)
 
-		slog.DebugContext(ctx, "Command service client reset successfully")
+		slog.InfoContext(ctx, "Command plugin connection reset finished successfully")
 	}
 }
 
