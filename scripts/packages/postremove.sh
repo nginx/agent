@@ -32,6 +32,34 @@ full_cleanup() {
     rm -rf "/var/lib/nginx-agent"
 }
 
+is_agent_installed() {
+    # Check if nginx-agent binary still exists
+    if [ -f "/usr/bin/nginx-agent" ]; then
+        return 0  # Agent is installed
+    else
+        return 1  # Agent is not installed
+    fi
+}
+
+is_package_installed() {
+    # Check if nginx-agent package is still installed using package manager
+    case "$ID" in
+        debian|ubuntu)
+            dpkg -l | grep -q '^ii.*nginx-agent' && return 0 || return 1
+            ;;
+        rhel|fedora|centos|amzn|almalinux|rocky|ol)
+            rpm -q nginx-agent >/dev/null 2>&1 && return 0 || return 1
+            ;;
+        alpine)
+            apk info nginx-agent >/dev/null 2>&1 && return 0 || return 1
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+
 case "$ID" in
     debian|ubuntu)
         case "$1" in
@@ -49,12 +77,26 @@ case "$ID" in
                 ;;
         esac
         ;;
-    rhel|fedora|centos|amzn|almalinux|rocky)
+    rhel|fedora|centos|amzn|almalinux|rocky|ol)
         if [ "$1" = "0" ]; then
+            # Package is being completely removed
+            echo "PostRemove: Package being removed (not upgraded)"
             stop_agent_systemd
             disable_agent_systemd
             systemd_daemon_reload
-            full_cleanup
+                    
+            # Check if agent binary still exists (it shouldn't in a real removal)
+            if ! is_agent_installed; then
+                echo "PostRemove: Agent binary not found, performing full cleanup"
+                full_cleanup
+            else
+                echo "PostRemove: Agent binary still present, performing partial cleanup only"
+                cleanup
+            fi
+        elif [ "$1" = "1" ]; then
+            # Package is being upgraded
+            echo "PostRemove: Agent is being upgraded, performing partial cleanup only"
+            cleanup
         fi
         ;;
     alpine)
