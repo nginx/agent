@@ -352,7 +352,8 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
-	if areInstanceDifferent(iw.instanceCache, instancesFound) || iw.nginxAppProtectInstanceWatcher.checkForAppProtectUpdates(ctx) {
+	if areInstanceDifferent(iw.instanceCache, instancesFound) ||
+		iw.nginxAppProtectInstanceWatcher.checkForAppProtectUpdates(ctx) {
 		var updatedInstances []*mpi.Instance
 		for _, instance := range instancesFound {
 			updatedInstances = append(updatedInstances, instance)
