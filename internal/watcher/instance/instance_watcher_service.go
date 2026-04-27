@@ -248,14 +248,6 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		}
 	}
 
-	appProtectInstance := iw.nginxAppProtectInstanceWatcher.checkForAppProtectUpdates(ctx)
-
-	if appProtectInstance != nil {
-		slog.DebugContext(ctx, "Adding nginx app protect instance to updated instance list")
-		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances,
-			iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance())
-	}
-
 	if len(instanceUpdates.UpdatedInstances) > 0 {
 		iw.updateResourceInstanceList(ctx, instanceUpdates.UpdatedInstances)
 
@@ -269,6 +261,11 @@ func (iw *InstanceWatcherService) checkForUpdates(
 func (iw *InstanceWatcherService) updateResourceInstanceList(ctx context.Context, instances []*mpi.Instance) {
 	iw.resourceMutex.Lock()
 	defer iw.resourceMutex.Unlock()
+
+	slog.InfoContext(ctx, "Updating resource list", "instances", len(instances))
+	for _, instance := range instances {
+		slog.InfoContext(ctx, "Updating resource list", "instance", instance.GetInstanceMeta().GetInstanceType())
+	}
 
 	resourceCopy, ok := proto2.Clone(iw.resource).(*mpi.Resource)
 	if ok {
@@ -355,10 +352,15 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
-	if areInstanceDifferent(iw.instanceCache, instancesFound) {
+	if areInstanceDifferent(iw.instanceCache, instancesFound) || iw.nginxAppProtectInstanceWatcher.checkForAppProtectUpdates(ctx) {
 		var updatedInstances []*mpi.Instance
 		for _, instance := range instancesFound {
 			updatedInstances = append(updatedInstances, instance)
+		}
+
+		if iw.nginxAppProtectInstanceWatcher.nginxAppProtectInstance != nil {
+			slog.DebugContext(ctx, "Adding nginx app protect instance to updated instance list")
+			updatedInstances = append(updatedInstances, iw.nginxAppProtectInstanceWatcher.nginxAppProtectInstance)
 		}
 
 		instanceUpdates.UpdatedInstances = updatedInstances

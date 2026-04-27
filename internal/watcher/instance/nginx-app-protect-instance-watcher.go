@@ -205,30 +205,30 @@ func (w *NginxAppProtectInstanceWatcher) handleFileDeleteEvent(event fsnotify.Ev
 	}
 }
 
-func (w *NginxAppProtectInstanceWatcher) checkForAppProtectUpdates(ctx context.Context) (instance *mpi.Instance) {
+func (w *NginxAppProtectInstanceWatcher) checkForAppProtectUpdates(ctx context.Context) (update bool) {
 	// If a version file is discovered for the first time we treat that as a new instance
 	if w.isNewInstance() {
 		w.createInstance(ctx)
 		slog.InfoContext(ctx, "New NAP instance created")
 
-		return w.nginxAppProtectInstance
+		return true
 	} else if w.nginxAppProtectInstance != nil {
 		// If a version file disappears then we assume that NGINX App Protect is uninstalled
 		if w.version == "" {
 			w.deleteInstance(ctx)
 			slog.InfoContext(ctx, "Deleted NAP instance")
 
-			return w.nginxAppProtectInstance
+			return true
 			// If any version changes then we update the instance metadata
 		} else if w.haveVersionsChanged() {
 			w.updateInstance(ctx)
 			slog.InfoContext(ctx, "Updated NAP instance")
 
-			return w.nginxAppProtectInstance
+			return true
 		}
 	}
 
-	return nil
+	return false
 }
 
 func (w *NginxAppProtectInstanceWatcher) isNewInstance() bool {
