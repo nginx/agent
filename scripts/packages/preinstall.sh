@@ -149,5 +149,39 @@ command:
 {
     title
     ensure_sudo
+
+    # Preserve existing config before upgrade on RHEL-family systems and only for V3->V3 upgrades.
+    is_rhel_family() {
+        printf "%s\n" "$ID" "$ID_LIKE" | grep -Eq '\brhel\b|\bcentos\b|\bol\b|\balmalinux\b|\brocky\b|\bamzn\b' 2>/dev/null
+    }
+
+    INSTALLED_VERSION=""
+    INSTALLED_MAJOR=""
+    if command -v nginx-agent >/dev/null 2>&1; then
+        INSTALLED_VERSION=$(nginx-agent -v 2>/dev/null || true)
+        INSTALLED_MAJOR=$(printf "%s" "$INSTALLED_VERSION" | sed -n 's/^.*version v\([0-9]\+\).*$/\1/p' || true)
+    fi
+
+    AGENT_LIB_DIR=${AGENT_LIB_DIR:-"/var/lib/nginx-agent"}
+    AGENT_CONFIG_BACKUP="${AGENT_LIB_DIR}/nginx-agent.conf.preupgrade"
+
+    if is_rhel_family && [ -n "${INSTALLED_MAJOR}" ] && [ "${INSTALLED_MAJOR}" -eq 3 ] && [ -f "${AGENT_CONFIG_FILE}" ]; then
+        mkdir -p "${AGENT_LIB_DIR}" || true
+        if [ ! -f "${AGENT_CONFIG_BACKUP}" ]; then
+            echo "Backing up existing config to ${AGENT_CONFIG_BACKUP}"
+            cp -a "${AGENT_CONFIG_FILE}" "${AGENT_CONFIG_BACKUP}" || true
+        fi
+        
+        # Also backup the manifest file
+        MANIFEST_BACKUP="${AGENT_LIB_DIR}/manifest.json.preupgrade"
+        if [ ! -f "${MANIFEST_BACKUP}" ] && [ -f "${AGENT_LIB_DIR}/manifest.json" ]; then
+            echo "Backing up existing manifest to ${MANIFEST_BACKUP}"
+            cp -a "${AGENT_LIB_DIR}/manifest.json" "${MANIFEST_BACKUP}" || true
+        fi
+        
+        printf "%s" "${INSTALLED_VERSION}" > "${AGENT_LIB_DIR}/nginx-agent.preupgrade.version" 2>/dev/null || true
+    fi
+
+
     update_config_file
 }

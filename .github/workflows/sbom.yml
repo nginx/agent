@@ -1,0 +1,50 @@
+name: Generate SBOM
+
+on:
+  workflow_dispatch:
+    inputs:
+      packageVersion:
+        description: 'Agent version'
+        type: string
+        required: true
+      runId:
+        description: 'Run ID of the workflow that built the artifacts'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: Create SBOM Document for Agent Go binary
+    runs-on: ubuntu-24.04
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    permissions:
+      id-token: write # for OIDC authentication
+      contents: read # Needed to download artifacts
+    strategy:
+      matrix:
+        osarch: [amd64, arm64]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Download nginx-agent binary artifacts
+        if: ${{ inputs.runId != '' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # 8.0.1
+        with:
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
+          path: binaries
+          run-id: ${{ inputs.runId }}
+          github-token: ${{ github.token }}
+
+      - name: Generate SBOM from binary
+        uses: nginx/compliance-rules/.github/actions/sbom@refs/heads/main
+        with:
+          binary-name: binaries/nginx_agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}
+          product-name: nginx-agent
+          release-version: ${{ inputs.packageVersion }}
+          az-vault-client-id: ${{ secrets.AZ_VAULT_SEC_CLIENT_ID }}
+          az-vault-tenant-id: ${{ secrets.AZ_VAULT_SEC_TENANT_ID }}
+          az-vault-name: ${{ secrets.AZ_VAULT_SEC_NAME }}
