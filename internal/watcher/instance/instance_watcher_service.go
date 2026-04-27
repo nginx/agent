@@ -262,10 +262,7 @@ func (iw *InstanceWatcherService) updateResourceInstanceList(ctx context.Context
 	iw.resourceMutex.Lock()
 	defer iw.resourceMutex.Unlock()
 
-	slog.InfoContext(ctx, "Updating resource list", "instances", len(instances))
-	for _, instance := range instances {
-		slog.InfoContext(ctx, "Updating resource list", "instance", instance.GetInstanceMeta().GetInstanceType())
-	}
+	slog.DebugContext(ctx, "Updating resource instance list", "instances", len(instances))
 
 	resourceCopy, ok := proto2.Clone(iw.resource).(*mpi.Resource)
 	if ok {

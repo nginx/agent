@@ -209,20 +209,16 @@ func (w *NginxAppProtectInstanceWatcher) checkForAppProtectUpdates(ctx context.C
 	// If a version file is discovered for the first time we treat that as a new instance
 	if w.isNewInstance() {
 		w.createInstance(ctx)
-		slog.InfoContext(ctx, "New NAP instance created")
 
 		return true
 	} else if w.nginxAppProtectInstance != nil {
 		// If a version file disappears then we assume that NGINX App Protect is uninstalled
 		if w.version == "" {
 			w.deleteInstance(ctx)
-			slog.InfoContext(ctx, "Deleted NAP instance")
-
 			return true
 			// If any version changes then we update the instance metadata
 		} else if w.haveVersionsChanged() {
 			w.updateInstance(ctx)
-			slog.InfoContext(ctx, "Updated NAP instance")
 
 			return true
 		}
