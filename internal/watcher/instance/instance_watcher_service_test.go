@@ -55,7 +55,6 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 
 	instanceUpdatesMessage := <-instanceUpdatesChannel
 	assert.Len(t, instanceUpdatesMessage.Resource.GetInstances(), 2)
-	// assert.Empty(t, instanceUpdatesMessage.InstanceUpdates.DeletedInstances)
 
 	nginxConfigContextMessage := <-nginxConfigContextChannel
 	assert.Equal(t, nginxConfigContext, nginxConfigContextMessage.NginxConfigContext)
@@ -157,6 +156,126 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			assert.Len(tt, instanceUpdates.UpdatedInstances, len(test.expectedInstanceUpdates.UpdatedInstances))
 
 			compareInstances(t, test.expectedInstanceUpdates.UpdatedInstances, instanceUpdates.UpdatedInstances)
+		})
+	}
+}
+
+func TestInstanceWatcherService_instanceUpdatesNap(t *testing.T) {
+	ctx := context.Background()
+	processID := int32(123)
+
+	agentInstance := protos.AgentInstance(processID, types.AgentConfig())
+	nginxInstance := protos.NginxOssInstance([]string{})
+	napInstance := protos.NginxAppProtectInstance()
+	napInstance.GetInstanceMeta().InstanceId = "ebe89555-5ff3-36a6-91d7-f79e5f7e3cc1"
+
+	updatedNapInstance := protos.NginxAppProtectInstance()
+	updatedNapInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo().Release = "1.2.3.4"
+	updatedNapInstance.GetInstanceMeta().InstanceId = "ebe89555-5ff3-36a6-91d7-f79e5f7e3cc1"
+
+	nginxInstanceWithDifferentPID := protos.NginxOssInstance([]string{})
+	nginxInstanceWithDifferentPID.GetInstanceRuntime().ProcessId = 3526
+
+	tests := []struct {
+		name                    string
+		napVersion              string
+		napRelease              string
+		oldInstances            map[string]*mpi.Instance
+		parsedInstances         map[string]*mpi.Instance
+		napInstance             *mpi.Instance
+		expectedInstanceUpdates InstanceUpdates
+	}{
+		{
+			name: "Test 1: New NAP instance",
+			oldInstances: map[string]*mpi.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+			},
+			parsedInstances: map[string]*mpi.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+			},
+			expectedInstanceUpdates: InstanceUpdates{
+				UpdatedInstances: []*mpi.Instance{
+					agentInstance,
+					napInstance,
+				},
+			},
+			napInstance: nil,
+			napVersion:  "6",
+			napRelease:  napInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo().GetRelease(),
+		},
+		{
+			name: "Test 2: Deleted instance",
+			oldInstances: map[string]*mpi.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId():                 agentInstance,
+				nginxInstanceWithDifferentPID.GetInstanceMeta().GetInstanceId(): nginxInstanceWithDifferentPID,
+				napInstance.GetInstanceMeta().GetInstanceId():                   napInstance,
+			},
+			parsedInstances: map[string]*mpi.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+				nginxInstance.GetInstanceMeta().GetInstanceId(): nginxInstance,
+			},
+			expectedInstanceUpdates: InstanceUpdates{
+				UpdatedInstances: []*mpi.Instance{
+					agentInstance,
+					nginxInstance,
+				},
+			},
+			napInstance: nil,
+			napVersion:  "",
+			napRelease:  "",
+		},
+		{
+			name: "Test 3: Updated instance",
+			oldInstances: map[string]*mpi.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+				napInstance.GetInstanceMeta().GetInstanceId():   napInstance,
+			},
+			parsedInstances: map[string]*mpi.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+			},
+			expectedInstanceUpdates: InstanceUpdates{
+				UpdatedInstances: []*mpi.Instance{
+					agentInstance,
+					updatedNapInstance,
+				},
+			},
+			napInstance: napInstance,
+			napVersion:  napInstance.GetInstanceMeta().GetVersion(),
+			napRelease:  "1.2.3.4",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
+			fakeProcessWatcher.ProcessesReturns(nil, nil)
+
+			fakeProcessParser := &instancefakes.FakeProcessParser{}
+			fakeProcessParser.ParseReturns(test.parsedInstances)
+
+			fakeExec := &execfakes.FakeExecInterface{}
+			fakeExec.ExecutableReturns(defaultAgentPath, nil)
+			fakeExec.ProcessIDReturns(processID)
+
+			instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
+			instanceWatcherService.processOperator = fakeProcessWatcher
+			instanceWatcherService.nginxParser = fakeProcessParser
+			instanceWatcherService.instanceCache = test.oldInstances
+			instanceWatcherService.executer = fakeExec
+			instanceWatcherService.nginxAppProtectInstanceWatcher.nginxAppProtectInstance = test.napInstance
+
+			instanceWatcherService.nginxAppProtectInstanceWatcher.version = test.napVersion
+			instanceWatcherService.nginxAppProtectInstanceWatcher.release = test.napRelease
+			napInstance.GetInstanceMeta().Version = test.napVersion
+
+			instanceUpdates, err := instanceWatcherService.instanceUpdates(ctx)
+
+			require.NoError(tt, err)
+			assert.Len(tt, instanceUpdates.UpdatedInstances, len(test.expectedInstanceUpdates.UpdatedInstances))
+
+			assert.Equal(tt, instanceWatcherService.nginxAppProtectInstanceWatcher.nginxAppProtectInstance.
+				GetInstanceRuntime().GetNginxAppProtectRuntimeInfo().GetRelease(),
+				instanceUpdates.UpdatedInstances[1].GetInstanceRuntime().GetNginxAppProtectRuntimeInfo().GetRelease())
 		})
 	}
 }

@@ -11,12 +11,15 @@ import (
 	"testing"
 	"time"
 
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/proto"
-
+	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
+	"github.com/nginx/agent/v3/internal/watcher/process/processfakes"
 	"github.com/nginx/agent/v3/pkg/id"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/require"
@@ -92,7 +95,25 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 		},
 	)
 
-	go nginxAppProtectInstanceWatcher.Watch(ctx)
+	agentConfig := types.AgentConfig()
+	agentConfig.Watchers.InstanceWatcher.MonitoringFrequency = 200 * time.Millisecond
+	instanceWatcher := NewInstanceWatcherService(
+		agentConfig,
+	)
+
+	instanceUpdatesChannel := make(chan ResourceUpdatesMessage, 2)
+	fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
+	fakeProcessWatcher.ProcessesReturns(nil, nil)
+
+	fakeProcessParser := &instancefakes.FakeProcessParser{}
+	fakeProcessParser.ParseReturns(make(map[string]*mpi.Instance))
+	instanceWatcher.processOperator = fakeProcessWatcher
+	instanceWatcher.nginxParser = fakeProcessParser
+	instanceWatcher.nginxAppProtectInstanceWatcher = nginxAppProtectInstanceWatcher
+	instanceWatcher.instancesChannel = instanceUpdatesChannel
+
+	instanceWatcher.SetEnabled(true)
+	go instanceWatcher.Watch(ctx, instanceUpdatesChannel, make(chan<- NginxConfigContextMessage))
 
 	t.Run("Test 1: New instance", func(t *testing.T) {
 		assert.Eventually(t, func() bool { return nginxAppProtectInstanceWatcher.NginxAppProtectInstance() != nil },
@@ -110,7 +131,7 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 
 		assert.Eventually(t, func() bool {
 			return proto.Equal(nginxAppProtectInstanceWatcher.NginxAppProtectInstance(), expectedInstance)
-		}, timeout, 30*time.Millisecond)
+		}, 1*time.Second, 30*time.Millisecond)
 	})
 	t.Run("Test 3: Delete instance", func(t *testing.T) {
 		helpers.RemoveFileWithErrorCheck(t, versionFile.Name())
