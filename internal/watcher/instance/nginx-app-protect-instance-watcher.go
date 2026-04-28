@@ -206,6 +206,9 @@ func (w *NginxAppProtectInstanceWatcher) handleFileDeleteEvent(event fsnotify.Ev
 }
 
 func (w *NginxAppProtectInstanceWatcher) checkForAppProtectUpdates(ctx context.Context) (update bool) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	// If a version file is discovered for the first time we treat that as a new instance
 	if w.isNewInstance() {
 		w.createInstance(ctx)
@@ -228,15 +231,10 @@ func (w *NginxAppProtectInstanceWatcher) checkForAppProtectUpdates(ctx context.C
 }
 
 func (w *NginxAppProtectInstanceWatcher) isNewInstance() bool {
-	w.instanceMutex.Lock()
-	defer w.instanceMutex.Unlock()
-
 	return w.nginxAppProtectInstance == nil && w.version != ""
 }
 
 func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
-	w.instanceMutex.Lock()
-	defer w.instanceMutex.Unlock()
 	w.nginxAppProtectInstance = &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   id.Generate(versionFilePath),
@@ -264,17 +262,11 @@ func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
 }
 
 func (w *NginxAppProtectInstanceWatcher) deleteInstance(ctx context.Context) {
-	w.instanceMutex.Lock()
-	defer w.instanceMutex.Unlock()
-
 	slog.InfoContext(ctx, "NGINX App Protect instance not longer exists")
 	w.nginxAppProtectInstance = nil
 }
 
 func (w *NginxAppProtectInstanceWatcher) updateInstance(ctx context.Context) {
-	w.instanceMutex.Lock()
-	defer w.instanceMutex.Unlock()
-
 	instanceCopy, ok := proto.Clone(w.nginxAppProtectInstance).(*mpi.Instance)
 
 	if ok {

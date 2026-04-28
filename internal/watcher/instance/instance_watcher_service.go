@@ -356,9 +356,9 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 			updatedInstances = append(updatedInstances, instance)
 		}
 
-		if iw.nginxAppProtectInstanceWatcher.nginxAppProtectInstance != nil {
+		if iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance() != nil {
 			slog.DebugContext(ctx, "Adding nginx app protect instance to updated instance list")
-			updatedInstances = append(updatedInstances, iw.nginxAppProtectInstanceWatcher.nginxAppProtectInstance)
+			updatedInstances = append(updatedInstances, iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance())
 		}
 
 		instanceUpdates.UpdatedInstances = updatedInstances
