@@ -271,7 +271,10 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, fileMeta.GetName())
+
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -326,6 +329,68 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, "/unknown")
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command, &sync.RWMutex{})
+	err := filePlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.Messages()) == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	assert.Equal(t, 0, fakeFileServiceClient.UpdateFileCallCount())
+
+	messages := messagePipe.Messages()
+	assert.Len(t, messages, 1)
+
+	assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+
+	dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+	assert.True(t, ok)
+	assert.Equal(
+		t,
+		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		dataPlaneResponse.GetCommandResponse().GetStatus(),
+	)
+	assert.Equal(t, "open /unknown/file.conf: no such file or directory",
+		dataPlaneResponse.GetCommandResponse().GetError())
+}
+
+func TestFilePlugin_Process_ConfigUploadRequestTopic_AllowedDirFailure(t *testing.T) {
+	ctx := context.Background()
+
+	fileMeta := protos.FileMeta("/not_allowed_dir/file.conf", "")
+
+	message := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+			ConfigUploadRequest: &mpi.ConfigUploadRequest{
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{
+						{
+							FileMeta: fileMeta,
+						},
+						{
+							FileMeta: fileMeta,
+						},
+					},
+					ConfigVersion: protos.CreateConfigVersion(),
+				},
+			},
+		},
+	}
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
+	messagePipe := busfakes.NewFakeMessagePipe()
+
 	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
@@ -354,6 +419,8 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		dataPlaneResponse.GetCommandResponse().GetStatus(),
 	)
+	assert.Equal(t, "file not in allowed directories /not_allowed_dir/file.conf",
+		dataPlaneResponse.GetCommandResponse().GetError())
 }
 
 func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
