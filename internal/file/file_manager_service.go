@@ -31,7 +31,7 @@ import (
 //counterfeiter:generate . fileOperator
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
-//counterfeiter:generate . fileManagerServiceInterface
+//counterfeiter:generate . FileManagerServiceInterface
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
 //counterfeiter:generate . fileServiceOperatorInterface
@@ -88,7 +88,7 @@ type (
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
-	fileManagerServiceInterface interface {
+	FileManagerServiceInterface interface {
 		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
 			err error)
 		Rollback(ctx context.Context, instanceID string) error
