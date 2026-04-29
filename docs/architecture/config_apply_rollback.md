@@ -25,36 +25,26 @@ flowchart TB
 # Config Apply Rollback Sequence Diagram 
 ```mermaid
 sequenceDiagram
-    participant Command Plugin as Command Plugin
-    participant Message Bus as Message Bus
-    participant File Plugin as File Plugin
-    participant File Manager Service as File Manager Service
-    participant File Operator as File Operator
-    participant Resource Plugin as Resource Plugin
-    participant Resource Service as Resource Service
-    participant Instance Operator as Instance Operator
-    participant Log Tailer Operator as Log Tailer Operator
-
-    Message Bus -)+ File Plugin: ConfigApplyFailedTopic
-    File Plugin ->>+ File Manager Service: Rollback(ctx, instanceID)
+    Message Bus -)+ Nginx Plugin: ConfigApplyFailedTopic
+    Nginx Plugin ->>+ File Manager Service: Rollback(ctx, instanceID)
     File Manager Service ->> File Operator: Write()
     File Operator -->> File Manager Service: error
-    File Manager Service -->>- File Plugin: error
+    File Manager Service -->>- Nginx Plugin: error
     alt error
         rect rgb(166, 128, 140)
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
+            Nginx Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
-            File Plugin -) Message Bus: ConfigApplyCompleteTopic
+            Nginx Plugin -) Message Bus: ConfigApplyCompleteTopic
             Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
-            Message Bus -) File Plugin: ConfigApplyCompleteTopic
-            File Plugin ->> File Plugin: ClearCache()
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            Message Bus -) Nginx Plugin: ConfigApplyCompleteTopic
+            Nginx Plugin ->> Nginx Plugin: ClearCache()
+            Nginx Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else no error
         rect rgb(66, 129, 164)
-            File Plugin -)- Message Bus: RollbackWriteTopic
+            Nginx Plugin -)- Message Bus: RollbackWriteTopic
         end
     end
     Message Bus -)+ Resource Plugin: WriteConfigSuccessfulTopic
@@ -77,9 +67,9 @@ sequenceDiagram
             Resource Plugin -) Message Bus: ConfigApplyCompleteTopic
             Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
-            Message Bus -)+ File Plugin: ConfigApplyCompleteTopic
-            File Plugin ->> File Plugin: clearCache()
-            File Plugin -)- Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            Message Bus -)+ Nginx Plugin: ConfigApplyCompleteTopic
+            Nginx Plugin ->> Nginx Plugin: clearCache()
+            Nginx Plugin -)- Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else error
@@ -89,13 +79,12 @@ sequenceDiagram
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
             Resource Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
-            Message Bus -)+ File Plugin: ConfigApplyCompleteTopic
-            File Plugin ->> File Plugin: clearCache()
-            File Plugin -)- Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            Message Bus -)+ Nginx Plugin: ConfigApplyCompleteTopic
+            Nginx Plugin ->> Nginx Plugin: clearCache()
+            Nginx Plugin -)- Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
 
         end
     end
-
 
 ```
