@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 const emptyResponse = "{}"
 
 type APIAction struct {
-	ResourceService resourceServiceInterface
+	NginxService nginxServiceInterface
 }
 
 func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
@@ -28,7 +28,7 @@ func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 		ctx,
 		instance,
 		func(ctx context.Context, instance *mpi.Instance) (interface{}, error) {
-			return a.ResourceService.GetStreamUpstreams(ctx, instance)
+			return a.NginxService.GetStreamUpstreams(ctx, instance)
 		},
 		"Unable to get stream upstreams",
 	)
@@ -39,7 +39,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 		ctx,
 		instance,
 		func(ctx context.Context, instance *mpi.Instance) (interface{}, error) {
-			return a.ResourceService.GetUpstreams(ctx, instance)
+			return a.NginxService.GetUpstreams(ctx, instance)
 		},
 		"Unable to get upstreams",
 	)
@@ -54,7 +54,7 @@ func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	upstreamsResponse := emptyResponse
 
-	upstreams, err := a.ResourceService.GetHTTPUpstreamServers(
+	upstreams, err := a.NginxService.GetHTTPUpstreamServers(
 		ctx,
 		instance,
 		action.GetGetHttpUpstreamServers().GetHttpUpstreamName(),
@@ -102,7 +102,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(
 	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
-	add, update, del, err := a.ResourceService.UpdateStreamServers(
+	add, update, del, err := a.NginxService.UpdateStreamServers(
 		ctx,
 		instance,
 		action.GetUpdateStreamServers().GetUpstreamStreamName(),
@@ -158,7 +158,7 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(
 	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
-	add, update, del, err := a.ResourceService.UpdateHTTPUpstreamServers(ctx, instance,
+	add, update, del, err := a.NginxService.UpdateHTTPUpstreamServers(ctx, instance,
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
 		action.GetUpdateHttpUpstreamServers().GetServers())
 	if err != nil {
