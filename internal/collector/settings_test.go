@@ -196,13 +196,13 @@ func TestTemplateWrite(t *testing.T) {
 			"otlp/default", "nginx", "nginxplus/456", "nginxplus/789",
 		},
 		Processors: []string{"resource/default", "batch/default"},
-		Exporters:  []string{"otlp/default", "prometheus", "debug"},
+		Exporters:  []string{"otlp_grpc/default", "prometheus", "debug"},
 	}
 	cfg.Collector.Pipelines.Logs = make(map[string]*config.Pipeline)
 	cfg.Collector.Pipelines.Logs["default"] = &config.Pipeline{
 		Receivers:  []string{"tcplog/default"},
 		Processors: []string{"securityviolationsfilter/default", "resource/default", "batch/default"},
-		Exporters:  []string{"otlp/default", "debug"},
+		Exporters:  []string{"otlp_grpc/default", "debug"},
 	}
 
 	require.NotNil(t, cfg)

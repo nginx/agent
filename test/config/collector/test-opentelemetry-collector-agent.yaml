@@ -75,7 +75,7 @@ processors:
   securityviolationsfilter/default: {}
 
 exporters:
-  otlp/default:
+  otlp_grpc/default:
     endpoint: "127.0.0.1:1234"
     compression: none
     timeout: 10s
@@ -133,7 +133,7 @@ service:
         - resource/default
         - batch/default
       exporters:
-        - otlp/default
+        - otlp_grpc/default
         - prometheus
         - debug
     logs/default:
@@ -144,5 +144,5 @@ service:
         - resource/default
         - batch/default
       exporters:
-        - otlp/default
+        - otlp_grpc/default
         - debug

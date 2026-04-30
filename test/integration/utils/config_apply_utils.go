@@ -48,7 +48,7 @@ func PerformConfigApply(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAdd
 	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 
 	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
-	resp, err := client.R().EnableTrace().Post(url)
+	resp, err := client.R().EnableTrace().SetContentLength(true).Post(url)
 
 	t.Logf("Config ApplyResponse: %s", resp.String())
 	require.NoError(t, err)
