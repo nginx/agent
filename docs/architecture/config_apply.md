@@ -39,66 +39,55 @@ flowchart TB
 
 # Config Apply Sequence Diagram
 ```mermaid
-sequenceDiagram
-    participant Command Plugin as Command Plugin
-    participant Message Bus as Message Bus
-    participant File Plugin as File Plugin
-    participant File Manager Service as File Manager Service
-    participant File Operator as File Operator
-    participant Resource Plugin as Resource Plugin
-    participant Resource Service as Resource Service
-    participant Instance Operator as Instance Operator
-    participant Log Tailer Operator as Log Tailer Operator
-    participant Watcher Plugin as Watcher Plugin
-
+    sequenceDiagram
     Command Plugin -) Message Bus: ConfigApplyRequestTopic
     Message Bus -)+ Watcher Plugin: ConfigApplyRequestTopic
     Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(false)
-    Message Bus -)+ File Plugin: ConfigApplyRequestTopic
-    File Plugin ->>+ File Manager Service: ConfigApply(ctx, configApplyRequest)
+    Message Bus -)+ Nginx Plugin: ConfigApplyRequestTopic
+    Nginx Plugin ->>+ File Manager Service: ConfigApply(ctx, configApplyRequest)
     File Manager Service ->> File Manager Service: checkAllowedDirectory(checkFiles)
     File Manager Service ->> File Manager Service: DetermineFileActions(currentFilesOnDisk, modifiedFiles)
     File Manager Service ->> File Manager Service: executeFileActions(ctx)
     File Manager Service ->> File Operator: Write()
     File Operator -->> File Manager Service: error
-    File Manager Service -->>- File Plugin: writeStatus, error
+    File Manager Service -->>- Nginx Plugin: writeStatus, error
     alt no file changes
         rect rgb(66, 129, 164)
-            File Plugin -) Message Bus: ConfigApplySuccessfulTopic
+            Nginx Plugin -) Message Bus: ConfigApplySuccessfulTopic
             Message Bus -) Watcher Plugin: ConfigApplySuccessfulTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
 
-            Message Bus -) File Plugin: ConfigApplySuccessfulTopic
-            File Plugin ->> File Plugin: ClearCache()
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
+            Message Bus -) Nginx Plugin: ConfigApplySuccessfulTopic
+            Nginx Plugin ->> Nginx Plugin: ClearCache()
+            Nginx Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
         end
-    else has error
+        else has error
         rect rgb(166, 128, 140)
-            File Plugin -) Message Bus: ConfigApplyCompleteTopic
+            Nginx Plugin -) Message Bus: ConfigApplyCompleteTopic
             Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
-            Message Bus -) File Plugin: ConfigApplyCompleteTopic
-            File Plugin ->> File Plugin: ClearCache()
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            Message Bus -) Nginx Plugin: ConfigApplyCompleteTopic
+            Nginx Plugin ->> Nginx Plugin: ClearCache()
+            Nginx Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
-    else rollback required
+         else rollback required
         rect rgb(144, 143, 217)
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
+            Nginx Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
-            File Plugin ->> File Manager Service: Rollback(ctx, instanceID)
-            File Plugin -) Message Bus: ConfigApplyCompleteTopic
+            Nginx Plugin ->> File Manager Service: Rollback(ctx, instanceID)
+            Nginx Plugin -) Message Bus: ConfigApplyCompleteTopic
             Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
-            Message Bus -) File Plugin: ConfigApplyCompleteTopic
-            File Plugin ->> File Plugin: ClearCache()
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            Message Bus -) Nginx Plugin: ConfigApplyCompleteTopic
+            Nginx Plugin ->> Nginx Plugin: ClearCache()
+            Nginx Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else no error
         rect rgb(66, 129, 164)
-            File Plugin -)- Message Bus: WriteConfigSuccessfulTopic
+            Nginx Plugin -)- Message Bus: WriteConfigSuccessfulTopic
         end
     end
     Message Bus -)+ Resource Plugin: WriteConfigSuccessfulTopic
@@ -119,9 +108,9 @@ sequenceDiagram
     alt no error
         rect rgb(66, 129, 164)
             Resource Plugin -) Message Bus: ConfigApplySuccessfulTopic
-            Message Bus -)+ File Plugin: ConfigApplySuccessfulTopic
-            File Plugin ->>- File Plugin: clearCache()
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
+            Message Bus -)+ Nginx Plugin: ConfigApplySuccessfulTopic
+            Nginx Plugin ->>- Nginx Plugin: clearCache()
+            Nginx Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
             Message Bus -)+ Watcher Plugin: ConfigApplySuccessfulTopic
             Watcher Plugin ->>- Watcher Plugin: Reparse Config
@@ -132,12 +121,9 @@ sequenceDiagram
             Resource Plugin -) Message Bus: ConfigApplyFailedTopic
             Resource Plugin -)- Message Bus: DataPlaneResponseTopic Command_Status_ERROR
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
-            Message Bus -)+ File Plugin: ConfigApplyFailedTopic
-            File Plugin ->>- File Manager Service: Rollback(ctx, instanceID)
+            Message Bus -)+ Nginx Plugin: ConfigApplyFailedTopic
+            Nginx Plugin ->>- File Manager Service: Rollback(ctx, instanceID)
         end
     end
-
-
-
 
 ```
