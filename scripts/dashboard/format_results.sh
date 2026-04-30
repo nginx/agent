@@ -72,6 +72,13 @@ write_result() {
     if [[ ${msg} == "msg" ]]; then
         msg=""
     fi
+
+    # Escape characters for valid JSON
+    msg="${msg//\\/\\\\}"  # escape backslashes
+    msg="${msg//\"/\\\"}"  # escape quotes
+    msg="${msg//$'\n'/\\n}"   # escape newlines
+    msg="${msg//$'\r'/\\r}"   # escape carriage returns
+    msg="${msg//$'\t'/\\t}"   # escape tabs
     
     mkdir -p "$output_dir"
     result_file="$output_dir/result.json"
@@ -171,6 +178,7 @@ format_results() {
         fi
         write_result "${test_group[1]}" "${test_group[2]}" "${test_group[3]}" "${test_group[4]}" "$OUTPUT_DIR/${test_group[0]}"
         test_group=("name" "start_at" "end_at" "result" "msg")
+        error_trace=""
         is_running=false
         continue
       fi 
@@ -186,6 +194,7 @@ format_results() {
           test_match[4]+="$error_trace"
         fi
         write_result "${test_match[1]}" "${test_match[2]}" "${test_match[3]}" "${test_match[4]}" "$OUTPUT_DIR/${test_match[0]}"
+        error_trace=""
         
         for i in {0..4}; do
           unset 'test_queue[$i]'
