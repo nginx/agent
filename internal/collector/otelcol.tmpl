@@ -7,7 +7,7 @@ receivers:
 {{- end }}
 
 {{- if ne .Receivers.HostMetrics nil }}
-  hostmetrics:
+  host_metrics:
     {{- if .Receivers.HostMetrics.CollectionInterval }}
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     {{- end}}
@@ -280,7 +280,7 @@ service:
         - containermetrics
             {{- end }}
             {{- if ne $.Receivers.HostMetrics nil }}
-        - hostmetrics
+        - host_metrics
             {{- end }}
           {{- else if eq $receiver "nginx_metrics" }}
             {{- range $.Receivers.NginxReceivers }}
