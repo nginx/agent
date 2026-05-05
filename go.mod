@@ -65,7 +65,7 @@ require (
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.150.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.150.0
 	go.opentelemetry.io/collector/extension v1.56.0
-	go.opentelemetry.io/collector/extension/extensionauth v1.56.0
+	go.opentelemetry.io/collector/extension/extensionauth v1.57.0
 	go.opentelemetry.io/collector/extension/xextension v0.150.0
 	go.opentelemetry.io/collector/filter v0.150.0
 	go.opentelemetry.io/collector/otelcol v0.150.0
