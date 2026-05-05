@@ -54,7 +54,7 @@ func createMetrics(
 		return nil, stubStatusMetricsError
 	}
 
-	controllers = append(controllers, scraperhelper.AddScraper(metadata.Type, stubStatusMetrics))
+	controllers = append(controllers, scraperhelper.AddMetricsScraper(metadata.Type, stubStatusMetrics))
 
 	if len(cfg.AccessLogs) > 0 {
 		accessLogScraper := accesslog.NewScraper(params, cfg)
@@ -68,7 +68,7 @@ func createMetrics(
 			return nil, accessLogMetricsError
 		}
 
-		controllers = append(controllers, scraperhelper.AddScraper(metadata.Type, accessLogMetrics))
+		controllers = append(controllers, scraperhelper.AddMetricsScraper(metadata.Type, accessLogMetrics))
 	}
 
 	return scraperhelper.NewMetricsController(
