@@ -1360,14 +1360,14 @@ func createConfig() *Config {
 					"default": {
 						Receivers:  []string{"host_metrics", "nginx_metrics"},
 						Processors: []string{"batch/default_metrics"},
-						Exporters:  []string{"otlp/default"},
+						Exporters:  []string{"otlp_grpc/default"},
 					},
 				},
 				Logs: map[string]*Pipeline{
 					"default": {
 						Receivers:  []string{"tcplog/nginx_app_protect"},
 						Processors: []string{"securityviolationsfilter/default", "batch/default_logs"},
-						Exporters:  []string{"otlp/default"},
+						Exporters:  []string{"otlp_grpc/default"},
 					},
 				},
 			},
