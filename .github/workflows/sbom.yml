@@ -48,3 +48,4 @@ jobs:
           az-vault-client-id: ${{ secrets.AZ_VAULT_SEC_CLIENT_ID }}
           az-vault-tenant-id: ${{ secrets.AZ_VAULT_SEC_TENANT_ID }}
           az-vault-name: ${{ secrets.AZ_VAULT_SEC_NAME }}
+          ref: ''
