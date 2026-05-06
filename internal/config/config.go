@@ -214,9 +214,11 @@ func addDefaultPipelines(collector *Collector) {
 	if collector.Pipelines.Metrics == nil {
 		collector.Pipelines.Metrics = make(map[string]*Pipeline)
 	}
+
+	// add check if container and nginx plus or oss 
 	if _, ok := collector.Pipelines.Metrics[DefaultPipeline]; !ok {
 		collector.Pipelines.Metrics[DefaultPipeline] = &Pipeline{
-			Receivers:  []string{"host_metrics", "nginx_metrics"},
+			Receivers:  []string{"host_metrics"},
 			Processors: []string{"batch/default_metrics"},
 			Exporters:  []string{"otlp_grpc/default"},
 		}
