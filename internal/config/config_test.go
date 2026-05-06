@@ -1358,7 +1358,7 @@ func createConfig() *Config {
 			Pipelines: Pipelines{
 				Metrics: map[string]*Pipeline{
 					"default": {
-						Receivers:  []string{"host_metrics", "nginx_metrics"},
+						Receivers:  []string{"host_metrics"},
 						Processors: []string{"batch/default_metrics"},
 						Exporters:  []string{"otlp_grpc/default"},
 					},

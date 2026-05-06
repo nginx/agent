@@ -275,31 +275,7 @@ service:
     metrics/{{$pipelineName}}:
       receivers:
         {{- range $receiver := $pipeline.Receivers }}
-          {{- if eq $receiver "host_metrics" }}
-            {{- if ne $.Receivers.ContainerMetrics nil }}
-        - containermetrics
-            {{- end }}
-            {{- if ne $.Receivers.HostMetrics nil }}
-        - host_metrics
-            {{- end }}
-          {{- else if eq $receiver "nginx_metrics" }}
-            {{- range $.Receivers.NginxReceivers }}
-            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
-        - nginx/{{- .InstanceID -}}
-            {{- else }}
-        - nginx
-            {{- end }}
-            {{- end }}
-            {{- range $.Receivers.NginxPlusReceivers }}
-            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
-        - nginxplus/{{- .InstanceID -}}
-            {{- else }}
-        - nginxplus
-            {{- end }}
-            {{- end }}
-          {{- else }}
         - {{ $receiver }}
-          {{- end }}
         {{- end }}
       processors:
         {{- range $pipeline.Processors }}
