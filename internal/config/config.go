@@ -215,7 +215,7 @@ func addDefaultPipelines(collector *Collector) {
 		collector.Pipelines.Metrics = make(map[string]*Pipeline)
 	}
 
-	// add check if container and nginx plus or oss 
+	// add check if container and nginx plus or oss
 	if _, ok := collector.Pipelines.Metrics[DefaultPipeline]; !ok {
 		collector.Pipelines.Metrics[DefaultPipeline] = &Pipeline{
 			Receivers:  []string{"host_metrics"},
