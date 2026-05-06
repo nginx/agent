@@ -40,7 +40,7 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Generate SBOM from binary
-        uses:  nginx/compliance-rules/.github/actions/sbom@da13035e50240db4b6d05ffa096ba14e09974ad3
+        uses: nginx/compliance-rules/.github/actions/sbom@da13035e50240db4b6d05ffa096ba14e09974ad3
         with:
           binary-name: binaries/nginx_agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}
           product-name: nginx-agent
