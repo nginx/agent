@@ -23,62 +23,62 @@ resource_attributes:
 
 attributes:
   nginx.connections.outcome:
-    description: "The outcome of a connection"
+    description: The outcome of a connection
     type: string
     enum:
-      - "ACCEPTED"
-      - "ACTIVE"
-      - "HANDLED"
-      - "READING"
-      - "WRITING"
-      - "WAITING"
+      - ACCEPTED
+      - ACTIVE
+      - HANDLED
+      - READING
+      - WRITING
+      - WAITING
   nginx.status_range:
-    description: "A status code range or bucket for a HTTP response's status code."
+    description: A status code range or bucket for a HTTP response's status code.
     type: string
     enum:
-      - "1xx"
-      - "2xx"
-      - "3xx"
-      - "4xx"
-      - "5xx"
+      - 1xx
+      - 2xx
+      - 3xx
+      - 4xx
+      - 5xx
 metrics:
-  nginx.http.connections:
-    enabled: true
-    description: "The total number of connections, since NGINX was last started or reloaded."
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    unit: "connections"
-    attributes:  
-      - nginx.connections.outcome
   nginx.http.connection.count:
     enabled: true
-    description: "The current number of connections."
+    description: The current number of connections.
     gauge:
       value_type: int
-    unit: "connections"
+    unit: connections
     attributes:  
       - nginx.connections.outcome
-  nginx.http.requests:
+  nginx.http.connections:
     enabled: true
-    description: "The total number of client requests received, since NGINX was last started or reloaded."
+    description: The total number of connections, since NGINX was last started or reloaded.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "requests"
+    unit: connections
+    attributes:  
+      - nginx.connections.outcome
   nginx.http.request.count:
     enabled: true
-    description: "The total number of client requests received, since the last collection interval."
+    description: The total number of client requests received, since the last collection interval.
     gauge:
       value_type: int
-    unit: "requests"
+    unit: requests
+  nginx.http.requests:
+    enabled: true
+    description: The total number of client requests received, since NGINX was last started or reloaded.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: requests
   nginx.http.response.count:
     enabled: true
-    description: "The total number of HTTP responses since the last collection interval, grouped by status code range."
+    description: The total number of HTTP responses since the last collection interval, grouped by status code range.
     gauge:
       value_type: int
-    unit: "responses"
+    unit: responses
     attributes:  
       - nginx.status_range
