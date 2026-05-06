@@ -63,7 +63,7 @@ case "$ID" in
             cleanup
         fi
         ;;
-    rhel|fedora|centos|amzn|almalinux|rocky)
+    rhel|fedora|centos|amzn|almalinux|rocky|ol)
         if [ "$1" = "0" ]; then
             stop_agent_systemd
             disable_agent_systemd
