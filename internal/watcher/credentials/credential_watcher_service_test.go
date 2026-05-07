@@ -33,6 +33,9 @@ func TestCredentialWatcherService_TestNewCredentialWatcherService(t *testing.T) 
 func TestCredentialWatcherService_Watch(t *testing.T) {
 	ctx := context.Background()
 	cws := NewCredentialWatcherService(types.AgentConfig(), model.Command)
+	cws.agentConfig.Command.TLS = &config.TLSConfig{
+		SkipVerify: true,
+	}
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	cws.watcher = watcher
@@ -140,6 +143,8 @@ func TestCredentialWatcherService_watchFiles(t *testing.T) {
 func TestCredentialWatcherService_checkForUpdates(t *testing.T) {
 	ctx := context.Background()
 	cws := NewCredentialWatcherService(types.AgentConfig(), model.Command)
+	cws.agentConfig.Command.TLS = nil
+	cws.agentConfig.Command.Auth = nil
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	cws.watcher = watcher
