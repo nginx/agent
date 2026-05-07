@@ -6,6 +6,7 @@
 package grpc
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -13,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/nginx/agent/v3/test/stub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -82,6 +84,7 @@ func Test_GrpcConnection(t *testing.T) {
 func Test_GetDialOptions(t *testing.T) {
 	tests := []struct {
 		agentConfig *config.Config
+		checkLog    func(*testing.T, string)
 		name        string
 		expected    int
 		createCerts bool
@@ -184,11 +187,18 @@ func Test_GetDialOptions(t *testing.T) {
 			},
 			expected:    7,
 			createCerts: false,
+			checkLog: func(t *testing.T, logOutput string) {
+				t.Helper()
+				require.Contains(t, logOutput, "level=ERROR msg=\"Unable to add transport credentials to gRPC dial",
+					"should log TLS error at ERROR level")
+			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
 			if test.createCerts {
 				tmpDir := t.TempDir()
 				// not mTLS scripts
@@ -211,6 +221,10 @@ func Test_GetDialOptions(t *testing.T) {
 			options := DialOptions(test.agentConfig, test.agentConfig.Command, "123")
 			assert.NotNil(tt, options)
 			assert.Len(tt, options, test.expected)
+
+			if test.checkLog != nil {
+				test.checkLog(tt, logBuf.String())
+			}
 		})
 	}
 }
