@@ -60,7 +60,7 @@ permissions:
 jobs:
   vars:
     name: Set workflow variables
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       tag_release: ${{steps.vars.outputs.tag_release }}
       github_release: ${{steps.vars.outputs.github_release }}
@@ -83,7 +83,7 @@ jobs:
 
   release-draft:
     name: Update Release Draft
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [vars]
     permissions:
       contents: write # Needed to create draft release
@@ -181,7 +181,7 @@ jobs:
 
   tag-release:
     name: Tag Release
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [vars,release-draft]
     permissions:
       contents: write # Needed to tag a release
@@ -298,7 +298,7 @@ jobs:
   merge-release:
     if: ${{ needs.vars.outputs.create_pull_request == 'true' }}
     name: Merge release branch back into main branch
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [vars,tag-release]
     permissions:
       pull-requests: write # Needed to create pull request back into main branch

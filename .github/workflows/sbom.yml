@@ -18,7 +18,7 @@ permissions:
 jobs:
   generate-sbom:
     name: Create SBOM Document for Agent Go binary
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
       id-token: write # for OIDC authentication
@@ -40,7 +40,7 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Generate SBOM from binary
-        uses: nginx/compliance-rules/.github/actions/sbom@refs/heads/main
+        uses: nginx/compliance-rules/.github/actions/sbom@da13035e50240db4b6d05ffa096ba14e09974ad3
         with:
           binary-name: binaries/nginx_agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}
           product-name: nginx-agent
@@ -48,3 +48,4 @@ jobs:
           az-vault-client-id: ${{ secrets.AZ_VAULT_SEC_CLIENT_ID }}
           az-vault-tenant-id: ${{ secrets.AZ_VAULT_SEC_TENANT_ID }}
           az-vault-name: ${{ secrets.AZ_VAULT_SEC_NAME }}
+          ref: ''

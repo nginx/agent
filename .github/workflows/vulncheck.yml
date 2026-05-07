@@ -20,7 +20,7 @@ permissions:
 jobs:
   vulncheck:
     name: Vulnerability Check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       security-events: write # for reporting vulnerabilities via code-scanning API
     env:
@@ -51,7 +51,7 @@ jobs:
           cache: true
 
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
 
       - name: Run govulncheck
         id: govulncheck

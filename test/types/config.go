@@ -31,7 +31,6 @@ const (
 
 	maxParallelFileOperations = 5
 	reloadMonitoringPeriod    = 400 * time.Millisecond
-	connectionResetTimeout    = 200 * time.Millisecond
 )
 
 // Produces a populated Agent Config for testing usage.
@@ -59,7 +58,6 @@ func AgentConfig() *config.Config {
 				MaxFileSize:               1,
 				FileChunkSize:             1,
 				MaxParallelFileOperations: maxParallelFileOperations,
-				ConnectionResetTimeout:    connectionResetTimeout,
 			},
 			Backoff: &config.BackOff{
 				InitialInterval:     commonInitialInterval,
@@ -143,7 +141,7 @@ func AgentConfig() *config.Config {
 					"default": {
 						Receivers:  []string{"host_metrics"},
 						Processors: []string{"batch/default"},
-						Exporters:  []string{"otlp/default"},
+						Exporters:  []string{"otlp_grpc/default"},
 					},
 				},
 			},

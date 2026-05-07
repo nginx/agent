@@ -23,9 +23,9 @@ const operatorType = "access_log_file_input"
 
 // Config is the configuration of a file input operator
 type Config struct {
-	helper.InputConfig  `mapstructure:",squash"`
-	AccessLogFormat     string `mapstructure:"access_log_format"`
 	fileconsumer.Config `mapstructure:",squash"`
+	AccessLogFormat     string `mapstructure:"access_log_format"`
+	helper.InputConfig  `mapstructure:",squash"`
 }
 
 func init() {
