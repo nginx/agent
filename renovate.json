@@ -46,5 +46,5 @@
         }
     ],
     "rebaseWhen": "behind-base-branch",
-    "baseBranchPatterns": ["main"]
+    "baseBranchPatterns": ["main", "dev-v2"]
 }
