@@ -1,39 +1,13 @@
 receivers:
+  containermetrics:
+    collection_interval: 1m0s
   hostmetrics:
     collection_interval: 1m0s
     initial_delay: 1s
     scrapers:
-      cpu:
-        metrics:
-          system.cpu.utilization:
-            enabled: true
-          system.cpu.logical.count:
-            enabled: true
-      disk:
-      filesystem:
-      memory:
-        metrics:
-          system.memory.limit:
-            enabled: true
       network:
-  nginx:
-    instance_id: "cd2d5dc0-c528-3f37-b83c-727fd4010777"
-    api_details:
-      url: "http://localhost:8080/api"
-      listen: "localhost:8080"
-      location: "/api"
-      ca: ""
-    collection_interval: 1m0s
-    access_logs:
-      - log_format: "$$remote_addr - $$remote_user [$$time_local] \"$$request\" $$status $$body_bytes_sent \"$$http_referer\" \"$$http_user_agent\" \"$$http_x_forwarded_for\" \"$$bytes_sent\" \"$$request_length\" \"$$request_time\" \"$$gzip_ratio\" $$server_protocol "
-        file_path: "/var/log/nginx/access.log"
 
 processors:
-  resource/default:
-    attributes:
-      - key: resource.id
-        action: insert
-        value: 3a29f8ff-ad0c-3f97-9ae6-03582a160d84
   batch/default_logs:
     send_batch_size: 100
     timeout: 1m0s
@@ -46,7 +20,7 @@ processors:
 
 exporters:
   otlp_grpc/default:
-    endpoint: "agent.connect.nginxlab.net:443"
+    endpoint: "managementPlane:9092"
     timeout: 10s
     retry_on_failure:
       enabled: true
@@ -54,42 +28,25 @@ exporters:
       max_interval: 60s
       max_elapsed_time: 10m
     tls:
-      insecure: false
-      insecure_skip_verify: false
-      
-      
-      
-      
-    auth:
-      authenticator: headers_setter
+      insecure: true
 extensions:
-  headers_setter:
-    headers:
-      - action: "insert"
-        key: "authorization"
-        value: "ho58fAyb/UJnr21RWsMAfc2opKG/0tETWCUJZBv9olc="
-      - action: "insert"
-        key: "uuid"
-        value: "3a29f8ff-ad0c-3f97-9ae6-03582a160d84"
 
 service:
   telemetry:
     metrics:
       level: none
     logs:
-      level: INFO
+      level: DEBUG
       output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]
       error_output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]
   extensions:
-    - headers_setter
 
   pipelines:
     metrics/default:
       receivers:
+        - containermetrics
         - hostmetrics
-        - nginx
       processors:
         - batch/default_metrics
-        - resource/default
       exporters:
         - otlp_grpc/default
