@@ -120,7 +120,7 @@ receivers:
 {{- end }}
 
 {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
-  tcplog/{{$index}}:
+  tcp_log/{{$index}}:
     listen_address: "{{- .ListenAddress -}}"
     operators:
 {{- range $index, $operator := .Operators }}
@@ -317,7 +317,7 @@ service:
       receivers:
         {{- range $receiver := $pipeline.Receivers }}
           {{- if eq $receiver "tcplog/nginx_app_protect" }}
-        - tcplog/nginx_app_protect
+        - tcp_log/nginx_app_protect
           {{- else }}
         - {{ $receiver }}
           {{- end }}
