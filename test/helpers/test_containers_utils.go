@@ -21,9 +21,10 @@ import (
 const configFilePermissions = 0o600
 
 type Parameters struct {
-	NginxConfigPath      string
-	NginxAgentConfigPath string
-	LogMessage           string
+	NginxConfigPath          string
+	NginxAgentConfigPath     string
+	NginxAgentOTELConfigPath string
+	LogMessage               string
 }
 
 type MockCollectorContainers struct {

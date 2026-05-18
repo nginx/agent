@@ -63,7 +63,7 @@ func Test_UpgradeFromV3(t *testing.T) {
 	// Verify Agent Package Path & get the path
 	verifyAgentPackageSize(t)
 
-	// verify agent v3 config has not changed
+	// verify agent v3 configs has not changed
 	validateAgentConfig(ctx, t, testContainer)
 
 	// validate agent manifest file
@@ -217,18 +217,28 @@ func packagePath(pkgDir, osReleaseContent string) string {
 func validateAgentConfig(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) {
 	tb.Helper()
 
-	agentConfigContent, err := testContainer.CopyFileFromContainer(ctx, "/etc/nginx-agent/nginx-agent.conf")
-	require.NoError(tb, err)
+	files := []struct {
+		containerPath string
+		expectedPath  string
+		logLabel      string
+	}{
+		{"/etc/nginx-agent/nginx-agent.conf", "./configs/nginx-agent-v3-valid-config.conf", "agent config"},
+		{"/etc/nginx-agent/opentelemetry-collector-agent.yaml", "./configs/expected-otel-config.yaml", "otel config"},
+	}
 
-	agentConfig, err := io.ReadAll(agentConfigContent)
-	require.NoError(tb, err)
+	for _, file := range files {
+		configContent, err := testContainer.CopyFileFromContainer(ctx, file.containerPath)
+		require.NoError(tb, err)
 
-	expectedConfig, err := os.ReadFile("./configs/nginx-agent-v3-valid-config.conf")
-	require.NoError(tb, err)
+		config, err := io.ReadAll(configContent)
+		require.NoError(tb, err)
 
-	expectedConfig = bytes.TrimSpace(expectedConfig)
-	agentConfig = bytes.TrimSpace(agentConfig)
+		expectedConfig, err := os.ReadFile(file.expectedPath)
+		require.NoError(tb, err)
 
-	assert.Equal(tb, string(expectedConfig), string(agentConfig))
-	tb.Log("agent config:", string(agentConfig))
+		expectedConfig = bytes.TrimSpace(expectedConfig)
+		config = bytes.TrimSpace(config)
+
+		assert.Equal(tb, string(expectedConfig), string(config))
+	}
 }
