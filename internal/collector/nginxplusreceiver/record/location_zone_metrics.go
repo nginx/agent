@@ -6,6 +6,7 @@
 package record
 
 import (
+	"github.com/nginx/agent/v3/internal/collector/metricsutil"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 	plusapi "github.com/nginx/nginx-plus-go-client/v3/client"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -59,7 +60,7 @@ func (lzm *LocationZoneMetrics) RecordLocationZoneMetrics(stats *plusapi.Stats, 
 		)
 
 		lzm.mb.RecordNginxHTTPRequestCountDataPoint(now,
-			lz.Requests-lzm.PreviousLocationZoneRequests[lzName],
+			metricsutil.Increase(lz.Requests, lzm.PreviousLocationZoneRequests[lzName]),
 			lzName,
 			metadata.AttributeNginxZoneTypeLOCATION,
 		)
@@ -110,32 +111,37 @@ func (lzm *LocationZoneMetrics) recordLocationZoneHTTPMetrics(lz plusapi.Locatio
 
 	// Requests
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(lz.Responses.Responses1xx)-lzm.PreviousLocationZoneResponses[lzName].OneHundredStatusRange,
+		metricsutil.Increase(
+			int64(lz.Responses.Responses1xx), lzm.PreviousLocationZoneResponses[lzName].OneHundredStatusRange),
 		metadata.AttributeNginxStatusRange1xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
 
 	// Response Count Status
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(lz.Responses.Responses2xx)-lzm.PreviousLocationZoneResponses[lzName].TwoHundredStatusRange,
+		metricsutil.Increase(
+			int64(lz.Responses.Responses2xx), lzm.PreviousLocationZoneResponses[lzName].TwoHundredStatusRange),
 		metadata.AttributeNginxStatusRange2xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
 
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(lz.Responses.Responses3xx)-lzm.PreviousLocationZoneResponses[lzName].ThreeHundredStatusRange,
+		metricsutil.Increase(
+			int64(lz.Responses.Responses3xx), lzm.PreviousLocationZoneResponses[lzName].ThreeHundredStatusRange),
 		metadata.AttributeNginxStatusRange3xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
 
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(lz.Responses.Responses4xx)-lzm.PreviousLocationZoneResponses[lzName].FourHundredStatusRange,
+		metricsutil.Increase(
+			int64(lz.Responses.Responses4xx), lzm.PreviousLocationZoneResponses[lzName].FourHundredStatusRange),
 		metadata.AttributeNginxStatusRange4xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
 
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(lz.Responses.Responses5xx)-lzm.PreviousLocationZoneResponses[lzName].FiveHundredStatusRange,
+		metricsutil.Increase(
+			int64(lz.Responses.Responses5xx), lzm.PreviousLocationZoneResponses[lzName].FiveHundredStatusRange),
 		metadata.AttributeNginxStatusRange5xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
