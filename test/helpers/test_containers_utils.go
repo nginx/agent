@@ -107,6 +107,11 @@ func StartContainer(
 				ContainerFilePath: "/etc/nginx/mime.types",
 				FileMode:          configFilePermissions,
 			},
+			{
+				HostFilePath:      parameters.NginxAgentOTELConfigPath,
+				ContainerFilePath: "/etc/nginx-agent/my_config.yaml",
+				FileMode:          configFilePermissions,
+			},
 		},
 		Env: env,
 	}
