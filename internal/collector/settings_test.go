@@ -200,7 +200,7 @@ func TestTemplateWrite(t *testing.T) {
 	}
 	cfg.Collector.Pipelines.Logs = make(map[string]*config.Pipeline)
 	cfg.Collector.Pipelines.Logs["default"] = &config.Pipeline{
-		Receivers:  []string{"tcplog/default"},
+		Receivers:  []string{"tcp_log/default"},
 		Processors: []string{"securityviolationsfilter/default", "resource/default", "batch/default"},
 		Exporters:  []string{"otlp_grpc/default", "debug"},
 	}
