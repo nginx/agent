@@ -6,6 +6,7 @@
 package helpers
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
@@ -27,6 +28,11 @@ type Parameters struct {
 	LogMessage               string
 }
 
+type ConfigFileDescriptor struct {
+	ContainerPath string
+	ExpectedPath  string
+	LogLabel      string
+}
 type MockCollectorContainers struct {
 	Agent      testcontainers.Container
 	Otel       testcontainers.Container
@@ -478,4 +484,54 @@ func LogAndTerminateStack(ctx context.Context, tb testing.TB,
 	logAndTerminate("Agent", containers.Agent)
 	logAndTerminate("Otel Collector", containers.Otel)
 	logAndTerminate("Prometheus", containers.Prometheus)
+}
+
+// ExtractFileFromContainer copies a file from the container at the given path and returns its contents as a string.
+func ExtractFileFromContainer(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	containerPath string,
+) string {
+	tb.Helper()
+	fileContent, err := testContainer.CopyFileFromContainer(ctx, containerPath)
+	require.NoError(tb, err)
+
+	content, err := io.ReadAll(fileContent)
+	require.NoError(tb, err)
+	content = bytes.TrimSpace(content)
+
+	return string(content)
+}
+
+// ValidateAgentConfig compares files in the container to expected files on disk.
+func ValidateAgentConfig(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	files []ConfigFileDescriptor,
+) {
+	tb.Helper()
+
+	for _, file := range files {
+		config := ExtractFileFromContainer(ctx, tb, testContainer, file.ContainerPath)
+		expectedConfig, err := os.ReadFile(file.ExpectedPath)
+		require.NoError(tb, err)
+
+		expectedConfig = bytes.TrimSpace(expectedConfig)
+		assert.Equal(tb, string(expectedConfig), config)
+	}
+}
+
+// AssertStringInContainerFile asserts that a string exists in a file inside the container.
+func AssertStringInContainerFile(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	containerPath string,
+	searchString string,
+) {
+	tb.Helper()
+	content := ExtractFileFromContainer(ctx, tb, testContainer, containerPath)
+	assert.Contains(tb, content, searchString, "Expected phrase not found in file: %s", containerPath)
 }

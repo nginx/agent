@@ -6,7 +6,6 @@
 package upgrade
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"log/slog"
@@ -46,6 +45,7 @@ func Test_UpgradeFromV3(t *testing.T) {
 		require.NoError(t, err)
 	}(ctx)
 
+	// Prepare upgrade
 	testContainer, teardownTest := upgradeSetup(t, true, "default", containerNetwork)
 	defer teardownTest(t)
 
@@ -61,30 +61,40 @@ func Test_UpgradeFromV3(t *testing.T) {
 	verifyAgentVersion(ctx, t, testContainer, oldVersion)
 
 	// Expected files to validate after upgrade
-	files := []struct {
-		containerPath string
-		expectedPath  string
-		logLabel      string
-	}{
-		{agentConfigDir + "/nginx-agent.conf", "./configs/default/nginx-agent.conf", "agent config"},
-		{agentConfigDir + "/opentelemetry-collector-agent.yaml", "./configs/default/otel-config.yaml", "otel config"},
-		{agentConfigDir + "/my_config.yaml", "./configs/default/my_config.yaml", "otel config"},
+	files := []helpers.ConfigFileDescriptor{
+		{
+			ContainerPath: agentConfigDir + "/nginx-agent.conf",
+			ExpectedPath:  "./configs/default/nginx-agent.conf",
+			LogLabel:      "agent config",
+		},
+		{
+			ContainerPath: agentConfigDir + "/my_config.yaml",
+			ExpectedPath:  "./configs/default/my_config.yaml",
+			LogLabel:      "otel config",
+		},
 	}
-	// verify agent v3 configs has not changed
-	validateAgentConfig(ctx, t, testContainer, files)
 
 	// validate agent manifest file
 	expected := map[string]*model.ManifestFile{
 		"/etc/nginx/nginx.conf": {
 			ManifestFileMeta: &model.ManifestFileMeta{
-				Name:       "etc/nginx/nginx.conf",
+				Name:       "/etc/nginx/nginx.conf",
 				Hash:       "XEaOA4w+aT5fmNMISPwavBroLVYlkJf9sjKFTnWkTP8=",
 				Size:       1142,
 				Referenced: true,
 			},
 		},
 	}
+	// Check manifest file contents
 	utils.CheckManifestFile(t, testContainer, expected)
+
+	helpers.ValidateAgentConfig(ctx, t, testContainer, files)
+
+	// Validate agent otel conf is present
+	previousOtelConf := helpers.ExtractFileFromContainer(ctx, t,
+		testContainer,
+		agentConfigDir+"/opentelemetry-collector-agent.yaml")
+	assert.NotEmpty(t, previousOtelConf)
 
 	slog.Info("finished agent v3 upgrade tests")
 }
@@ -114,25 +124,43 @@ func Test_UpgradeWithCustomOTELConfig(t *testing.T) {
 	verifyAgentVersion(ctx, t, testContainer, oldVersion)
 
 	// Expected files to validate after upgrade
-	files := []struct {
-		containerPath string
-		expectedPath  string
-		logLabel      string
-	}{
-		{agentConfigDir + "/nginx-agent.conf", "./configs/otel/nginx-agent.conf", "agent config"},
-		{agentConfigDir + "/my_config.yaml", "./configs/otel/my_config.yaml", "otel custom config"},
-		{agentConfigDir + "/opentelemetry-collector-agent.yaml", "./configs/otel/otel-config.yaml", "otel config"},
+	files := []helpers.ConfigFileDescriptor{
+		{
+			ContainerPath: agentConfigDir + "/nginx-agent.conf",
+			ExpectedPath:  "./configs/otel/nginx-agent.conf",
+			LogLabel:      "agent config",
+		},
+		{
+			ContainerPath: agentConfigDir + "/my_config.yaml",
+			ExpectedPath:  "./configs/otel/my_config.yaml",
+			LogLabel:      "otel custom config",
+		},
+		{
+			ContainerPath: agentConfigDir + "/opentelemetry-collector-agent.yaml",
+			ExpectedPath:  "./configs/otel/otel-config.yaml",
+			LogLabel:      "otel config",
+		},
 	}
 	// verify agent v3 configs has not changed
-	validateAgentConfig(ctx, t, testContainer, files)
+	helpers.ValidateAgentConfig(ctx, t, testContainer, files)
 
 	// Validate agent.log contains OTEL startup log
-	assertStringInContainerFile(ctx, t, testContainer, agentLogDir+"/agent.log", "Starting OTel collector")
-	assertStringInContainerFile(ctx, t, testContainer, agentLogDir+"/agent.log", "Merging additional OTel config files")
+	helpers.AssertStringInContainerFile(
+		ctx, t, testContainer, agentLogDir+"/agent.log", "Starting OTel collector",
+	)
+	helpers.AssertStringInContainerFile(
+		ctx,
+		t,
+		testContainer,
+		agentLogDir+"/agent.log",
+		"Merging additional OTel config files",
+	)
 
 	// Validate agent otel log contains specific logs
-	assertStringInContainerFile(ctx, t, testContainer, agentLogDir+"/opentelemetry-collector-agent.log",
-		"Everything is ready. Begin running and processing data.")
+	helpers.AssertStringInContainerFile(
+		ctx, t, testContainer, agentLogDir+"/opentelemetry-collector-agent.log",
+		"Everything is ready. Begin running and processing data.",
+	)
 
 	slog.Info("finished agent v3 upgrade tests with custom OTEL config")
 }
@@ -253,49 +281,4 @@ func agentVersion(ctx context.Context, tb testing.TB, testContainer testcontaine
 	output := strings.TrimSpace(string(stdoutStderr))
 
 	return output
-}
-
-func validateAgentConfig(
-	ctx context.Context,
-	tb testing.TB,
-	testContainer testcontainers.Container,
-	files []struct {
-		containerPath string
-		expectedPath  string
-		logLabel      string
-	},
-) {
-	tb.Helper()
-
-	for _, file := range files {
-		configContent, err := testContainer.CopyFileFromContainer(ctx, file.containerPath)
-		require.NoError(tb, err)
-
-		config, err := io.ReadAll(configContent)
-		require.NoError(tb, err)
-
-		expectedConfig, err := os.ReadFile(file.expectedPath)
-		require.NoError(tb, err)
-
-		expectedConfig = bytes.TrimSpace(expectedConfig)
-		config = bytes.TrimSpace(config)
-		assert.Equal(tb, string(expectedConfig), string(config))
-	}
-}
-
-func assertStringInContainerFile(
-	ctx context.Context,
-	tb testing.TB,
-	testContainer testcontainers.Container,
-	containerPath string,
-	searchString string,
-) {
-	tb.Helper()
-	fileContent, err := testContainer.CopyFileFromContainer(ctx, containerPath)
-	require.NoError(tb, err)
-
-	content, err := io.ReadAll(fileContent)
-	require.NoError(tb, err)
-
-	assert.Contains(tb, string(content), searchString, "Expected phrase not found in file: %s", containerPath)
 }
