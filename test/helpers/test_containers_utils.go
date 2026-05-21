@@ -65,7 +65,30 @@ func StartContainer(
 			"NGINX_LICENSE_JWT": nginxLicenseJwt,
 		}
 	}
-
+	files := []testcontainers.ContainerFile{
+		{
+			HostFilePath:      parameters.NginxAgentConfigPath,
+			ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
+			FileMode:          configFilePermissions,
+		},
+		{
+			HostFilePath:      parameters.NginxConfigPath,
+			ContainerFilePath: "/etc/nginx/nginx.conf",
+			FileMode:          configFilePermissions,
+		},
+		{
+			HostFilePath:      "../../config/nginx/mime.types",
+			ContainerFilePath: "/etc/nginx/mime.types",
+			FileMode:          configFilePermissions,
+		},
+	}
+	if parameters.NginxAgentOTELConfigPath != "" {
+		files = append(files, testcontainers.ContainerFile{
+			HostFilePath:      parameters.NginxAgentOTELConfigPath,
+			ContainerFilePath: "/etc/nginx-agent/my_config.yaml",
+			FileMode:          configFilePermissions,
+		})
+	}
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:       "../../../",
@@ -97,29 +120,8 @@ func StartContainer(
 				"agent",
 			},
 		},
-		Files: []testcontainers.ContainerFile{
-			{
-				HostFilePath:      parameters.NginxAgentConfigPath,
-				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
-				FileMode:          configFilePermissions,
-			},
-			{
-				HostFilePath:      parameters.NginxConfigPath,
-				ContainerFilePath: "/etc/nginx/nginx.conf",
-				FileMode:          configFilePermissions,
-			},
-			{
-				HostFilePath:      "../../config/nginx/mime.types",
-				ContainerFilePath: "/etc/nginx/mime.types",
-				FileMode:          configFilePermissions,
-			},
-			{
-				HostFilePath:      parameters.NginxAgentOTELConfigPath,
-				ContainerFilePath: "/etc/nginx-agent/my_config.yaml",
-				FileMode:          configFilePermissions,
-			},
-		},
-		Env: env,
+		Files: files,
+		Env:   env,
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
