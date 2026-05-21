@@ -1,5 +1,5 @@
 receivers:
-  containermetrics:
+  container_metrics:
     collection_interval: 1s
   host_metrics:
     collection_interval: 1m0s
@@ -124,7 +124,7 @@ service:
     metrics/default:
       receivers:
         - host_metrics
-        - containermetrics
+        - container_metrics
         - otlp/default
         - nginx
         - nginxplus/456

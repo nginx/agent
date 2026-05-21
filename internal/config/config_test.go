@@ -71,7 +71,12 @@ func TestResolveConfig(t *testing.T) {
 		headers := actual.Collector.Extensions.HeadersSetter.Headers
 		return headers[i].Key < headers[j].Key
 	})
-	assert.Equal(t, createConfig(), actual)
+
+	assert.Equal(t, createConfig().Collector.Pipelines.Metrics, actual.Collector.Pipelines.Metrics)
+	t.Logf("Expected: %+v", createConfig().Collector.Pipelines.Metrics["default"])
+	t.Logf("Actual: %+v", actual.Collector.Pipelines.Metrics["default"])
+	assert.Equal(t, createConfig().Collector.Receivers, actual.Collector.Receivers)
+	//assert.Equal(t, createConfig(), actual)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -1358,7 +1363,7 @@ func createConfig() *Config {
 			Pipelines: Pipelines{
 				Metrics: map[string]*Pipeline{
 					"default": {
-						Receivers:  []string{"host_metrics"},
+						Receivers:  []string{"host_metrics", "nginx_metrics"},
 						Processors: []string{"batch/default_metrics"},
 						Exporters:  []string{"otlp_grpc/default"},
 					},

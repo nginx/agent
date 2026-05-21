@@ -215,10 +215,19 @@ func addDefaultPipelines(collector *Collector) {
 		collector.Pipelines.Metrics = make(map[string]*Pipeline)
 	}
 
+	isContainer, err := host.NewInfo().IsContainer()
+	if err != nil {
+		slog.Debug("No container information found", "error", err)
+	}
+	receivers := []string{"host_metrics", "nginx_metrics"}
+	if isContainer {
+		receivers = append(receivers, "container_metrics")
+	}
+
 	// add check if container and nginx plus or oss
 	if _, ok := collector.Pipelines.Metrics[DefaultPipeline]; !ok {
 		collector.Pipelines.Metrics[DefaultPipeline] = &Pipeline{
-			Receivers:  []string{"host_metrics"},
+			Receivers:  receivers,
 			Processors: []string{"batch/default_metrics"},
 			Exporters:  []string{"otlp_grpc/default"},
 		}
@@ -1206,6 +1215,7 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	// Collect receiver configurations
 	var receivers Receivers
 	err := resolveMapStructure(CollectorReceiversKey, &receivers)
+	slog.Info("recievers", "", receivers)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal collector receivers config: %w", err)
 	}

@@ -1,6 +1,6 @@
 receivers:
 {{- if ne .Receivers.ContainerMetrics nil }}
-  containermetrics:
+  container_metrics:
     {{- if .Receivers.ContainerMetrics.CollectionInterval }}
     collection_interval: {{ .Receivers.ContainerMetrics.CollectionInterval }}
     {{- end}}
@@ -275,7 +275,24 @@ service:
     metrics/{{$pipelineName}}:
       receivers:
         {{- range $receiver := $pipeline.Receivers }}
+          {{- if eq $receiver "nginx_metrics" }}
+            {{- range $.Receivers.NginxReceivers }}
+            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
+        - nginx/{{- .InstanceID -}}
+            {{- else }}
+        - nginx
+            {{- end }}
+            {{- end }}
+            {{- range $.Receivers.NginxPlusReceivers }}
+            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
+        - nginxplus/{{- .InstanceID -}}
+            {{- else }}
+        - nginxplus
+            {{- end }}
+            {{- end }}
+          {{- else }}
         - {{ $receiver }}
+          {{- end }}
         {{- end }}
       processors:
         {{- range $pipeline.Processors }}
