@@ -39,90 +39,119 @@ func buildSampleConfig() *crossplane.Config {
 	return &crossplane.Config{Parsed: []*crossplane.Directive{events, http}}
 }
 
-func TestCrossplaneConfigTraverse_VisitsEveryDirective(t *testing.T) {
-	cfg := buildSampleConfig()
+func TestCrossplaneConfigTraverse_TableDriven(t *testing.T) {
+	type traverseTestCase struct {
+		name        string
+		cfg         *crossplane.Config
+		cb          func(parent, current *crossplane.Directive) (bool, error)
+		wantVisited []string
+		wantCount   int
+		wantErr     error
+		assertFn    func(t *testing.T, visited []string, count int, err error)
+	}
 
-	visited := make([]string, 0)
-	err := CrossplaneConfigTraverse(cfg, func(_, current *crossplane.Directive) (bool, error) {
-		visited = append(visited, current.Directive)
-		return true, nil
-	})
-	require.NoError(t, err)
-	assert.ElementsMatch(t,
-		[]string{"events", "worker_connections", "http", "server", "listen"},
-		visited,
-	)
-}
-
-func TestCrossplaneConfigTraverse_StopsOnFalse(t *testing.T) {
-	cfg := buildSampleConfig()
-
-	count := 0
-	err := CrossplaneConfigTraverse(cfg, func(_, current *crossplane.Directive) (bool, error) {
-		count++
-		return false, nil
-	})
-	require.NoError(t, err)
-	assert.Equal(t, 1, count, "callback should be invoked exactly once before stopping")
-}
-
-func TestCrossplaneConfigTraverse_StopsOnFalseInsideBlock(t *testing.T) {
-	cfg := buildSampleConfig()
-
-	visited := make([]string, 0)
-	err := CrossplaneConfigTraverse(cfg, func(_, current *crossplane.Directive) (bool, error) {
-		visited = append(visited, current.Directive)
-		if current.Directive == "server" {
-			return false, nil
-		}
-		return true, nil
-	})
-	require.NoError(t, err)
-	assert.NotContains(t, visited, "listen")
-	assert.Contains(t, visited, "server")
-}
-
-func TestCrossplaneConfigTraverse_PropagatesError(t *testing.T) {
-	cfg := buildSampleConfig()
+	sampleCfg := buildSampleConfig()
 	wantErr := errors.New("callback boom")
+	wantTopErr := errors.New("top error")
 
-	calls := 0
-	err := CrossplaneConfigTraverse(cfg, func(_, current *crossplane.Directive) (bool, error) {
-		calls++
-		if current.Directive == "worker_connections" {
-			return false, wantErr
-		}
-		return true, nil
-	})
+	tests := []traverseTestCase{
+		{
+			name: "Test 1: VisitsEveryDirective",
+			cfg:  sampleCfg,
+			cb: func(_, current *crossplane.Directive) (bool, error) {
+				return true, nil
+			},
+			wantVisited: []string{"events", "worker_connections", "http", "server", "listen"},
+			assertFn: func(t *testing.T, visited []string, _ int, err error) {
+				require.NoError(t, err)
+				assert.ElementsMatch(t, []string{"events", "worker_connections", "http", "server", "listen"}, visited)
+			},
+		},
+		{
+			name: "Test 2: StopsOnFalse",
+			cfg:  sampleCfg,
+			cb: func(_, current *crossplane.Directive) (bool, error) {
+				return false, nil
+			},
+			wantCount: 1,
+			assertFn: func(t *testing.T, _ []string, count int, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, 1, count, "callback should be invoked exactly once before stopping")
+			},
+		},
+		{
+			name: "Test 3: StopsOnFalseInsideBlock",
+			cfg:  sampleCfg,
+			cb: func(_, current *crossplane.Directive) (bool, error) {
+				if current.Directive == "server" {
+					return false, nil
+				}
+				return true, nil
+			},
+			assertFn: func(t *testing.T, visited []string, _ int, err error) {
+				require.NoError(t, err)
+				assert.NotContains(t, visited, "listen")
+				assert.Contains(t, visited, "server")
+			},
+		},
+		{
+			name: "Test 4: PropagatesError",
+			cfg:  sampleCfg,
+			cb: func(_, current *crossplane.Directive) (bool, error) {
+				if current.Directive == "worker_connections" {
+					return false, wantErr
+				}
+				return true, nil
+			},
+			wantErr: wantErr,
+			assertFn: func(t *testing.T, _ []string, count int, err error) {
+				require.ErrorIs(t, err, wantErr)
+				assert.Greater(t, count, 0)
+			},
+		},
+		{
+			name: "Test 5: PropagatesErrorFromTopLevel",
+			cfg:  sampleCfg,
+			cb: func(parent, _ *crossplane.Directive) (bool, error) {
+				if parent == nil {
+					return false, wantTopErr
+				}
+				return true, nil
+			},
+			wantErr: wantTopErr,
+			assertFn: func(t *testing.T, _ []string, _ int, err error) {
+				assert.ErrorIs(t, err, wantTopErr)
+			},
+		},
+		{
+			name: "Test 6: EmptyConfig",
+			cfg:  &crossplane.Config{Parsed: nil},
+			cb: func(_, _ *crossplane.Directive) (bool, error) {
+				return true, nil
+			},
+			assertFn: func(t *testing.T, _ []string, called int, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, 0, called, "callback should not be invoked for empty config")
+			},
+		},
+	}
 
-	require.ErrorIs(t, err, wantErr)
-	assert.Greater(t, calls, 0)
-}
-
-func TestCrossplaneConfigTraverse_PropagatesErrorFromTopLevel(t *testing.T) {
-	cfg := buildSampleConfig()
-	wantErr := errors.New("top error")
-
-	err := CrossplaneConfigTraverse(cfg, func(parent, _ *crossplane.Directive) (bool, error) {
-		if parent == nil {
-			return false, wantErr
-		}
-		return true, nil
-	})
-	assert.ErrorIs(t, err, wantErr)
-}
-
-func TestCrossplaneConfigTraverse_EmptyConfig(t *testing.T) {
-	cfg := &crossplane.Config{Parsed: nil}
-
-	called := false
-	err := CrossplaneConfigTraverse(cfg, func(_, _ *crossplane.Directive) (bool, error) {
-		called = true
-		return true, nil
-	})
-
-	require.NoError(t, err)
-	assert.False(t, called, "callback should not be invoked for empty config")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			visited := make([]string, 0)
+			count := 0
+			err := CrossplaneConfigTraverse(tt.cfg, func(parent, current *crossplane.Directive) (bool, error) {
+				count++
+				if current != nil {
+					visited = append(visited, current.Directive)
+				}
+				return tt.cb(parent, current)
+			})
+			if tt.assertFn != nil {
+				tt.assertFn(t, visited, count, err)
+			}
+		})
+	}
 }
 
 func TestCrossplaneConfigTraverse_DeepNesting(t *testing.T) {

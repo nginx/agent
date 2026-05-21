@@ -21,17 +21,18 @@ func TestConfig_AllowedDirectories(t *testing.T) {
 		want []string
 	}{
 		{
-			name: "empty map returns empty slice",
+			name: "Test 1: Empty map returns empty slice",
 			m:    map[string]struct{}{},
 			want: []string{},
 		},
 		{
-			name: "single dir",
+			name: "Test 2: Single dir",
+
 			m:    map[string]struct{}{"/etc/nginx": {}},
 			want: []string{"/etc/nginx"},
 		},
 		{
-			name: "multiple dirs",
+			name: "Test 3: Multiple dirs",
 			m: map[string]struct{}{
 				"/etc/nginx":     {},
 				"/usr/share/nms": {},
@@ -41,7 +42,7 @@ func TestConfig_AllowedDirectories(t *testing.T) {
 			want: []string{"/etc/nginx", "/usr/share/nms", "/var/log/nginx", "/usr/local/etc"},
 		},
 		{
-			name: "nil map",
+			name: "Test 4: nil map",
 			m:    nil,
 			want: []string{},
 		},
@@ -63,10 +64,30 @@ func TestConfig_IsGrpcServerConfigured(t *testing.T) {
 		port   int
 		expect bool
 	}{
-		{"both set", "localhost", 1234, true},
-		{"host empty", "", 1234, false},
-		{"port zero", "localhost", 0, false},
-		{"both zero", "", 0, false},
+		{
+			name:   "both set",
+			host:   "localhost",
+			port:   1234,
+			expect: true,
+		},
+		{
+			name:   "host empty",
+			host:   "",
+			port:   1234,
+			expect: false,
+		},
+		{
+			name:   "port zero",
+			host:   "localhost",
+			port:   0,
+			expect: false,
+		},
+		{
+			name:   "both zero",
+			host:   "",
+			port:   0,
+			expect: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -84,13 +105,48 @@ func TestConfig_IsFeatureEnabled(t *testing.T) {
 		query    string
 		expect   bool
 	}{
-		{"present", []string{"metrics", "events"}, "metrics", true},
-		{"present in middle", []string{"a", "b", "c"}, "b", true},
-		{"absent", []string{"metrics"}, "events", false},
-		{"empty list", []string{}, "metrics", false},
-		{"nil list", nil, "metrics", false},
-		{"empty query against empty list", []string{}, "", false},
-		{"case sensitive", []string{"Metrics"}, "metrics", false},
+		{
+			name:     "present",
+			features: []string{"metrics", "events"},
+			query:    "metrics",
+			expect:   true,
+		},
+		{
+			name:     "present in middle",
+			features: []string{"a", "b", "c"},
+			query:    "b",
+			expect:   true,
+		},
+		{
+			name:     "absent",
+			features: []string{"metrics"},
+			query:    "events",
+			expect:   false,
+		},
+		{
+			name:     "empty list",
+			features: []string{},
+			query:    "metrics",
+			expect:   false,
+		},
+		{
+			name:     "nil list",
+			features: nil,
+			query:    "metrics",
+			expect:   false,
+		},
+		{
+			name:     "empty query against empty list",
+			features: []string{},
+			query:    "",
+			expect:   false,
+		},
+		{
+			name:     "case sensitive",
+			features: []string{"Metrics"},
+			query:    "metrics",
+			expect:   false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -108,10 +164,30 @@ func TestConfig_IsExtensionEnabled(t *testing.T) {
 		query      string
 		expect     bool
 	}{
-		{"present", []string{"nginx-app-protect"}, "nginx-app-protect", true},
-		{"absent", []string{"nginx-app-protect"}, "advanced-metrics", false},
-		{"empty list", []string{}, "advanced-metrics", false},
-		{"nil list", nil, "advanced-metrics", false},
+		{
+			name:       "present",
+			extensions: []string{"nginx-app-protect"},
+			query:      "nginx-app-protect",
+			expect:     true,
+		},
+		{
+			name:       "absent",
+			extensions: []string{"nginx-app-protect"},
+			query:      "advanced-metrics",
+			expect:     false,
+		},
+		{
+			name:       "empty list",
+			extensions: []string{},
+			query:      "advanced-metrics",
+			expect:     false,
+		},
+		{
+			name:       "nil list",
+			extensions: nil,
+			query:      "advanced-metrics",
+			expect:     false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -188,15 +264,51 @@ func TestConfig_IsFileAllowed(t *testing.T) {
 		path   string
 		expect bool
 	}{
-		{"absolute path inside allowed dir", "/etc/nginx/nginx.conf", true},
-		{"absolute path inside second allowed dir", "/var/log/nginx/access.log", true},
-		{"absolute path matches dir prefix exactly", "/etc/nginx", true},
-		{"absolute path outside allowed dirs", "/etc/passwd", false},
-		{"multiple rooted directories in allowed dir", "/etc/nginx/conf.d/default.conf", true},
-		{"relative path is rejected", "etc/nginx/nginx.conf", false},
-		{"empty path", "", false},
-		{"dot-relative", "./nginx.conf", false},
-		{"prefix-only match (current behaviour)", "/etc/nginxfoo/x.conf", true},
+		{
+			name:   "absolute path inside allowed dir",
+			path:   "/etc/nginx/nginx.conf",
+			expect: true,
+		},
+		{
+			name:   "absolute path inside second allowed dir",
+			path:   "/var/log/nginx/access.log",
+			expect: true,
+		},
+		{
+			name:   "absolute path matches dir prefix exactly",
+			path:   "/etc/nginx",
+			expect: true,
+		},
+		{
+			name:   "absolute path outside allowed dirs",
+			path:   "/etc/passwd",
+			expect: false,
+		},
+		{
+			name:   "multiple rooted directories in allowed dir",
+			path:   "/etc/nginx/conf.d/default.conf",
+			expect: true,
+		},
+		{
+			name:   "relative path is rejected",
+			path:   "etc/nginx/nginx.conf",
+			expect: false,
+		},
+		{
+			name:   "empty path",
+			path:   "",
+			expect: false,
+		},
+		{
+			name:   "dot-relative",
+			path:   "./nginx.conf",
+			expect: false,
+		},
+		{
+			name:   "prefix-only match (current behaviour)",
+			path:   "/etc/nginxfoo/x.conf",
+			expect: true,
+		},
 	}
 
 	for _, tt := range tests {
