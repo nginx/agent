@@ -1215,7 +1215,6 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	// Collect receiver configurations
 	var receivers Receivers
 	err := resolveMapStructure(CollectorReceiversKey, &receivers)
-	slog.Info("recievers", "", receivers)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal collector receivers config: %w", err)
 	}

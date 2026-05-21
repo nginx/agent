@@ -72,11 +72,7 @@ func TestResolveConfig(t *testing.T) {
 		return headers[i].Key < headers[j].Key
 	})
 
-	assert.Equal(t, createConfig().Collector.Pipelines.Metrics, actual.Collector.Pipelines.Metrics)
-	t.Logf("Expected: %+v", createConfig().Collector.Pipelines.Metrics["default"])
-	t.Logf("Actual: %+v", actual.Collector.Pipelines.Metrics["default"])
-	assert.Equal(t, createConfig().Collector.Receivers, actual.Collector.Receivers)
-	//assert.Equal(t, createConfig(), actual)
+	assert.Equal(t, createConfig(), actual)
 }
 
 func TestSetVersion(t *testing.T) {
