@@ -1259,6 +1259,11 @@ func resolvePipelines() Pipelines {
 		}
 	}
 
+	if metricsPipelines["default"] != nil && slices.Contains(metricsPipelines["default"].Receivers, "host_metrics") {
+		metricsPipelines["default"].Receivers =
+			append(metricsPipelines["default"].Receivers, "container_metrics")
+	}
+
 	var logsPipelines map[string]*Pipeline
 
 	if viperInstance.IsSet(CollectorLogsPipelinesKey) {
