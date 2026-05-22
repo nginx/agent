@@ -29,9 +29,9 @@ RUN set -x \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories and set permissions for nginx user
-RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run/nginx /var/lib/nginx /etc/nginx/conf.d /var/log/nginx-agent /etc/nginx-agent /etc/nginx/ssl \
-    && chown -R nginx:nginx /var/log/nginx /var/cache/nginx /var/run/nginx /var/lib/nginx /etc/nginx /var/log/nginx-agent /etc/nginx-agent /etc/nginx/ssl \
-    && chmod 755 /var/log/nginx /var/cache/nginx /var/run/nginx /var/lib/nginx /etc/nginx /var/log/nginx-agent /etc/nginx-agent /etc/nginx/ssl \
+RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run/nginx /var/lib/nginx /etc/nginx/conf.d /etc/nginx/ssl \
+    && chown -R nginx:nginx /var/log/nginx /var/cache/nginx /var/run/nginx /var/lib/nginx /etc/nginx  /etc/nginx/ssl \
+    && chmod 755 /var/log/nginx /var/cache/nginx /var/run/nginx /var/lib/nginx /etc/nginx /etc/nginx/ssl \
     && touch /var/lib/nginx/nginx.id || true
 
 # Copy custom nginx config for rootless setup
@@ -62,13 +62,14 @@ FROM install-nginx-rootless as install-agent-local
 ARG PACKAGE_NAME
 
 USER root
+
 RUN apt-get update && apt-get install -y /agent/build/$PACKAGE_NAME.deb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Fix permissions for nginx agent config and directories
 RUN if [[ -f /etc/nginx-agent/nginx-agent.conf ]]; then chmod 644 /etc/nginx-agent/nginx-agent.conf; fi \
-    && chmod 755 /etc/nginx-agent \
+    && chmod 755 /etc/nginx-agent /var/log/nginx-agent \
     && chown -R nginx:nginx /etc/nginx-agent /var/log/nginx-agent /var/lib/nginx-agent
 
 USER nginx
@@ -87,8 +88,7 @@ RUN apt-get update && apt-get install -y nginx-agent \
 
 # Fix permissions for nginx agent config and directories
 RUN if [[ -f /etc/nginx-agent/nginx-agent.conf ]]; then chmod 644 /etc/nginx-agent/nginx-agent.conf; fi \
-    && chmod 755 /etc/nginx-agent \
+    && chmod 755 /etc/nginx-agent /var/log/nginx-agent \
     && chown -R nginx:nginx /etc/nginx-agent /var/log/nginx-agent /var/lib/nginx-agent
 
 USER nginx
-
