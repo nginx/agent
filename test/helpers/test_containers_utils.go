@@ -506,8 +506,8 @@ func ExtractFileFromContainer(
 	return string(content)
 }
 
-// ValidateAgentConfig compares files in the container to expected files on disk.
-func ValidateAgentConfig(
+// ValidateContainerFiles compares files in the container to expected files on disk.
+func ValidateContainerFiles(
 	ctx context.Context,
 	tb testing.TB,
 	testContainer testcontainers.Container,
@@ -521,7 +521,7 @@ func ValidateAgentConfig(
 		require.NoError(tb, err)
 
 		expectedConfig = bytes.TrimSpace(expectedConfig)
-		assert.Equal(tb, string(expectedConfig), config)
+		assert.Equal(tb, string(expectedConfig), config, "Mismatch in file: %s", file.LogLabel)
 	}
 }
 

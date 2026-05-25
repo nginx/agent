@@ -88,7 +88,7 @@ func Test_UpgradeFromV3(t *testing.T) {
 	// Check manifest file contents
 	utils.CheckManifestFile(t, testContainer, expected)
 
-	helpers.ValidateAgentConfig(ctx, t, testContainer, files)
+	helpers.ValidateContainerFiles(ctx, t, testContainer, files)
 
 	// Validate agent otel conf is present
 	previousOtelConf := helpers.ExtractFileFromContainer(ctx, t,
@@ -142,7 +142,7 @@ func Test_UpgradeWithCustomOTELConfig(t *testing.T) {
 		},
 	}
 	// verify agent v3 configs has not changed
-	helpers.ValidateAgentConfig(ctx, t, testContainer, files)
+	helpers.ValidateContainerFiles(ctx, t, testContainer, files)
 
 	// Validate agent.log contains OTEL startup log
 	helpers.AssertStringInContainerFile(
