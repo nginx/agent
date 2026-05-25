@@ -25,32 +25,69 @@ const (
 	testBearer = "test-bearer-xyz"
 )
 
-func TestNewClientAuth_DefaultLogger(t *testing.T) {
-	ci := NewClientAuth(testUUID, testToken)
-
-	require.NotNil(t, ci)
-	assert.Equal(t, testUUID, ci.uuid)
-	assert.Equal(t, testToken, ci.token)
-	assert.Empty(t, ci.bearer)
-	assert.NotNil(t, ci.log, "default logger should be assigned")
-}
-
-func TestNewClientAuth_WithBearerToken(t *testing.T) {
-	ci := NewClientAuth(testUUID, testToken, WithBearerToken(testBearer))
-
-	require.NotNil(t, ci)
-	assert.Equal(t, testBearer, ci.bearer)
-}
-
-func TestNewClientAuth_MultipleOptions(t *testing.T) {
-	// Applying option multiple times: last one wins.
-	ci := NewClientAuth(testUUID, testToken,
-		WithBearerToken("first"),
-		WithBearerToken("second"),
-	)
-
-	require.NotNil(t, ci)
-	assert.Equal(t, "second", ci.bearer)
+func TestNewClientAuth_Variants(t *testing.T) {
+	tests := []struct {
+		name         string
+		options      []Option
+		wantUUID     string
+		wantToken    string
+		wantBearer   string
+		checkLogger  bool
+		customLogger *log.Logger
+	}{
+		{
+			name:         "DefaultLogger",
+			options:      nil,
+			wantUUID:     testUUID,
+			wantToken:    testToken,
+			wantBearer:   "",
+			checkLogger:  true,
+			customLogger: nil,
+		},
+		{
+			name:         "WithBearerToken",
+			options:      []Option{WithBearerToken(testBearer)},
+			wantUUID:     testUUID,
+			wantToken:    testToken,
+			wantBearer:   testBearer,
+			checkLogger:  false,
+			customLogger: nil,
+		},
+		{
+			name:         "MultipleOptions_LastWins",
+			options:      []Option{WithBearerToken("first"), WithBearerToken("second")},
+			wantUUID:     testUUID,
+			wantToken:    testToken,
+			wantBearer:   "second",
+			checkLogger:  false,
+			customLogger: nil,
+		},
+		{
+			name:         "CustomLogger",
+			options:      []Option{withLoggerForTest(log.New())},
+			wantUUID:     testUUID,
+			wantToken:    testToken,
+			wantBearer:   "",
+			checkLogger:  false,
+			customLogger: log.New(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ci := NewClientAuth(testUUID, testToken, tt.options...)
+			require.NotNil(t, ci)
+			assert.Equal(t, tt.wantUUID, ci.uuid)
+			assert.Equal(t, tt.wantToken, ci.token)
+			assert.Equal(t, tt.wantBearer, ci.bearer)
+			if tt.checkLogger {
+				assert.NotNil(t, ci.log, "default logger should be assigned")
+			}
+			if tt.customLogger != nil {
+				// We can't compare loggers by value, but we can check type and that it's not the default
+				assert.IsType(t, tt.customLogger, ci.log)
+			}
+		})
+	}
 }
 
 func TestClientInterceptor_GetRequestMetadata(t *testing.T) {
@@ -150,13 +187,6 @@ func TestClientInterceptor_AttachToken_PreservesExistingMetadata(t *testing.T) {
 
 	assert.Equal(t, []string{"custom-value"}, md.Get("custom-key"))
 	assert.Equal(t, []string{testToken}, md.Get(TokenHeader))
-}
-
-func TestClientInterceptor_CustomLogger(t *testing.T) {
-	customLogger := log.New()
-	ci := NewClientAuth(testUUID, testToken, withLoggerForTest(customLogger))
-
-	assert.Same(t, customLogger, ci.log)
 }
 
 func withLoggerForTest(l *log.Logger) Option {

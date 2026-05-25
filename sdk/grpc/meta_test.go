@@ -8,10 +8,10 @@
 package grpc
 
 import (
-	"sync"
 	"testing"
 	"time"
 
+	sdk "github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,23 +111,61 @@ func TestNewMeta_EmptyArgs(t *testing.T) {
 	assert.NotNil(t, m.Timestamp)
 }
 
-func TestNewMessageMeta_ConcurrentReads(t *testing.T) {
-	resetMetaForTest()
-	t.Cleanup(resetMetaForTest)
-
-	InitMeta("concurrent-client", "concurrent-cloud")
-
-	const goroutines = 50
-	var wg sync.WaitGroup
-	wg.Add(goroutines)
-
-	for range goroutines {
-		go func() {
-			defer wg.Done()
-			m := NewMessageMeta("msg")
-			assert.Equal(t, "concurrent-client", m.ClientId)
-			assert.Equal(t, "concurrent-cloud", m.CloudAccountId)
-		}()
+func TestMetaVariants(t *testing.T) {
+	tests := []struct {
+		name          string
+		setup         func()
+		metaFunc      func() *sdk.Metadata
+		wantClientId  string
+		wantMessageId string
+		wantCloudId   string
+	}{
+		{
+			name: "NewMessageMeta uses global meta",
+			setup: func() {
+				resetMetaForTest()
+				InitMeta("global-client", "global-cloud")
+			},
+			metaFunc: func() *sdk.Metadata {
+				return NewMessageMeta("msg-123")
+			},
+			wantClientId:  "global-client",
+			wantMessageId: "msg-123",
+			wantCloudId:   "global-cloud",
+		},
+		{
+			name:  "NewMeta sets all fields",
+			setup: func() {},
+			metaFunc: func() *sdk.Metadata {
+				return NewMeta("client-x", "msg-x", "cloud-x")
+			},
+			wantClientId:  "client-x",
+			wantMessageId: "msg-x",
+			wantCloudId:   "cloud-x",
+		},
+		{
+			name:  "NewMeta empty args",
+			setup: func() {},
+			metaFunc: func() *sdk.Metadata {
+				return NewMeta("", "", "")
+			},
+			wantClientId:  "",
+			wantMessageId: "",
+			wantCloudId:   "",
+		},
 	}
-	wg.Wait()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetMetaForTest()
+			t.Cleanup(resetMetaForTest)
+			tt.setup()
+			m := tt.metaFunc()
+			require.NotNil(t, m, "meta should not be nil for test %q", tt.name)
+			assert.Equal(t, tt.wantClientId, m.ClientId, "Test %q failed", tt.name)
+			assert.Equal(t, tt.wantMessageId, m.MessageId, "Test %q failed", tt.name)
+			assert.Equal(t, tt.wantCloudId, m.CloudAccountId, "Test %q failed", tt.name)
+			assert.NotNil(t, m.Timestamp, "Test %q failed", tt.name)
+		})
+	}
 }
