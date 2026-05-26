@@ -260,7 +260,7 @@ build-test-oss-image:
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
 	
-.PHONY: build-rootless-oos-image
+.PHONY: build-rootless-oss-image
 build-rootless-oss-image: local-deb-package
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_agent_rootless_oss_$(IMAGE_TAG) . \
 		--no-cache -f ./test/docker/nginx-rootless-oss/deb/Dockerfile \
