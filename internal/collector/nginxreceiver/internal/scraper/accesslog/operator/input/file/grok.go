@@ -62,7 +62,8 @@ func NewCompiledGrok(logFormat string, logger *zap.Logger) (*grok.CompiledGrok, 
 
 	g, err := grok.New(grok.Config{
 		NamedCapturesOnly: false,
-		Patterns:          map[string]string{"DEFAULT": grokPattern},
+		//nolint:goconst // value is local to this function
+		Patterns: map[string]string{"DEFAULT": grokPattern},
 	})
 	if err != nil {
 		return nil, err
