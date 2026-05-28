@@ -709,6 +709,7 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 					{
 						Type: "add",
 						Fields: map[string]string{
+							//nolint:goconst // keeping raw values here to avoid overengineering
 							"field": "resource[\"instance.type\"]",
 							"value": "nginx-app-protect",
 						},
