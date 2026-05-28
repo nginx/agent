@@ -644,6 +644,7 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	return nginxReceiverFound, reloadCollector
 }
 
+//nolint:goconst // keeping map raw values to avoid overengineering
 func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 	ctx context.Context, nginxConfigContext *model.NginxConfigContext,
 ) bool {
@@ -665,7 +666,7 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 						Type: "regex_parser",
 						Fields: map[string]string{
 							"regex":      "^<(?P<priority>\\d+)>",
-							"parse_from": "body", //nolint:goconst // value is local to this function
+							"parse_from": "body",
 							"parse_to":   "attributes",
 						},
 					},
@@ -679,10 +680,9 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 						},
 					},
 					{
-						Type: "add", //nolint:goconst // value is local to this function
+						Type: "add",
 						Fields: map[string]string{
 							"field": "body",
-							//nolint:goconst // keeping raw values here to avoid overengineering
 							"value": timestampConversionExpression,
 						},
 					},
@@ -695,7 +695,6 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 					{
 						Type: "remove",
 						Fields: map[string]string{
-							//nolint:goconst // keeping raw values here to avoid overengineering
 							"field": "attributes.message",
 						},
 					},
@@ -709,7 +708,6 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 					{
 						Type: "add",
 						Fields: map[string]string{
-							//nolint:goconst // keeping raw values here to avoid overengineering
 							"field": "resource[\"instance.type\"]",
 							"value": "nginx-app-protect",
 						},
