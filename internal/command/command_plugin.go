@@ -192,6 +192,14 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 
 	if createConnectionResponse != nil {
 		cp.subscribeMutex.Lock()
+		// Cancel any existing Subscribe goroutine before starting a new one.
+		// Without this, a race between handleSubscribeError (which briefly sets
+		// isConnected=false) and a concurrent ResourceUpdate event can launch a
+		// second Subscribe goroutine. Both goroutines then call Recv() on the
+		// shared subscribeClient concurrently, corrupting gRPC stream framing.
+		if cp.subscribeCancel != nil {
+			cp.subscribeCancel()
+		}
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctx)
 		cp.subscribeMutex.Unlock()
 
