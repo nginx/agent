@@ -259,7 +259,28 @@ build-test-oss-image:
 		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
-		
+	
+.PHONY: build-rootless-oss-image
+build-rootless-oss-image: local-deb-package
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_agent_rootless_oss_$(IMAGE_TAG) . \
+		--no-cache -f ./test/docker/nginx-rootless-oss/deb/Dockerfile \
+		--target install-agent-local \
+		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
+		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg ENTRY_POINT=./test/docker/rootless-entrypoint.sh
+
+.PHONY: build-rootless-plus-image
+build-rootless-plus-image:
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_agent_rootless_plus_$(IMAGE_TAG) . \
+		--no-cache -f ./test/docker/nginx-rootless-plus/deb/Dockerfile \
+		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
+		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
+		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
+		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg ENTRY_POINT=./test/docker/rootless-entrypoint.sh
+	
 .PHONY: build-mock-management-otel-collector-image
 build-mock-management-otel-collector-image: build-mock-management-otel-collector
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t mock-collector . \
