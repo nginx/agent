@@ -14,7 +14,7 @@ import (
 
 var RootCommand = &cobra.Command{
 	Use:   "nginx-agent [flags]",
-	Short: "nginx-agent",
+	Short: "nginx-agent", //nolint:goconst // keeping raw values here makes it cleaner
 }
 
 var CompletionCommand = &cobra.Command{
