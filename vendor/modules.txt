@@ -247,8 +247,6 @@ github.com/nginx/nginx-plus-go-client/v3/client
 # github.com/nginxinc/nginx-go-crossplane v0.4.84
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
-# github.com/nginxinc/nginx-prometheus-exporter v1.1.2
-## explicit; go 1.21.3
 # github.com/nginxinc/nginx-prometheus-exporter v1.2.0
 ## explicit; go 1.21.3
 github.com/nginxinc/nginx-prometheus-exporter/client
@@ -285,21 +283,15 @@ github.com/pmezard/go-difflib/difflib
 # github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55
 ## explicit; go 1.14
 github.com/power-devops/perfstat
-# github.com/prometheus/client_golang v1.19.0
-## explicit; go 1.20
 # github.com/prometheus/client_golang v1.19.1
 ## explicit; go 1.20
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promauto
 github.com/prometheus/client_golang/prometheus/promhttp
-# github.com/prometheus/client_model v0.6.0
-## explicit; go 1.19
 # github.com/prometheus/client_model v0.6.1
 ## explicit; go 1.19
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.49.0
-## explicit; go 1.20
 # github.com/prometheus/common v0.55.0
 ## explicit; go 1.20
 github.com/prometheus/common/expfmt
@@ -354,8 +346,6 @@ github.com/shirou/gopsutil/v4/process
 # github.com/shoenig/go-m1cpu v0.1.6
 ## explicit; go 1.20
 github.com/shoenig/go-m1cpu
-# github.com/sirupsen/logrus v1.9.3
-## explicit; go 1.17
 # github.com/sirupsen/logrus v1.9.4
 ## explicit; go 1.17
 github.com/sirupsen/logrus
