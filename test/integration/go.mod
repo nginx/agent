@@ -1,8 +1,8 @@
 module github.com/nginx/agent/test/integration
 
-go 1.25.0
+go 1.26
 
-toolchain go1.25.10
+toolchain go1.26.3
 
 require (
 	github.com/docker/docker v28.0.1+incompatible

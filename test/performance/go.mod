@@ -1,8 +1,8 @@
 module github.com/nginx/agent/test/performance
 
-go 1.25.0
+go 1.26
 
-toolchain go1.25.10
+toolchain go1.26.3
 
 require (
 	github.com/gogo/protobuf v1.3.2
