@@ -34,7 +34,6 @@ import (
 type CommandService struct {
 	mpi.UnimplementedCommandServiceServer
 	instanceFiles                map[string][]*mpi.File
-	instanceFilesMutex           sync.RWMutex
 	firstConnectionCallCh        chan struct{}
 	server                       *gin.Engine
 	connectionRequest            *mpi.CreateConnectionRequest
@@ -44,6 +43,7 @@ type CommandService struct {
 	externalFileServer           string
 	configDirectory              string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
+	instanceFilesMutex           sync.RWMutex
 	dataPlaneResponsesMutex      sync.Mutex
 	updateDataPlaneStatusMutex   sync.Mutex
 	connectionMutex              sync.Mutex
