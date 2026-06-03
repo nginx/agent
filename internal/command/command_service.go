@@ -468,16 +468,15 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			}
 		}
 
-		cs.subscribeClientMutex.Unlock()
-
 		request, recvError := cs.subscribeClient.Recv()
 		if recvError != nil {
-			cs.subscribeClientMutex.Lock()
 			cs.subscribeClient = nil
 			cs.subscribeClientMutex.Unlock()
 
 			return cs.handleSubscribeError(ctx, recvError, "receive message from subscribe stream")
 		}
+
+		cs.subscribeClientMutex.Unlock()
 
 		if cs.isValidRequest(ctx, request) {
 			switch request.GetRequest().(type) {
