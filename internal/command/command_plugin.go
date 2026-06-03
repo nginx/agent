@@ -316,7 +316,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 
 		cp.conn = newConnection
 
-		// Wait for the old Subscribe goroutine to fully exit before creating a new one with the new connection. .
+		// Wait for the old Subscribe goroutine to fully exit before creating a new one with the new connection.
 		cp.subscribeWg.Wait()
 
 		// Update the command service with the new client after the old stream has been torn down
