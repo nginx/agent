@@ -18,7 +18,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 
 	"buf.build/go/protovalidate"
@@ -71,7 +71,7 @@ func NewMockManagementServer(
 	externalFileServer *string,
 ) (*MockManagementServer, error) {
 	var err error
-	requestChan := make(chan *v1.ManagementPlaneRequest)
+	requestChan := make(chan *v1.ManagementPlaneRequest, 100)
 
 	commandService := serveCommandService(ctx, apiAddress, agentConfig, requestChan, *configDirectory,
 		*externalFileServer)

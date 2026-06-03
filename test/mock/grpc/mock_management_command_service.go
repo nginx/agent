@@ -34,6 +34,7 @@ import (
 type CommandService struct {
 	mpi.UnimplementedCommandServiceServer
 	instanceFiles                map[string][]*mpi.File
+	instanceFilesMutex           sync.RWMutex
 	firstConnectionCallCh        chan struct{}
 	server                       *gin.Engine
 	connectionRequest            *mpi.CreateConnectionRequest
@@ -216,8 +217,11 @@ func (cs *CommandService) handleConfigUploadRequest(
 	instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
 	overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
 
+	cs.instanceFilesMutex.Lock()
+	defer cs.instanceFilesMutex.Unlock()
+
 	if cs.instanceFiles[instanceID] != nil {
-		filesToDelete := cs.checkForDeletedFiles(instanceID, overviewFiles)
+		filesToDelete := cs.checkForDeletedFilesLocked(instanceID, overviewFiles)
 		for _, fileToDelete := range filesToDelete {
 			err := os.Remove(fileToDelete)
 			if err != nil {
@@ -228,7 +232,8 @@ func (cs *CommandService) handleConfigUploadRequest(
 	cs.instanceFiles[instanceID] = overviewFiles
 }
 
-func (cs *CommandService) checkForDeletedFiles(instanceID string, overviewFiles []*mpi.File) []string {
+// checkForDeletedFilesLocked must be called while holding instanceFilesMutex
+func (cs *CommandService) checkForDeletedFilesLocked(instanceID string, overviewFiles []*mpi.File) []string {
 	filesToDelete := []string{}
 
 	for _, diskfile := range cs.instanceFiles[instanceID] {
@@ -401,6 +406,7 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
+		cs.instanceFilesMutex.Lock()
 		if filesUpdated {
 			cs.instanceFiles[instanceID] = updatedConfigFiles
 		} else {
@@ -425,6 +431,7 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 				},
 			},
 		}
+		cs.instanceFilesMutex.Unlock()
 
 		cs.requestChan <- &request
 
@@ -437,6 +444,7 @@ func (cs *CommandService) addConfigEndpoint() {
 		instanceID := c.Param("instanceID")
 		var data map[string]interface{}
 
+		cs.instanceFilesMutex.RLock()
 		response := &mpi.GetOverviewResponse{
 			Overview: &mpi.FileOverview{
 				ConfigVersion: &mpi.ConfigVersion{
@@ -446,6 +454,7 @@ func (cs *CommandService) addConfigEndpoint() {
 				Files: cs.instanceFiles[instanceID],
 			},
 		}
+		cs.instanceFilesMutex.RUnlock()
 
 		if err := json.Unmarshal([]byte(protojson.Format(response)), &data); err != nil {
 			slog.Error("Failed to return connection", "error", err)
