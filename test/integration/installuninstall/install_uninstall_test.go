@@ -216,7 +216,7 @@ func updateDebRepo(tb testing.TB, testContainer testcontainers.Container) {
 	exitCode, _, err := testContainer.Exec(context.Background(), updateCmd)
 	require.NoError(tb, err)
 
-	msg := fmt.Sprintf("expected error code of 0 from cmd %q", exitCode)
+	msg := fmt.Sprintf("expected error code of 0 from cmd %d", exitCode)
 	assert.Equal(tb, 0, exitCode, msg)
 }
 
