@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,11 @@ import (
 )
 
 const configFilePermissions = 0o600
+
+const (
+	extractFileMaxAttempts = 10
+	extractFileRetryDelay  = 100 * time.Millisecond
+)
 
 type Parameters struct {
 	NginxConfigPath          string
@@ -496,8 +502,33 @@ func ExtractFileFromContainer(
 	containerPath string,
 ) string {
 	tb.Helper()
-	fileContent, err := testContainer.CopyFileFromContainer(ctx, containerPath)
+
+	var (
+		fileContent io.ReadCloser
+		err         error
+	)
+
+	for attempt := 1; attempt <= extractFileMaxAttempts; attempt++ {
+		fileContent, err = testContainer.CopyFileFromContainer(ctx, containerPath)
+		if err == nil {
+			break
+		}
+
+		if attempt == extractFileMaxAttempts {
+			break
+		}
+
+		select {
+		case <-ctx.Done():
+			require.NoError(tb, ctx.Err())
+		case <-time.After(extractFileRetryDelay):
+		}
+	}
+
 	require.NoError(tb, err)
+	defer func() {
+		require.NoError(tb, fileContent.Close())
+	}()
 
 	content, err := io.ReadAll(fileContent)
 	require.NoError(tb, err)
