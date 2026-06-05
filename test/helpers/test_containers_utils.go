@@ -503,29 +503,20 @@ func ExtractFileFromContainer(
 ) string {
 	tb.Helper()
 
-	var (
-		fileContent io.ReadCloser
-		err         error
-	)
+	var fileContent io.ReadCloser
+	totalTimeout := time.Duration(extractFileMaxAttempts) * extractFileRetryDelay
 
-	for attempt := 1; attempt <= extractFileMaxAttempts; attempt++ {
+	assert.Eventually(tb, func() bool {
+		var err error
 		fileContent, err = testContainer.CopyFileFromContainer(ctx, containerPath)
-		if err == nil {
-			break
-		}
 
-		if attempt == extractFileMaxAttempts {
-			break
-		}
+		return err == nil
+	}, totalTimeout, extractFileRetryDelay, "Failed to extract file %s", containerPath)
 
-		select {
-		case <-ctx.Done():
-			require.NoError(tb, ctx.Err())
-		case <-time.After(extractFileRetryDelay):
-		}
+	if fileContent == nil {
+		tb.Fatalf("Unable to extract file %s", containerPath)
 	}
 
-	require.NoError(tb, err)
 	defer func() {
 		require.NoError(tb, fileContent.Close())
 	}()
