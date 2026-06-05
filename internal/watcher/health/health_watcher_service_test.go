@@ -189,13 +189,6 @@ func TestHealthWatcherService_health(t *testing.T) {
 func TestHealthWatcherService_compareCache(t *testing.T) {
 	ossInstance := protos.NginxOssInstance([]string{})
 	plusInstance := protos.NginxPlusInstance([]string{})
-	healthCache := map[string]*mpi.InstanceHealth{
-		ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
-		plusInstance.GetInstanceMeta().GetInstanceId(): {
-			InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
-			InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
-		},
-	}
 
 	healths := []*mpi.InstanceHealth{
 		protos.HealthyInstanceHealth(),
@@ -203,12 +196,20 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 
 	tests := []struct {
 		name           string
+		initialCache   map[string]*mpi.InstanceHealth
 		expectedCache  map[string]*mpi.InstanceHealth
 		instances      map[string]*mpi.Instance
 		expectedHealth []*mpi.InstanceHealth
 	}{
 		{
 			name: "Test 1: Instance was deleted",
+			initialCache: map[string]*mpi.InstanceHealth{
+				ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
+				plusInstance.GetInstanceMeta().GetInstanceId(): {
+					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
+				},
+			},
 			expectedHealth: []*mpi.InstanceHealth{
 				protos.HealthyInstanceHealth(),
 				{
@@ -227,6 +228,9 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 		},
 		{
 			name: "Test 2: No change to instance list",
+			initialCache: map[string]*mpi.InstanceHealth{
+				ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
+			},
 			expectedHealth: []*mpi.InstanceHealth{
 				protos.HealthyInstanceHealth(),
 			},
@@ -243,7 +247,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			agentConfig := types.AgentConfig()
 			healthWatcher := NewHealthWatcherService(agentConfig)
-			healthWatcher.cache = healthCache
+			healthWatcher.cache = test.initialCache
 			healthWatcher.instances = test.instances
 
 			result := healthWatcher.compareCache(healths)
