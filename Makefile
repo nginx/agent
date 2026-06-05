@@ -271,7 +271,7 @@ build-rootless-oss-image: local-deb-package
 		--build-arg ENTRY_POINT=./test/docker/rootless-entrypoint.sh
 
 .PHONY: build-rootless-plus-image
-build-rootless-plus-image:
+build-rootless-plus-image: local-deb-package
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_agent_rootless_plus_$(IMAGE_TAG) . \
 		--no-cache -f ./test/docker/nginx-rootless-plus/deb/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
