@@ -262,8 +262,14 @@ func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontaine
 func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testcontainers.Container, oldVersion string) {
 	tb.Helper()
 
-	newVersion := agentVersion(ctx, tb, testContainer)
-	assert.NotEqual(tb, oldVersion, newVersion)
+	var newVersion string
+
+	assert.Eventually(tb, func() bool {
+		newVersion = agentVersion(ctx, tb, testContainer)
+
+		return newVersion != oldVersion
+	}, maxUpgradeTime, 100*time.Millisecond, "agent version not upgraded, still %s after upgrade", oldVersion)
+
 	tb.Logf("agent upgraded to version %s successfully", newVersion)
 }
 

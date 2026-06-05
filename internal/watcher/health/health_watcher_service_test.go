@@ -6,9 +6,9 @@
 package health
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"testing"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -171,17 +171,26 @@ func TestHealthWatcherService_health(t *testing.T) {
 			healthWatcher := NewHealthWatcherService(agentConfig)
 			fakeHealthWatcher := healthfakes.FakeHealthWatcherOperator{}
 
-			fakeHealthWatcher.HealthReturnsOnCall(0, protos.HealthyInstanceHealth(), nil)
-			fakeHealthWatcher.HealthReturnsOnCall(1, protos.UnhealthyInstanceHealth(), nil)
-			fakeHealthWatcher.HealthReturnsOnCall(2, nil, errors.New("unable to determine health"))
+			// Dispatch by instance ID so results are independent of map iteration order.
+			ossID := ossInstance.GetInstanceMeta().GetInstanceId()
+			plusID := plusInstance.GetInstanceMeta().GetInstanceId()
+			fakeHealthWatcher.HealthCalls(func(_ context.Context, instance *mpi.Instance) (*mpi.InstanceHealth, error) {
+				switch instance.GetInstanceMeta().GetInstanceId() {
+				case ossID:
+					return protos.HealthyInstanceHealth(), nil
+				case plusID:
+					return protos.UnhealthyInstanceHealth(), nil
+				default:
+					return nil, errors.New("unable to determine health")
+				}
+			})
 
 			healthWatcher.instances = test.instances
 			healthWatcher.updateCache(test.cache)
 			healthWatcher.watcher = &fakeHealthWatcher
 			updatedStatus, isHealthDiff := healthWatcher.health(t.Context())
 			assert.Equal(t, test.isHealthDiff, isHealthDiff)
-
-			reflect.DeepEqual(test.updatedInstances, updatedStatus)
+			assert.ElementsMatch(t, test.updatedInstances, updatedStatus)
 		})
 	}
 }
