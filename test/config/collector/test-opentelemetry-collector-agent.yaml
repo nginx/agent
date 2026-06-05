@@ -53,7 +53,7 @@ receivers:
       location: ""
       ca: ""
     collection_interval: 20s
-  tcplog/default:
+  tcp_log/default:
     listen_address: "localhost:151"
     operators:
       - type: add
@@ -138,7 +138,7 @@ service:
         - debug
     logs/default:
       receivers:
-        - tcplog/default
+        - tcp_log/default
       processors:
         - securityviolationsfilter/default
         - resource/default

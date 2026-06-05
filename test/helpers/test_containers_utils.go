@@ -6,6 +6,7 @@
 package helpers
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
@@ -21,11 +22,17 @@ import (
 const configFilePermissions = 0o600
 
 type Parameters struct {
-	NginxConfigPath      string
-	NginxAgentConfigPath string
-	LogMessage           string
+	NginxConfigPath          string
+	NginxAgentConfigPath     string
+	NginxAgentOTELConfigPath string
+	LogMessage               string
 }
 
+type ConfigFileDescriptor struct {
+	ContainerPath string
+	ExpectedPath  string
+	LogLabel      string
+}
 type MockCollectorContainers struct {
 	Agent      testcontainers.Container
 	Otel       testcontainers.Container
@@ -58,7 +65,30 @@ func StartContainer(
 			"NGINX_LICENSE_JWT": nginxLicenseJwt,
 		}
 	}
-
+	files := []testcontainers.ContainerFile{
+		{
+			HostFilePath:      parameters.NginxAgentConfigPath,
+			ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
+			FileMode:          configFilePermissions,
+		},
+		{
+			HostFilePath:      parameters.NginxConfigPath,
+			ContainerFilePath: "/etc/nginx/nginx.conf",
+			FileMode:          configFilePermissions,
+		},
+		{
+			HostFilePath:      "../../config/nginx/mime.types",
+			ContainerFilePath: "/etc/nginx/mime.types",
+			FileMode:          configFilePermissions,
+		},
+	}
+	if parameters.NginxAgentOTELConfigPath != "" {
+		files = append(files, testcontainers.ContainerFile{
+			HostFilePath:      parameters.NginxAgentOTELConfigPath,
+			ContainerFilePath: "/etc/nginx-agent/my_config.yaml",
+			FileMode:          configFilePermissions,
+		})
+	}
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:       "../../../",
@@ -90,24 +120,8 @@ func StartContainer(
 				"agent",
 			},
 		},
-		Files: []testcontainers.ContainerFile{
-			{
-				HostFilePath:      parameters.NginxAgentConfigPath,
-				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
-				FileMode:          configFilePermissions,
-			},
-			{
-				HostFilePath:      parameters.NginxConfigPath,
-				ContainerFilePath: "/etc/nginx/nginx.conf",
-				FileMode:          configFilePermissions,
-			},
-			{
-				HostFilePath:      "../../config/nginx/mime.types",
-				ContainerFilePath: "/etc/nginx/mime.types",
-				FileMode:          configFilePermissions,
-			},
-		},
-		Env: env,
+		Files: files,
+		Env:   env,
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -472,4 +486,54 @@ func LogAndTerminateStack(ctx context.Context, tb testing.TB,
 	logAndTerminate("Agent", containers.Agent)
 	logAndTerminate("Otel Collector", containers.Otel)
 	logAndTerminate("Prometheus", containers.Prometheus)
+}
+
+// ExtractFileFromContainer copies a file from the container at the given path and returns its contents as a string.
+func ExtractFileFromContainer(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	containerPath string,
+) string {
+	tb.Helper()
+	fileContent, err := testContainer.CopyFileFromContainer(ctx, containerPath)
+	require.NoError(tb, err)
+
+	content, err := io.ReadAll(fileContent)
+	require.NoError(tb, err)
+	content = bytes.TrimSpace(content)
+
+	return string(content)
+}
+
+// ValidateContainerFiles compares files in the container to expected files on disk.
+func ValidateContainerFiles(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	files []ConfigFileDescriptor,
+) {
+	tb.Helper()
+
+	for _, file := range files {
+		config := ExtractFileFromContainer(ctx, tb, testContainer, file.ContainerPath)
+		expectedConfig, err := os.ReadFile(file.ExpectedPath)
+		require.NoError(tb, err)
+
+		expectedConfig = bytes.TrimSpace(expectedConfig)
+		assert.Equal(tb, string(expectedConfig), config, "Mismatch in file: %s", file.LogLabel)
+	}
+}
+
+// AssertStringInContainerFile asserts that a string exists in a file inside the container.
+func AssertStringInContainerFile(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	containerPath string,
+	searchString string,
+) {
+	tb.Helper()
+	content := ExtractFileFromContainer(ctx, tb, testContainer, containerPath)
+	assert.Contains(tb, content, searchString, "Expected phrase not found in file: %s", containerPath)
 }

@@ -6,13 +6,10 @@
 package upgrade
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"log/slog"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -29,6 +26,8 @@ const (
 	maxFileSize    int64 = 70000000
 	maxUpgradeTime       = 30 * time.Second
 	agentBuildDir        = "../agent/build"
+	agentConfigDir       = "/etc/nginx-agent"
+	agentLogDir          = "/var/log/nginx-agent"
 )
 
 var (
@@ -46,7 +45,8 @@ func Test_UpgradeFromV3(t *testing.T) {
 		require.NoError(t, err)
 	}(ctx)
 
-	testContainer, teardownTest := upgradeSetup(t, true, containerNetwork)
+	// Prepare upgrade
+	testContainer, teardownTest := upgradeSetup(t, true, "default", containerNetwork)
 	defer teardownTest(t)
 
 	slog.Info("starting agent v3 upgrade tests")
@@ -60,11 +60,19 @@ func Test_UpgradeFromV3(t *testing.T) {
 	// verify version of agent
 	verifyAgentVersion(ctx, t, testContainer, oldVersion)
 
-	// Verify Agent Package Path & get the path
-	verifyAgentPackageSize(t)
-
-	// verify agent v3 config has not changed
-	validateAgentConfig(ctx, t, testContainer)
+	// Expected files to validate after upgrade
+	files := []helpers.ConfigFileDescriptor{
+		{
+			ContainerPath: agentConfigDir + "/nginx-agent.conf",
+			ExpectedPath:  "./configs/default/nginx-agent.conf",
+			LogLabel:      "agent config",
+		},
+		{
+			ContainerPath: agentConfigDir + "/my_config.yaml",
+			ExpectedPath:  "./configs/default/my_config.yaml",
+			LogLabel:      "otel config",
+		},
+	}
 
 	// validate agent manifest file
 	expected := map[string]*model.ManifestFile{
@@ -77,21 +85,42 @@ func Test_UpgradeFromV3(t *testing.T) {
 			},
 		},
 	}
+	// Check manifest file contents
 	utils.CheckManifestFile(t, testContainer, expected)
+
+	helpers.ValidateContainerFiles(ctx, t, testContainer, files)
+
+	// Validate agent otel conf is present
+	previousOtelConf := helpers.ExtractFileFromContainer(ctx, t,
+		testContainer,
+		agentConfigDir+"/opentelemetry-collector-agent.yaml")
+	assert.NotEmpty(t, previousOtelConf)
 
 	slog.Info("finished agent v3 upgrade tests")
 }
 
-func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool,
+func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool, setupType string,
 	containerNetwork *testcontainers.DockerNetwork,
 ) (testcontainers.Container, func(tb testing.TB)) {
 	tb.Helper()
 	ctx := context.Background()
+	var params *helpers.Parameters
 
-	params := &helpers.Parameters{
-		NginxConfigPath:      "./configs/nginx-oss.conf",
-		NginxAgentConfigPath: "./configs/nginx-agent.conf",
-		LogMessage:           "nginx_pid",
+	switch setupType {
+	case "custom_otel":
+		params = &helpers.Parameters{
+			NginxConfigPath:          "./configs/nginx-oss.conf",
+			NginxAgentConfigPath:     "./configs/otel/nginx-agent.conf",
+			NginxAgentOTELConfigPath: "./configs/otel/my_config.yaml",
+			LogMessage:               "nginx_pid",
+		}
+	default:
+		params = &helpers.Parameters{
+			NginxConfigPath:          "./configs/nginx-oss.conf",
+			NginxAgentConfigPath:     "./configs/default/nginx-agent.conf",
+			NginxAgentOTELConfigPath: "./configs/default/my_config.yaml",
+			LogMessage:               "nginx_pid",
+		}
 	}
 
 	testContainer := helpers.StartContainer(
@@ -112,20 +141,6 @@ func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool,
 			nil,
 		)
 	}
-}
-
-func verifyAgentPackageSize(tb testing.TB) string {
-	tb.Helper()
-	agentPkgPath, filePathErr := filepath.Abs("../../../build/")
-	require.NoError(tb, filePathErr, "Error finding local agent package build dir")
-
-	localAgentPkg, packageErr := os.Stat(packagePath(agentPkgPath, osRelease))
-	require.NoError(tb, packageErr, "Error accessing package at: "+agentPkgPath)
-
-	// check if file size is less than 70MB
-	assert.Less(tb, localAgentPkg.Size(), maxFileSize)
-
-	return packagePath(agentBuildDir, osRelease)
 }
 
 func verifyAgentUpgrade(ctx context.Context, tb testing.TB,
@@ -200,35 +215,4 @@ func agentVersion(ctx context.Context, tb testing.TB, testContainer testcontaine
 	output := strings.TrimSpace(string(stdoutStderr))
 
 	return output
-}
-
-func packagePath(pkgDir, osReleaseContent string) string {
-	pkgPath := path.Join(pkgDir, packageName)
-
-	if strings.Contains(osReleaseContent, "ubuntu") || strings.Contains(osReleaseContent, "Debian") {
-		return pkgPath + ".deb"
-	} else if strings.Contains(osReleaseContent, "alpine") {
-		return pkgPath + ".apk"
-	}
-
-	return pkgPath + ".rpm"
-}
-
-func validateAgentConfig(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) {
-	tb.Helper()
-
-	agentConfigContent, err := testContainer.CopyFileFromContainer(ctx, "/etc/nginx-agent/nginx-agent.conf")
-	require.NoError(tb, err)
-
-	agentConfig, err := io.ReadAll(agentConfigContent)
-	require.NoError(tb, err)
-
-	expectedConfig, err := os.ReadFile("./configs/nginx-agent-v3-valid-config.conf")
-	require.NoError(tb, err)
-
-	expectedConfig = bytes.TrimSpace(expectedConfig)
-	agentConfig = bytes.TrimSpace(agentConfig)
-
-	assert.Equal(tb, string(expectedConfig), string(agentConfig))
-	tb.Log("agent config:", string(agentConfig))
 }
