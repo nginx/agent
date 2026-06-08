@@ -30,7 +30,7 @@ processors:
       key: resource.id
       value: f16dedd7-929f-3642-b823-4ac8d295cc23
 receivers:
-  hostmetrics:
+  host_metrics:
     collection_interval: 1m0s
     initial_delay: 1s
     scrapers:
@@ -57,7 +57,7 @@ service:
       - batch/default_metrics
       - resource/default
       receivers:
-      - hostmetrics
+      - host_metrics
     metrics/prometheus-example-pipeline:
       exporters:
       - prometheus

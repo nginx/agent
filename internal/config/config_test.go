@@ -71,6 +71,7 @@ func TestResolveConfig(t *testing.T) {
 		headers := actual.Collector.Extensions.HeadersSetter.Headers
 		return headers[i].Key < headers[j].Key
 	})
+
 	assert.Equal(t, createConfig(), actual)
 }
 

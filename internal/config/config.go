@@ -216,9 +216,20 @@ func addDefaultPipelines(collector *Collector) {
 	if collector.Pipelines.Metrics == nil {
 		collector.Pipelines.Metrics = make(map[string]*Pipeline)
 	}
+
+	isContainer, err := host.NewInfo().IsContainer()
+	if err != nil {
+		slog.Debug("No container information found", "error", err)
+	}
+	receivers := []string{"host_metrics", "nginx_metrics"}
+	if isContainer {
+		receivers = append(receivers, "container_metrics")
+	}
+
+	// add check if container and nginx plus or oss
 	if _, ok := collector.Pipelines.Metrics[DefaultPipeline]; !ok {
 		collector.Pipelines.Metrics[DefaultPipeline] = &Pipeline{
-			Receivers:  []string{"host_metrics", "nginx_metrics"},
+			Receivers:  receivers,
 			Processors: []string{"batch/default_metrics"},
 			Exporters:  []string{DefaultOtlpGrpc},
 		}
@@ -1248,6 +1259,10 @@ func resolvePipelines() Pipelines {
 		if err != nil {
 			metricsPipelines = nil
 		}
+	}
+
+	if metricsPipelines["default"] != nil && slices.Contains(metricsPipelines["default"].Receivers, "host_metrics") {
+		metricsPipelines["default"].Receivers = append(metricsPipelines["default"].Receivers, "container_metrics")
 	}
 
 	var logsPipelines map[string]*Pipeline

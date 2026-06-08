@@ -1,5 +1,5 @@
 receivers:
-  hostmetrics:
+  host_metrics:
     collection_interval: 1m0s
     initial_delay: 1s
     scrapers:
@@ -56,7 +56,7 @@ service:
   pipelines:
     metrics/default:
       receivers:
-        - hostmetrics
+        - host_metrics
       processors:
         - batch/default_metrics
         - resource/default

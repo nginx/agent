@@ -192,7 +192,7 @@ func TestTemplateWrite(t *testing.T) {
 	cfg.Collector.Pipelines.Metrics = make(map[string]*config.Pipeline)
 	cfg.Collector.Pipelines.Metrics["default"] = &config.Pipeline{
 		Receivers: []string{
-			"hostmetrics", "containermetrics",
+			"host_metrics", "container_metrics",
 			"otlp/default", "nginx", "nginxplus/456", "nginxplus/789",
 		},
 		Processors: []string{"resource/default", "batch/default"},

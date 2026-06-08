@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("containermetrics")
+	Type      = component.MustNewType("container_metrics")
 	ScopeName = "github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 )
 
