@@ -6,6 +6,7 @@
 package record
 
 import (
+	"github.com/nginx/agent/v3/internal/collector/metricsutil"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 	plusapi "github.com/nginx/nginx-plus-go-client/v3/client"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -45,7 +46,7 @@ func (szm *ServerZoneMetrics) RecordServerZoneMetrics(stats *plusapi.Stats, now 
 		szm.mb.RecordNginxHTTPRequestsDataPoint(now, int64(sz.Requests), szName, metadata.AttributeNginxZoneTypeSERVER)
 
 		szm.mb.RecordNginxHTTPRequestCountDataPoint(now,
-			int64(sz.Requests)-szm.PreviousServerZoneRequests[szName],
+			metricsutil.Increase(int64(sz.Requests), szm.PreviousServerZoneRequests[szName]),
 			szName,
 			metadata.AttributeNginxZoneTypeSERVER,
 		)
@@ -98,31 +99,36 @@ func (szm *ServerZoneMetrics) recordServerZoneHTTPMetrics(sz plusapi.ServerZone,
 
 	// Response Count Status
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(sz.Responses.Responses1xx)-szm.PreviousServerZoneResponses[szName].OneHundredStatusRange,
+		metricsutil.Increase(
+			int64(sz.Responses.Responses1xx), szm.PreviousServerZoneResponses[szName].OneHundredStatusRange),
 		metadata.AttributeNginxStatusRange1xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(sz.Responses.Responses2xx)-szm.PreviousServerZoneResponses[szName].TwoHundredStatusRange,
+		metricsutil.Increase(
+			int64(sz.Responses.Responses2xx), szm.PreviousServerZoneResponses[szName].TwoHundredStatusRange),
 		metadata.AttributeNginxStatusRange2xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(sz.Responses.Responses3xx)-szm.PreviousServerZoneResponses[szName].ThreeHundredStatusRange,
+		metricsutil.Increase(
+			int64(sz.Responses.Responses3xx), szm.PreviousServerZoneResponses[szName].ThreeHundredStatusRange),
 		metadata.AttributeNginxStatusRange3xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(sz.Responses.Responses4xx)-szm.PreviousServerZoneResponses[szName].FourHundredStatusRange,
+		metricsutil.Increase(
+			int64(sz.Responses.Responses4xx), szm.PreviousServerZoneResponses[szName].FourHundredStatusRange),
 		metadata.AttributeNginxStatusRange4xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		int64(sz.Responses.Responses5xx)-szm.PreviousServerZoneResponses[szName].FiveHundredStatusRange,
+		metricsutil.Increase(
+			int64(sz.Responses.Responses5xx), szm.PreviousServerZoneResponses[szName].FiveHundredStatusRange),
 		metadata.AttributeNginxStatusRange5xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
