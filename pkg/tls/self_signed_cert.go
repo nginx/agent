@@ -56,7 +56,7 @@ func GenerateCertificate(req *CertReq) (*x509.Certificate, []byte, error) {
 	if parseCertErr != nil {
 		return &x509.Certificate{}, []byte{}, fmt.Errorf("error parsing certificate: %w", parseCertErr)
 	}
-
+	//nolint:goconst // extracting a constant here would be overengineering
 	b := pem.Block{Type: "CERTIFICATE", Bytes: certBytes}
 	certPEM := pem.EncodeToMemory(&b)
 

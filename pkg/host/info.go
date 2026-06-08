@@ -358,7 +358,7 @@ func readOsRelease(path string) (map[string]string, error) {
 }
 
 func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
-	osReleaseInfoMap := map[string]string{"NAME": "unix"}
+	osReleaseInfoMap := map[string]string{name: "unix"}
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
