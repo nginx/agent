@@ -85,7 +85,7 @@ func (fso *FileServiceOperator) File(
 		grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
 		defer cancel()
 
-		return fso.getFileServiceClient().GetFile(grpcCtx, &mpi.GetFileRequest{
+		return fso.client().GetFile(grpcCtx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
 				MessageId:     id.GenerateMessageID(),
 				CorrelationId: logger.CorrelationID(ctx),
@@ -175,7 +175,7 @@ func (fso *FileServiceOperator) UpdateOverview(
 	}
 
 	sendUpdateOverview := func() (*mpi.UpdateOverviewResponse, error) {
-		client := fso.getFileServiceClient()
+		client := fso.client()
 		if client == nil {
 			return nil, errors.New("file service client is not initialized")
 		}
@@ -238,7 +238,7 @@ func (fso *FileServiceOperator) ChunkedFile(
 	grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
 	defer cancel()
 
-	stream, err := fso.getFileServiceClient().GetFileStream(grpcCtx, &mpi.GetFileRequest{
+	stream, err := fso.client().GetFileStream(grpcCtx, &mpi.GetFileRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
 			CorrelationId: logger.CorrelationID(ctx),
@@ -333,8 +333,8 @@ func (fso *FileServiceOperator) ValidateFileHash(ctx context.Context, filePath, 
 	return nil
 }
 
-//nolint:ireturn // getFileServiceClient needs to return an interface
-func (fso *FileServiceOperator) getFileServiceClient() mpi.FileServiceClient {
+//nolint:ireturn // client needs to return an interface
+func (fso *FileServiceOperator) client() mpi.FileServiceClient {
 	fso.fileServiceClientMu.RLock()
 	defer fso.fileServiceClientMu.RUnlock()
 
@@ -390,7 +390,7 @@ func (fso *FileServiceOperator) sendUpdateFileRequest(
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		client := fso.getFileServiceClient()
+		client := fso.client()
 		slog.DebugContext(ctx, "Sending update file request", "request_file", request.GetFile(),
 			"request_message_meta", request.GetMessageMeta())
 		if client == nil {
@@ -442,7 +442,7 @@ func (fso *FileServiceOperator) sendUpdateFileStream(
 	grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
 	defer cancel()
 
-	updateFileStreamClient, err := fso.getFileServiceClient().UpdateFileStream(grpcCtx)
+	updateFileStreamClient, err := fso.client().UpdateFileStream(grpcCtx)
 	if err != nil {
 		return err
 	}
@@ -482,7 +482,7 @@ func (fso *FileServiceOperator) sendUpdateFileStreamHeader(
 
 	sendUpdateFileHeader := func() error {
 		slog.DebugContext(ctx, "Sending update file stream header", "header", header)
-		if fso.getFileServiceClient() == nil {
+		if fso.client() == nil {
 			return errors.New("file service client is not initialized")
 		}
 
@@ -575,7 +575,7 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunk(
 
 	sendUpdateFileChunk := func() error {
 		slog.DebugContext(ctx, "Sending update file stream chunk", "chunk_id", chunk.Content.GetChunkId())
-		if fso.getFileServiceClient() == nil {
+		if fso.client() == nil {
 			return errors.New("file service client is not initialized")
 		}
 
