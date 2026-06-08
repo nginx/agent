@@ -92,7 +92,7 @@ func (n *NginxPlugin) Close(ctx context.Context) error {
 }
 
 func (n *NginxPlugin) Info() *bus.Info {
-	name := "nginx"
+	name := "nginx" //nolint:goconst // value is local to this function
 	if n.serverType.String() == model.Auxiliary.String() {
 		name = "auxiliary-nginx"
 	}
@@ -442,7 +442,8 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			rollbackResponse := response.CreateDataPlaneResponse(
 				correlationID,
 				&mpi.CommandResponse{
-					Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					Status: mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					//nolint:goconst // keep raw value to avoid overengeneering
 					Message: "Config apply failed, rollback failed",
 					Error:   combinedErr.Error(),
 				},

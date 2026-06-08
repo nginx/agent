@@ -1,4 +1,4 @@
-type: containermetrics
+type: container_metrics
 
 status:
   class: receiver
