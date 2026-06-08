@@ -385,7 +385,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.89
 	github.com/prometheus/client_golang v1.23.2 // indirect
-	github.com/samber/slog-gin v1.21.0
+	github.com/samber/slog-gin v1.21.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/vardius/message-bus v1.1.5
