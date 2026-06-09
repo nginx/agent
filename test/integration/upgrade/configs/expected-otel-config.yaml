@@ -44,8 +44,8 @@ service:
   pipelines:
     metrics/default:
       receivers:
-        - container_metrics
         - host_metrics
+        - container_metrics
       processors:
         - batch/default_metrics
       exporters:
