@@ -24,6 +24,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	eventuallyTimeout  = 1 * time.Second
+	eventuallyInterval = 100 * time.Millisecond
+)
+
 type AuxiliaryTestSuite struct {
 	suite.Suite
 	teardownTest func(tb testing.TB)
@@ -125,8 +130,10 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test3_DataplaneHealthRequest() {
 	s.False(s.T().Failed())
 
 	// Check auxiliary server still only has 1 ManagementPlaneResponses as it didn't send the request
-	utils.ManagementPlaneResponses(s.T(), 0, utils.AuxiliaryMockManagementPlaneAPIAddress)
-	s.False(s.T().Failed())
+	s.Eventually(func() bool {
+		responses := utils.ManagementPlaneResponses(s.T(), 0, utils.AuxiliaryMockManagementPlaneAPIAddress)
+		return len(responses) == 0
+	}, eventuallyTimeout, eventuallyInterval, "Expected no responses from auxiliary server, got some")
 	slog.Info("finished auxiliary command server data plane health request test")
 }
 
