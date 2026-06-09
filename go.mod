@@ -1,8 +1,8 @@
 module github.com/nginx/agent/v2
 
-go 1.25.0
+go 1.26.0
 
-toolchain go1.25.11
+toolchain go1.26.4
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
