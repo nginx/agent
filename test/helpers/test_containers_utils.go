@@ -37,7 +37,7 @@ const (
 
 const (
 	extractFileMaxAttempts = 10
-	extractFileRetryDelay  = 100 * time.Millisecond
+	extractFileRetryDelay  = 200 * time.Millisecond
 )
 
 type Parameters struct {
