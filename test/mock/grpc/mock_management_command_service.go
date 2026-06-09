@@ -402,6 +402,7 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 
 		updatedConfigFiles, filesUpdated, err := processConfigApplyRequestBody(c, configFiles)
 		if err != nil {
+			//nolint:goconst // extracting a constant here would be overengineering
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

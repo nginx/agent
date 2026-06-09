@@ -148,6 +148,7 @@ func ToAgentConfigLogProto(log *Log) *mpi.Log {
 	}
 }
 
+//nolint:goconst // extracting log levels constant here would be overengineering
 func MapConfigLogLevelToSlogLevel(level mpi.Log_LogLevel) string {
 	slogLevel := "INFO"
 

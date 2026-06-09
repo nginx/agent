@@ -1,13 +1,13 @@
 receivers:
 {{- if ne .Receivers.ContainerMetrics nil }}
-  containermetrics:
+  container_metrics:
     {{- if .Receivers.ContainerMetrics.CollectionInterval }}
     collection_interval: {{ .Receivers.ContainerMetrics.CollectionInterval }}
     {{- end}}
 {{- end }}
 
 {{- if ne .Receivers.HostMetrics nil }}
-  hostmetrics:
+  host_metrics:
     {{- if .Receivers.HostMetrics.CollectionInterval }}
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     {{- end}}
@@ -275,14 +275,7 @@ service:
     metrics/{{$pipelineName}}:
       receivers:
         {{- range $receiver := $pipeline.Receivers }}
-          {{- if eq $receiver "host_metrics" }}
-            {{- if ne $.Receivers.ContainerMetrics nil }}
-        - containermetrics
-            {{- end }}
-            {{- if ne $.Receivers.HostMetrics nil }}
-        - hostmetrics
-            {{- end }}
-          {{- else if eq $receiver "nginx_metrics" }}
+          {{- if eq $receiver "nginx_metrics" }}
             {{- range $.Receivers.NginxReceivers }}
             {{- if gt (len $.Receivers.NginxReceivers) 1 }}
         - nginx/{{- .InstanceID -}}

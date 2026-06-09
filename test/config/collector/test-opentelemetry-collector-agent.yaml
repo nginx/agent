@@ -1,7 +1,7 @@
 receivers:
-  containermetrics:
+  container_metrics:
     collection_interval: 1s
-  hostmetrics:
+  host_metrics:
     collection_interval: 1m0s
     initial_delay: 1s
     scrapers:
@@ -123,8 +123,8 @@ service:
   pipelines:
     metrics/default:
       receivers:
-        - hostmetrics
-        - containermetrics
+        - host_metrics
+        - container_metrics
         - otlp/default
         - nginx
         - nginxplus/456

@@ -133,6 +133,7 @@ func DefaultFeatures() []string {
 	}
 }
 
+//nolint:goconst // path values are local to this function
 func DefaultAllowedDirectories() []string {
 	return []string{
 		"/etc/nginx",

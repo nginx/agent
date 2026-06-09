@@ -48,6 +48,7 @@ const (
 		`date(timestamp).UTC(); utcTime.Format("Jan  2 15:04:05")) : date(timestamp).Format("Jan 02 15:04:05"); ` +
 		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
 	debugOTelConfigFile = "/opentelemetry-collector-agent-debug.yaml"
+	insertAction        = "insert"
 )
 
 type (
@@ -383,8 +384,8 @@ func (oc *Collector) updateResourceProcessor(resourceUpdateContext *v1.Resource)
 		resourceProcessorUpdated = oc.updateResourceAttributes(
 			[]config.ResourceAttribute{
 				{
-					Key:    "resource.id",
-					Action: "insert",
+					Key:    "resource.id", //nolint:goconst // value is local to this function
+					Action: insertAction,
 					Value:  resourceUpdateContext.GetResourceId(),
 				},
 			},
@@ -404,7 +405,7 @@ func (oc *Collector) updateHeadersSetterExtension(
 		oc.config.Collector.Extensions.HeadersSetter.Headers != nil {
 		isUUIDHeaderSet := false
 		for _, header := range oc.config.Collector.Extensions.HeadersSetter.Headers {
-			if header.Key == "uuid" {
+			if header.Key == "uuid" { //nolint:goconst // value is local to this function
 				isUUIDHeaderSet = true
 				break
 			}
@@ -418,7 +419,7 @@ func (oc *Collector) updateHeadersSetterExtension(
 			oc.config.Collector.Extensions.HeadersSetter.Headers = append(
 				oc.config.Collector.Extensions.HeadersSetter.Headers,
 				config.Header{
-					Action: "insert",
+					Action: insertAction,
 					Key:    "uuid",
 					Value:  resourceUpdateContext.GetResourceId(),
 				},
@@ -465,7 +466,7 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 
 	settings := OTelCollectorSettings(oc.config)
 
-	if strings.ToLower(oc.config.Log.Level) == "debug" {
+	if strings.ToLower(oc.config.Log.Level) == "debug" { //nolint:goconst // value is local to this function
 		writeErr := oc.writeRunningConfig(ctx, settings)
 		if writeErr != nil {
 			slog.ErrorContext(ctx, "Failed to write debug OTel Collector config", "error", writeErr)
@@ -643,6 +644,7 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	return nginxReceiverFound, reloadCollector
 }
 
+//nolint:goconst // keeping map raw values to avoid overengineering
 func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 	ctx context.Context, nginxConfigContext *model.NginxConfigContext,
 ) bool {
@@ -900,7 +902,7 @@ func normaliseAddress(address string) string {
 		return address
 	}
 
-	if host == "localhost" {
+	if host == "localhost" { //nolint:goconst // value is local to this function
 		host = "127.0.0.1"
 	}
 
