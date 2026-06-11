@@ -8,8 +8,6 @@ ARG PACKAGE_NAME
 ARG PACKAGES_REPO
 
 WORKDIR /agent
-COPY ./build /agent/build
-COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN set -x \
     && ls /usr/sbin/ \
@@ -29,7 +27,9 @@ RUN set -x \
 RUN curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
     && printf "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://${PACKAGES_REPO}/nginx-agent/ubuntu/ `lsb_release -cs` agent\n" > /etc/apt/sources.list.d/nginx-agent.list
 
+COPY $ENTRY_POINT /agent/entrypoint.sh
 RUN chmod +x /agent/entrypoint.sh
+COPY ./build /agent/build
 STOPSIGNAL SIGTERM
 
 EXPOSE 80 443

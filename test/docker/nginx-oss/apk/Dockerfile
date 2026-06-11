@@ -5,8 +5,6 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 ARG ENTRY_POINT
 
 WORKDIR /agent
-COPY ./build /agent/build
-COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN set -x \
     && addgroup -g 101 -S nginx \
@@ -17,6 +15,7 @@ RUN set -x \
                bash \
                nginx
 
+COPY $ENTRY_POINT /agent/entrypoint.sh
 RUN chmod +x /agent/entrypoint.sh
 STOPSIGNAL SIGTERM
 
@@ -28,6 +27,7 @@ FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
+COPY ./build /agent/build
 RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.apk
 
 FROM install-nginx as install-agent-repo

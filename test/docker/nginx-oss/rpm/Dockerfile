@@ -8,8 +8,6 @@ ARG OS_VERSION
 ARG OS_RELEASE
 
 WORKDIR /agent
-COPY ./ /agent
-COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
         then yum install -y oracle-epel-release-el7; \
@@ -74,6 +72,7 @@ gpgkey=https://nginx.org/keys/nginx_signing.key \n\
 module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo; \
     fi
 
+COPY $ENTRY_POINT /agent/entrypoint.sh
 RUN chmod +x /agent/entrypoint.sh
 
 STOPSIGNAL SIGTERM
@@ -87,6 +86,7 @@ FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
+COPY ./build /agent/build
 RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
 
 
