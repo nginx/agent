@@ -85,7 +85,7 @@ func (fso *FileServiceOperator) File(
 		grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
 		defer cancel()
 
-		return fso.client().GetFile(grpcCtx, &mpi.GetFileRequest{
+		response, err := fso.client().GetFile(grpcCtx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
 				MessageId:     id.GenerateMessageID(),
 				CorrelationId: logger.CorrelationID(ctx),
@@ -93,6 +93,16 @@ func (fso *FileServiceOperator) File(
 			},
 			FileMeta: file.GetFileMeta(),
 		})
+
+		validatedError := internalgrpc.ValidateGrpcError(err)
+
+		if validatedError != nil {
+			slog.ErrorContext(grpcCtx, "Failed to get file", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
 	}
 
 	getFileResp, getFileErr := backoff.RetryWithData(
