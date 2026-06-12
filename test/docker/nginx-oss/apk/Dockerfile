@@ -9,11 +9,12 @@ WORKDIR /agent
 RUN set -x \
     && addgroup -g 101 -S nginx \
     && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx \
-    && apk add ca-certificates \
-               curl \
-               openssl \
-               bash \
-               nginx
+    && apk add --no-cache ca-certificates \
+                          curl \
+                          openssl \
+                          bash \
+                          procps \
+                          nginx
 
 COPY $ENTRY_POINT /agent/entrypoint.sh
 RUN chmod +x /agent/entrypoint.sh

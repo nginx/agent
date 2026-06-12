@@ -10,18 +10,17 @@ ARG PACKAGES_REPO
 WORKDIR /agent
 
 RUN set -x \
-    && ls /usr/sbin/ \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home /nonexistent --comment "nginx user" --shell /bin/false --uid 101 nginx \
-    && apt-get update \
+    && (apt-get update || (sleep 30 && apt-get update) || (sleep 60 && apt-get update)) \
     && apt-get install --no-install-recommends --no-install-suggests -y ca-certificates \
                                                                         gnupg2 \
-                                                                        git \
-                                                                        make \
                                                                         curl \
                                                                         lsb-release \
                                                                         procps \
-                                                                        nginx
+                                                                        nginx \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Setup nginx agent repository
 RUN curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
@@ -44,4 +43,7 @@ RUN apt install -y /agent/build/$PACKAGE_NAME.deb
 
 FROM install-nginx as install-agent-repo
 
-RUN apt-get update && apt-get install -y nginx-agent
+RUN (apt-get update || (sleep 30 && apt-get update) || (sleep 60 && apt-get update)) \
+    && apt-get install -y nginx-agent \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
