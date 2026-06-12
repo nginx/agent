@@ -8,6 +8,7 @@ ARG OS_VERSION
 ARG OS_RELEASE
 
 WORKDIR /agent
+COPY ./build /agent/build
 
 RUN set -x \
     && if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; then yum install -y oracle-epel-release-el7; fi \

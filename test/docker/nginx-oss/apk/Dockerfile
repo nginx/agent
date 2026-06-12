@@ -5,6 +5,7 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 ARG ENTRY_POINT
 
 WORKDIR /agent
+COPY ./build /agent/build
 
 RUN set -x \
     && addgroup -g 101 -S nginx \
@@ -28,7 +29,6 @@ FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
-COPY ./build /agent/build
 RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.apk
 
 FROM install-nginx as install-agent-repo
