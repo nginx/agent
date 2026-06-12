@@ -235,3 +235,35 @@ func TestUnPack(t *testing.T) {
 		assert.NotEmpty(t, confFiles)
 	}
 }
+
+func TestUnPackCheckDirs(t *testing.T) {
+	allowedDirs := map[string]struct{}{
+		"/etc/nginx": {},
+		"/tmp/nginx": {},
+	}
+	for _, tt := range []readTest{
+		createReadTest(t, "/tmp/nginx/conf",
+			[]fileDef{
+				{
+					name: "nginx.conf",
+					mode: 0o600,
+					content: []byte(`
+					worker_processes  2;
+					user              www-data;
+					
+					events {
+						use           epoll;
+						worker_connections  128;
+					}
+					access_log    /tmp/testdata/logs/access.log  combined;
+					}`),
+				},
+			},
+		),
+	} {
+		confFiles, err := UnPackWithDirCheck(tt.zipFile, allowedDirs)
+		assert.NoError(t, err)
+		assert.NotNil(t, confFiles)
+		assert.NotEmpty(t, confFiles)
+	}
+}

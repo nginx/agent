@@ -16,11 +16,13 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"maps"
 	"net"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -331,12 +333,8 @@ func updateNginxConfigWithCert(
 	}
 
 	isAllowed := false
-	for dir := range allowedDirectories {
-		if strings.HasPrefix(file, dir) {
-			isAllowed = true
-			break
-		}
-	}
+
+	isAllowed = CheckAllowedPath(file, allowedDirectories)
 
 	certDirectives := []string{
 		"ssl_certificate",
@@ -636,6 +634,25 @@ func GetNginxConfigFiles(config *proto.NginxConfig) (confFiles, auxFiles []*prot
 	return confFiles, auxFiles, nil
 }
 
+func GetNginxConfigFilesWithCheck(config *proto.NginxConfig, allowedDirs map[string]struct{}) (confFiles, auxFiles []*proto.File, err error) {
+	if config.GetZconfig() == nil {
+		return nil, nil, errors.New("config is empty")
+	}
+
+	confFiles, err = zip.UnPackWithDirCheck(config.GetZconfig(), allowedDirs)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unpack zipped config error: %s", err)
+	}
+
+	if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
+		auxFiles, err = zip.UnPackWithDirCheck(aux, allowedDirs)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unpack zipped auxiliary error: %s", err)
+		}
+	}
+	return confFiles, auxFiles, nil
+}
+
 // AddAuxfileToNginxConfig adds the specified newAuxFile to the Nginx Config cfg
 func AddAuxfileToNginxConfig(
 	confFile string,
@@ -654,7 +671,7 @@ func AddAuxfileToNginxConfig(
 		}
 	}
 
-	_, auxFiles, err := GetNginxConfigFiles(cfg)
+	_, auxFiles, err := GetNginxConfigFilesWithCheck(cfg, allowedDirectories)
 	if err != nil {
 		return nil, err
 	}
@@ -1038,12 +1055,35 @@ func GetAccessLogs(accessLogs *proto.AccessLogs) []string {
 // allowedPath return true if the provided path has a prefix in the allowedDirectories, false otherwise. The
 // path could be a filepath or directory.
 func allowedPath(path string, allowedDirectories map[string]struct{}) bool {
-	for d := range allowedDirectories {
-		if strings.HasPrefix(path, d) {
-			return true
+	dirs := slices.Collect(maps.Keys(allowedDirectories))
+	return checkDirIsAllowed(filepath.Clean(path), dirs)
+}
+
+func CheckAllowedPath(path string, allowedDirectories map[string]struct{}) bool {
+	return allowedPath(path, allowedDirectories)
+}
+
+func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
+	for _, file := range files {
+		filePath := file.Name
+		if !allowedPath(filePath, allowedDirs) {
+			return fmt.Errorf("write prohibited for: %s", filePath)
 		}
 	}
-	return false
+	return nil
+}
+
+func checkDirIsAllowed(path string, allowedDirs []string) bool {
+
+	if slices.Contains(allowedDirs, path) {
+		return true
+	}
+
+	if path == "/" || !strings.HasPrefix(path, "/") { // root directory reached with no match, path is not allowed
+		return false
+	}
+
+	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
 }
 
 func convertToHexFormat(hexString string) string {

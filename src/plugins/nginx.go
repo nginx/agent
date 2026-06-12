@@ -260,7 +260,7 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	}
 
 	if n.isNginxAppProtectEnabled {
-		err = nap.UpdateMetadata(cfg, n.nginxAppProtectSoftwareDetails, n.config.IgnoreDirectives)
+		err = nap.UpdateMetadata(cfg, n.nginxAppProtectSoftwareDetails, n.config.IgnoreDirectives, n.config.AllowedDirectoriesMap)
 		if err != nil {
 			log.Errorf("Unable to update NAP metadata: %v", err)
 		}
@@ -737,7 +737,7 @@ func (n *Nginx) syncAgentConfigChange() {
 func (n *Nginx) ValidateNginxAppProtectVersion(nginxConfig *proto.NginxConfig) (bool, error) {
 	if isFileInDirectoryMap(nginxConfig.GetDirectoryMap(), n.nginxAppProtectSoftwareDetails.GetWafLocation()) {
 		if aux := nginxConfig.GetZaux(); aux != nil && len(aux.Contents) > 0 {
-			auxFiles, err := zip.UnPack(aux)
+			auxFiles, err := zip.UnPackWithDirCheck(aux, n.config.AllowedDirectoriesMap)
 			if err != nil {
 				return false, fmt.Errorf("config apply failed (preflight): not able to read unpack aux files %v", nginxConfig.GetZaux())
 			}

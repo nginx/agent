@@ -15,13 +15,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"maps"
 	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 var ErrFlushed = errors.New("zipped file: already flushed")
@@ -220,4 +224,64 @@ func UnPack(zipFile *proto.ZippedFile) ([]*proto.File, error) {
 		return true
 	})
 	return rawFiles, err
+}
+
+func UnPackWithDirCheck(zipFile *proto.ZippedFile, allowedDirs map[string]struct{}) ([]*proto.File, error) {
+	zipContentsReader, err := NewReader(zipFile)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = zipContentsReader.Close()
+	}()
+
+	rawFiles := make([]*proto.File, 0)
+
+	zipContentsReader.RangeFileReaders(func(err error, path string, mode os.FileMode, rc io.Reader) bool {
+		if err != nil {
+			log.Print(err)
+		}
+
+		b := bytes.NewBuffer([]byte{})
+		_, err = io.Copy(b, rc)
+		if err != nil {
+			return false
+		}
+
+		log.Info("zipped file %s", path)
+		rawFiles = append(rawFiles, &proto.File{
+			Name:        path,
+			Permissions: files.GetPermissions(mode),
+			Contents:    b.Bytes(),
+		})
+		return true
+	})
+
+	err = checkAllowedFiles(rawFiles, allowedDirs)
+
+	return rawFiles, err
+}
+
+func checkDirIsAllowed(path string, allowedDirs []string) bool {
+
+	if slices.Contains(allowedDirs, path) {
+		return true
+	}
+
+	if path == "/" || !strings.HasPrefix(path, "/") { // root directory reached with no match, path is not allowed
+		return false
+	}
+
+	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
+}
+
+func checkAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
+	dirs := slices.Collect(maps.Keys(allowedDirs))
+	for _, file := range files {
+		filePath := file.Name
+		if !checkDirIsAllowed(filepath.Clean(filePath), dirs) {
+			return fmt.Errorf("write prohibited for: %s, not in allowed config directories", filePath)
+		}
+	}
+	return nil
 }
