@@ -243,14 +243,6 @@ jobs:
           version: "9"
         - image: "alpine"
           version: "3.23"
-        suite:
-        - name: "install-nginxless"
-          target: "integration-test-install-nginxless"
-        - name: "managementplane"
-          target: "integration-test-managementplane"
-        - name: "auxiliarycommandserver"
-          target: "integration-test-auxiliarycommandserver"
-      fail-fast: false
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Get Secrets from Azure Key Vault
@@ -281,7 +273,7 @@ jobs:
           path: build
 
       - name: Create Results Directory
-        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}/${{matrix.suite.name}}
+        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
 
       - name: Start Promtail
         uses: ./.github/actions/start-promtail
@@ -290,14 +282,13 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          echo "Running suite: ${{ matrix.suite.name }} (${{ matrix.suite.target }})"
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
-          make ${{ matrix.suite.target }} | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/${{matrix.suite.name}}/raw_logs.log
+          make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
       - name: Format Results
         if: always()
-        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/${{matrix.suite.name}} ${{github.workspace}}
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
 
   upgrade-tests:
     name: Upgrade Tests
