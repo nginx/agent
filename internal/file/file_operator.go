@@ -87,6 +87,9 @@ func (fo *FileOperator) WriteChunkedFile(
 	}
 
 	fileToWrite, createError := os.Create(fileName)
+	if createError != nil {
+		return createError
+	}
 	defer func() {
 		closeError := fileToWrite.Close()
 		if closeError != nil {
@@ -97,9 +100,6 @@ func (fo *FileOperator) WriteChunkedFile(
 			)
 		}
 	}()
-	if createError != nil {
-		return createError
-	}
 
 	filePermission := files.FileMode(filePermissions)
 	if err := os.Chmod(fileName, filePermission); err != nil {

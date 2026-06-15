@@ -337,6 +337,11 @@ func (fso *FileServiceOperator) updateFiles(
 	iteration int,
 ) error {
 	diffFiles := slices.Collect(maps.Values(delta))
+	dirErr := fso.checkAllowedDirectory(diffFiles)
+
+	if dirErr != nil {
+		return dirErr
+	}
 
 	for _, file := range diffFiles {
 		updateErr := fso.UpdateFile(ctx, instanceID, file)
@@ -505,6 +510,10 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunks(
 	updateFileStreamClient grpc.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
 ) error {
 	f, err := os.Open(fileToUpdate.GetFileMeta().GetName())
+	if err != nil {
+		return err
+	}
+
 	defer func() {
 		closeError := f.Close()
 		if closeError != nil {
@@ -515,9 +524,6 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunks(
 			)
 		}
 	}()
-	if err != nil {
-		return err
-	}
 
 	var chunkID uint32
 
@@ -604,4 +610,15 @@ func (fso *FileServiceOperator) setupIdentifiers(ctx context.Context, iteration 
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
 
 	return newCtx, correlationID
+}
+
+func (fso *FileServiceOperator) checkAllowedDirectory(checkFiles []*mpi.File) error {
+	for _, file := range checkFiles {
+		allowed := fso.agentConfig.IsDirectoryAllowed(file.GetFileMeta().GetName())
+		if !allowed {
+			return fmt.Errorf("file not in allowed directories %s", file.GetFileMeta().GetName())
+		}
+	}
+
+	return nil
 }

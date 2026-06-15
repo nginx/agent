@@ -134,6 +134,7 @@ func (cs *CPUSource) collectCPUStats(ctx context.Context) (ContainerCPUStats, er
 	return cpuStats, nil
 }
 
+//nolint:mnd // magic number, makes it more difficult to read
 func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*ContainerCPUTimes, error) {
 	cpuTimes := &ContainerCPUTimes{}
 	lines, err := internal.ReadLines(filePath)
@@ -143,6 +144,9 @@ func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*Contai
 
 	for _, line := range lines {
 		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
 		switch fields[0] {
 		case userKey:
 			user, parseErr := strconv.ParseFloat(fields[1], 64)
