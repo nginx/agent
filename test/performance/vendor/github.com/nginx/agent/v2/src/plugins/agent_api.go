@@ -67,6 +67,7 @@ type AgentAPI struct {
 	nginxHandler *NginxHandler
 	rootHandler  *RootHandler
 	exporter     *prometheus_metrics.Exporter
+	processMutex sync.Mutex
 	processes    []*core.Process
 }
 
@@ -172,11 +173,12 @@ const (
 
 func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary, processes []*core.Process) *AgentAPI {
 	return &AgentAPI{
-		config:      config,
-		env:         env,
-		nginxBinary: nginxBinary,
-		exporter:    prometheus_metrics.NewExporter(&proto.MetricsReport{}),
-		processes:   processes,
+		config:       config,
+		env:          env,
+		nginxBinary:  nginxBinary,
+		exporter:     prometheus_metrics.NewExporter(&proto.MetricsReport{}),
+		processMutex: sync.Mutex{},
+		processes:    processes,
 	}
 }
 
@@ -223,7 +225,9 @@ func (a *AgentAPI) Process(message *core.Message) {
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, response)
 		}
 	case core.NginxDetailProcUpdate:
+		a.processMutex.Lock()
 		a.processes = message.Data().([]*core.Process)
+		a.processMutex.Unlock()
 		if a.nginxHandler != nil {
 			a.nginxHandler.syncProcessInfo(a.processes)
 		}

@@ -756,7 +756,7 @@ func parsePathFromLocationDirective(location *crossplane.Directive) string {
 	if len(location.Args) > 0 {
 		if location.Args[0] != "=" {
 			path = location.Args[0]
-		} else {
+		} else if len(location.Args) > 1 {
 			path = location.Args[1]
 		}
 	}

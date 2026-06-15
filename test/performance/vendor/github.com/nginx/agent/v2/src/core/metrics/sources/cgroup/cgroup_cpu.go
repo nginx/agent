@@ -10,6 +10,7 @@ package cgroup
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os/exec"
 	"path"
 	"runtime"
@@ -67,6 +68,9 @@ func (cgroupCPU *CgroupCPU) Percentages() (DockerCpuPercentages, error) {
 			V2UserKey,
 			V2SystemKey,
 		)
+		if err != nil {
+			return DockerCpuPercentages{}, err
+		}
 
 		// CPU times are in microseconds and get converted to nanoseconds
 		dockerCpuTimes.userUsage = dockerCpuTimes.userUsage * 1000
@@ -77,14 +81,13 @@ func (cgroupCPU *CgroupCPU) Percentages() (DockerCpuPercentages, error) {
 			V1UserKey,
 			V1SystemKey,
 		)
+		if err != nil {
+			return DockerCpuPercentages{}, err
+		}
 
 		// CPU times are in USER_HZ and get converted to nanoseconds
 		dockerCpuTimes.userUsage = (dockerCpuTimes.userUsage * nanoSecondsPerSecond) / float64(cgroupCPU.clockTicks)
 		dockerCpuTimes.systemUsage = (dockerCpuTimes.systemUsage * nanoSecondsPerSecond) / float64(cgroupCPU.clockTicks)
-	}
-
-	if err != nil {
-		return DockerCpuPercentages{}, err
 	}
 
 	hostSystemCpuUsage, err := getSystemCPUUsage(cgroupCPU.clockTicks)
@@ -178,6 +181,9 @@ func getCPUStat(statFile string, user_key string, system_key string) (*DockerCpu
 
 	for _, line := range lines {
 		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return ret, fmt.Errorf("%+v required 2 fields", fields)
+		}
 		if fields[0] == user_key {
 			user, err := strconv.ParseFloat(fields[1], 64)
 			if err != nil {

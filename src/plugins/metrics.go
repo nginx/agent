@@ -125,12 +125,15 @@ func (m *Metrics) Process(msg *core.Message) {
 		for key, collectorConfig := range collectorConfigsMap {
 			if _, ok := m.collectorConfigsMap[key]; !ok {
 				log.Debugf("Adding new nginx collector for nginx id: %s", collectorConfig.NginxId)
+				m.collectorsMutex.Lock()
 				m.collectors = append(m.collectors,
 					collectors.NewNginxCollector(m.conf, m.env, collectorConfig, m.binary),
 				)
+				m.collectorsMutex.Unlock()
 			}
 		}
 
+		m.collectorConfigsMapMutex.Lock()
 		collectorsToStop := []string{}
 		for key, collectorConfig := range m.collectorConfigsMap {
 			if _, ok := collectorConfigsMap[key]; !ok {
@@ -138,7 +141,6 @@ func (m *Metrics) Process(msg *core.Message) {
 			}
 		}
 
-		m.collectorConfigsMapMutex.Lock()
 		m.collectorConfigsMap = collectorConfigsMap
 		m.collectorConfigsMapMutex.Unlock()
 
@@ -160,7 +162,9 @@ func (m *Metrics) Process(msg *core.Message) {
 		m.collectorsMutex.RUnlock()
 
 		if stoppedCollectorIndex >= 0 {
+			m.collectorsMutex.Lock()
 			m.collectors = append(m.collectors[:stoppedCollectorIndex], m.collectors[stoppedCollectorIndex+1:]...)
+			m.collectorsMutex.Unlock()
 		}
 		return
 	}

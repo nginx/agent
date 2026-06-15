@@ -232,7 +232,7 @@ func parseToSbinRouteStruct(output []byte) (routeStruct, error) {
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		if len(fields) > 0 {
+		if len(fields) > 1 {
 			switch index := fields[0]; index {
 			case DestinationStr:
 				rs.Destination = fields[1]

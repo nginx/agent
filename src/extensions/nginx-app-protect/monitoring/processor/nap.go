@@ -278,9 +278,7 @@ func (f *NAPConfig) GetEvent(hostPattern *regexp.Regexp, logger *logrus.Entry) (
 	event.Metadata = metadata
 
 	secevt = f.getSecurityViolation(logger)
-	if err != nil {
-		return nil, err
-	}
+
 	event.Data = &models.Event_SecurityViolationEvent{
 		SecurityViolationEvent: secevt,
 	}

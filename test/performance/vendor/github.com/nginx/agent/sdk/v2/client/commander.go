@@ -355,7 +355,7 @@ func (c *commander) createClient() error {
 	grpc, err := sdkGRPC.NewGrpcConnectionWithContext(c.ctx, c.server, c.DialOptions())
 	if err != nil {
 		log.Errorf("Unable to create client connection to %s: %s", c.server, err)
-		log.Infof("Commander retrying to connect to %s", c.grpc.Target())
+		log.Infof("Commander retrying to connect to %s", c.server)
 		return err
 	}
 	c.grpc = grpc

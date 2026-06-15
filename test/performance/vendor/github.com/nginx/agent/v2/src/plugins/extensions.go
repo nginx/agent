@@ -79,6 +79,7 @@ func (e *Extensions) Process(msg *core.Message) {
 					err = e.pipeline.Register(e.conf.QueueSize, nil, []core.ExtensionPlugin{nap})
 					if err != nil {
 						log.Errorf("Unable to register %s extension, %v", data, err)
+						break
 					}
 					nap.Init(e.pipeline)
 				}
