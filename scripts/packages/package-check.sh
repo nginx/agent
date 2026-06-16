@@ -71,7 +71,7 @@ for alpine_version in "${ALPINE_VERSIONS[@]}"; do
 done
 
 UBUNTU=()
-UBUNTU_VERSIONS=("jammy" "noble" "plucky" "questing")
+UBUNTU_VERSIONS=("resolute" "jammy" "noble" "plucky" "questing")
 DEB_ARCH=("amd64" "arm64")
 for ubuntu_version in "${UBUNTU_VERSIONS[@]}"; do
     for arch in ${DEB_ARCH[@]}; do
