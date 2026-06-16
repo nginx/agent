@@ -289,17 +289,20 @@ func (iw *InstanceWatcherService) updateInstanceInResource(ctx context.Context, 
 	defer iw.resourceMutex.Unlock()
 
 	resourceCopy, ok := proto2.Clone(iw.resource).(*mpi.Resource)
-	if ok {
-		for _, instance := range resourceCopy.GetInstances() {
-			if instance.GetInstanceMeta().GetInstanceId() == updatedInstance.GetInstanceMeta().GetInstanceId() {
-				instance.InstanceMeta = updatedInstance.GetInstanceMeta()
-				instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
-				instance.InstanceConfig = updatedInstance.GetInstanceConfig()
-			}
-		}
-	} else {
+
+	if !ok {
 		slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
 			iw.resource, "instances", updatedInstance)
+
+		return
+	}
+
+	for _, instance := range resourceCopy.GetInstances() {
+		if instance.GetInstanceMeta().GetInstanceId() == updatedInstance.GetInstanceMeta().GetInstanceId() {
+			instance.InstanceMeta = updatedInstance.GetInstanceMeta()
+			instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
+			instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+		}
 	}
 
 	iw.resource = resourceCopy

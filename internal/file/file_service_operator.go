@@ -337,10 +337,9 @@ func (fso *FileServiceOperator) updateFiles(
 	iteration int,
 ) error {
 	diffFiles := slices.Collect(maps.Values(delta))
-	dirErr := fso.checkAllowedDirectory(diffFiles)
-
-	if dirErr != nil {
-		return dirErr
+	err := fso.checkAllowedDirectory(diffFiles)
+	if err != nil {
+		return err
 	}
 
 	for _, file := range diffFiles {

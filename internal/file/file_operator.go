@@ -86,9 +86,9 @@ func (fo *FileOperator) WriteChunkedFile(
 		return createFileDirectoriesError
 	}
 
-	fileToWrite, createError := os.Create(fileName)
-	if createError != nil {
-		return createError
+	fileToWrite, err := os.Create(fileName)
+	if err != nil {
+		return err
 	}
 	defer func() {
 		closeError := fileToWrite.Close()
@@ -102,8 +102,8 @@ func (fo *FileOperator) WriteChunkedFile(
 	}()
 
 	filePermission := files.FileMode(filePermissions)
-	if err := os.Chmod(fileName, filePermission); err != nil {
-		return fmt.Errorf("error setting permissions for %s file: %w", fileName, err)
+	if modeErr := os.Chmod(fileName, filePermission); modeErr != nil {
+		return fmt.Errorf("error setting permissions for %s file: %w", fileName, modeErr)
 	}
 
 	slog.DebugContext(ctx, "Writing chunked file", "file", fileName)
