@@ -174,6 +174,7 @@ func (r *OneTimeRegistration) registerAgent() {
 
 	findNginxMasterProcess := func() error {
 		r.processMutex.RLock()
+		defer r.processMutex.RUnlock()
 		for _, proc := range r.processes {
 			// only need master process for registration
 			if proc.IsMaster {
@@ -192,7 +193,6 @@ func (r *OneTimeRegistration) registerAgent() {
 				log.Tracef("NGINX non-master process: %d", proc.Pid)
 			}
 		}
-		r.processMutex.RUnlock()
 
 		r.logOnce.Do(func() {
 			log.Errorf("NGINX master process not found yet, waiting for NGINX to start...")
