@@ -461,6 +461,8 @@ func socketClient(ctx context.Context, socketPath string) *http.Client {
 }
 
 // createPlusAPIError converts the error returned by the plus go client into the json format used by the NGINX Plus API
+//
+//nolint:mnd // magic number, makes it more difficult to read
 func createPlusAPIError(apiErr error) error {
 	if apiErr == nil {
 		return nil
@@ -471,6 +473,11 @@ func createPlusAPIError(apiErr error) error {
 	for i, errStr := range errorSlice {
 		_, value, _ := strings.Cut(errStr, "=")
 		errorSlice[i] = value
+	}
+
+	if len(errorSlice) < 5 {
+		slog.Error("Unable to marshal NGINX Plus API error")
+		return nil
 	}
 
 	plusErr := plusAPIErr{

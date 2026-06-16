@@ -232,6 +232,8 @@ func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Me
 					err.Error(),
 				),
 			})
+
+			return
 		}
 		cp.processDataPlaneResponse(ctx, &bus.Message{
 			Topic: bus.DataPlaneResponseTopic,

@@ -142,7 +142,15 @@ func (iw *InstanceWatcherService) Watch(
 
 func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 	slog.DebugContext(ctx, "Reparsing all instance configurations")
+
+	iw.cacheMutex.Lock()
+	instances := make([]*mpi.Instance, 0, len(iw.instanceCache))
 	for _, instance := range iw.instanceCache {
+		instances = append(instances, instance)
+	}
+	iw.cacheMutex.Unlock()
+
+	for _, instance := range instances {
 		nginxConfigContext := &model.NginxConfigContext{}
 		var parseErr error
 		slog.DebugContext(
@@ -265,12 +273,13 @@ func (iw *InstanceWatcherService) updateResourceInstanceList(ctx context.Context
 	slog.DebugContext(ctx, "Updating resource instance list", "instances", len(instances))
 
 	resourceCopy, ok := proto2.Clone(iw.resource).(*mpi.Resource)
-	if ok {
-		resourceCopy.Instances = instances
-	} else {
+	if !ok {
 		slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
 			iw.resource, "instances", instances)
+
+		return
 	}
+	resourceCopy.Instances = instances
 
 	iw.resource = resourceCopy
 }
@@ -280,17 +289,20 @@ func (iw *InstanceWatcherService) updateInstanceInResource(ctx context.Context, 
 	defer iw.resourceMutex.Unlock()
 
 	resourceCopy, ok := proto2.Clone(iw.resource).(*mpi.Resource)
-	if ok {
-		for _, instance := range resourceCopy.GetInstances() {
-			if instance.GetInstanceMeta().GetInstanceId() == updatedInstance.GetInstanceMeta().GetInstanceId() {
-				instance.InstanceMeta = updatedInstance.GetInstanceMeta()
-				instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
-				instance.InstanceConfig = updatedInstance.GetInstanceConfig()
-			}
-		}
-	} else {
+
+	if !ok {
 		slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
 			iw.resource, "instances", updatedInstance)
+
+		return
+	}
+
+	for _, instance := range resourceCopy.GetInstances() {
+		if instance.GetInstanceMeta().GetInstanceId() == updatedInstance.GetInstanceMeta().GetInstanceId() {
+			instance.InstanceMeta = updatedInstance.GetInstanceMeta()
+			instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
+			instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+		}
 	}
 
 	iw.resource = resourceCopy
