@@ -6,6 +6,7 @@
 package helpers
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
@@ -18,14 +19,33 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-const configFilePermissions = 0o600
+const (
+	configFilePermissions = 0o600
+	dockerContextPath     = "../../../"
+
+	packageNameKey            = "PACKAGE_NAME"
+	packagesRepoKey           = "PACKAGES_REPO"
+	baseImageKey              = "BASE_IMAGE"
+	osReleaseKey              = "OS_RELEASE"
+	osVersionKey              = "OS_VERSION"
+	entryPointKey             = "ENTRY_POINT"
+	containerNginxImageRegKey = "CONTAINER_NGINX_IMAGE_REGISTRY"
+	imagePathKey              = "IMAGE_PATH"
+	tagKey                    = "TAG"
+)
 
 type Parameters struct {
-	NginxConfigPath      string
-	NginxAgentConfigPath string
-	LogMessage           string
+	NginxConfigPath          string
+	NginxAgentConfigPath     string
+	NginxAgentOTELConfigPath string
+	LogMessage               string
 }
 
+type ConfigFileDescriptor struct {
+	ContainerPath string
+	ExpectedPath  string
+	LogLabel      string
+}
 type MockCollectorContainers struct {
 	Agent      testcontainers.Container
 	Otel       testcontainers.Container
@@ -40,16 +60,16 @@ func StartContainer(
 ) testcontainers.Container {
 	tb.Helper()
 
-	packageName := Env(tb, "PACKAGE_NAME")
-	packageRepo := Env(tb, "PACKAGES_REPO")
-	baseImage := Env(tb, "BASE_IMAGE")
-	osRelease := Env(tb, "OS_RELEASE")
-	osVersion := Env(tb, "OS_VERSION")
+	packageName := Env(tb, packageNameKey)
+	packageRepo := Env(tb, packagesRepoKey)
+	baseImage := Env(tb, baseImageKey)
+	osRelease := Env(tb, osReleaseKey)
+	osVersion := Env(tb, osVersionKey)
 	buildTarget := Env(tb, "BUILD_TARGET")
 	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
-	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
-	tag := Env(tb, "TAG")
-	imagePath := Env(tb, "IMAGE_PATH")
+	containerRegistry := Env(tb, containerNginxImageRegKey)
+	tag := Env(tb, tagKey)
+	imagePath := Env(tb, imagePathKey)
 
 	var env map[string]string
 	if os.Getenv("NGINX_LICENSE_JWT") != "" {
@@ -58,23 +78,46 @@ func StartContainer(
 			"NGINX_LICENSE_JWT": nginxLicenseJwt,
 		}
 	}
-
+	files := []testcontainers.ContainerFile{
+		{
+			HostFilePath:      parameters.NginxAgentConfigPath,
+			ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
+			FileMode:          configFilePermissions,
+		},
+		{
+			HostFilePath:      parameters.NginxConfigPath,
+			ContainerFilePath: "/etc/nginx/nginx.conf",
+			FileMode:          configFilePermissions,
+		},
+		{
+			HostFilePath:      "../../config/nginx/mime.types",
+			ContainerFilePath: "/etc/nginx/mime.types",
+			FileMode:          configFilePermissions,
+		},
+	}
+	if parameters.NginxAgentOTELConfigPath != "" {
+		files = append(files, testcontainers.ContainerFile{
+			HostFilePath:      parameters.NginxAgentOTELConfigPath,
+			ContainerFilePath: "/etc/nginx-agent/my_config.yaml",
+			FileMode:          configFilePermissions,
+		})
+	}
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../../",
+			Context:       dockerContextPath,
 			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
-				"PACKAGE_NAME":                   ToPtr(packageName),
-				"PACKAGES_REPO":                  ToPtr(packageRepo),
-				"BASE_IMAGE":                     ToPtr(baseImage),
-				"OS_RELEASE":                     ToPtr(osRelease),
-				"OS_VERSION":                     ToPtr(osVersion),
-				"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
-				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
-				"IMAGE_PATH":                     ToPtr(imagePath),
-				"TAG":                            ToPtr(tag),
+				packageNameKey:            ToPtr(packageName),
+				packagesRepoKey:           ToPtr(packageRepo),
+				baseImageKey:              ToPtr(baseImage),
+				osReleaseKey:              ToPtr(osRelease),
+				osVersionKey:              ToPtr(osVersion),
+				entryPointKey:             ToPtr("./test/docker/entrypoint.sh"),
+				containerNginxImageRegKey: ToPtr(containerRegistry),
+				imagePathKey:              ToPtr(imagePath),
+				tagKey:                    ToPtr(tag),
 			},
 			BuildOptionsModifier: func(buildOptions *client.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
@@ -90,24 +133,8 @@ func StartContainer(
 				"agent",
 			},
 		},
-		Files: []testcontainers.ContainerFile{
-			{
-				HostFilePath:      parameters.NginxAgentConfigPath,
-				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
-				FileMode:          configFilePermissions,
-			},
-			{
-				HostFilePath:      parameters.NginxConfigPath,
-				ContainerFilePath: "/etc/nginx/nginx.conf",
-				FileMode:          configFilePermissions,
-			},
-			{
-				HostFilePath:      "../../config/nginx/mime.types",
-				ContainerFilePath: "/etc/nginx/mime.types",
-				FileMode:          configFilePermissions,
-			},
-		},
-		Env: env,
+		Files: files,
+		Env:   env,
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -127,32 +154,32 @@ func StartAgentlessContainer(
 ) testcontainers.Container {
 	tb.Helper()
 
-	packageName := Env(tb, "PACKAGE_NAME")
-	packageRepo := Env(tb, "PACKAGES_REPO")
-	baseImage := Env(tb, "BASE_IMAGE")
-	osRelease := Env(tb, "OS_RELEASE")
-	osVersion := Env(tb, "OS_VERSION")
+	packageName := Env(tb, packageNameKey)
+	packageRepo := Env(tb, packagesRepoKey)
+	baseImage := Env(tb, baseImageKey)
+	osRelease := Env(tb, osReleaseKey)
+	osVersion := Env(tb, osVersionKey)
 	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
-	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
-	tag := Env(tb, "TAG")
-	imagePath := Env(tb, "IMAGE_PATH")
+	containerRegistry := Env(tb, containerNginxImageRegKey)
+	tag := Env(tb, tagKey)
+	imagePath := Env(tb, imagePathKey)
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../../",
+			Context:       dockerContextPath,
 			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
-				"PACKAGE_NAME":                   ToPtr(packageName),
-				"PACKAGES_REPO":                  ToPtr(packageRepo),
-				"BASE_IMAGE":                     ToPtr(baseImage),
-				"OS_RELEASE":                     ToPtr(osRelease),
-				"OS_VERSION":                     ToPtr(osVersion),
-				"ENTRY_POINT":                    ToPtr("./test/docker/agentless-entrypoint.sh"),
-				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
-				"IMAGE_PATH":                     ToPtr(imagePath),
-				"TAG":                            ToPtr(tag),
+				packageNameKey:            ToPtr(packageName),
+				packagesRepoKey:           ToPtr(packageRepo),
+				baseImageKey:              ToPtr(baseImage),
+				osReleaseKey:              ToPtr(osRelease),
+				osVersionKey:              ToPtr(osVersion),
+				entryPointKey:             ToPtr("./test/docker/agentless-entrypoint.sh"),
+				containerNginxImageRegKey: ToPtr(containerRegistry),
+				imagePathKey:              ToPtr(imagePath),
+				tagKey:                    ToPtr(tag),
 			},
 			BuildOptionsModifier: func(buildOptions *client.ImageBuildOptions) {
 				buildOptions.Target = "install-nginx"
@@ -187,33 +214,33 @@ func StartNginxLessContainer(
 ) testcontainers.Container {
 	tb.Helper()
 
-	packageName := Env(tb, "PACKAGE_NAME")
-	packageRepo := Env(tb, "PACKAGES_REPO")
-	baseImage := Env(tb, "BASE_IMAGE")
+	packageName := Env(tb, packageNameKey)
+	packageRepo := Env(tb, packagesRepoKey)
+	baseImage := Env(tb, baseImageKey)
 	buildTarget := Env(tb, "BUILD_TARGET")
-	osRelease := Env(tb, "OS_RELEASE")
-	osVersion := Env(tb, "OS_VERSION")
+	osRelease := Env(tb, osReleaseKey)
+	osVersion := Env(tb, osVersionKey)
 	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
-	tag := Env(tb, "TAG")
-	imagePath := Env(tb, "IMAGE_PATH")
-	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	tag := Env(tb, tagKey)
+	imagePath := Env(tb, imagePathKey)
+	containerRegistry := Env(tb, containerNginxImageRegKey)
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../../",
+			Context:       dockerContextPath,
 			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
-				"PACKAGE_NAME":                   ToPtr(packageName),
-				"PACKAGES_REPO":                  ToPtr(packageRepo),
-				"BASE_IMAGE":                     ToPtr(baseImage),
-				"OS_RELEASE":                     ToPtr(osRelease),
-				"OS_VERSION":                     ToPtr(osVersion),
-				"ENTRY_POINT":                    ToPtr("./test/docker/nginxless-entrypoint.sh"),
-				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
-				"IMAGE_PATH":                     ToPtr(imagePath),
-				"TAG":                            ToPtr(tag),
+				packageNameKey:            ToPtr(packageName),
+				packagesRepoKey:           ToPtr(packageRepo),
+				baseImageKey:              ToPtr(baseImage),
+				osReleaseKey:              ToPtr(osRelease),
+				osVersionKey:              ToPtr(osVersion),
+				entryPointKey:             ToPtr("./test/docker/nginxless-entrypoint.sh"),
+				containerNginxImageRegKey: ToPtr(containerRegistry),
+				imagePathKey:              ToPtr(imagePath),
+				tagKey:                    ToPtr(tag),
 			},
 			BuildOptionsModifier: func(buildOptions *client.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
@@ -257,7 +284,7 @@ func StartMockManagementPlaneGrpcContainer(
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../../",
+			Context:       dockerContextPath,
 			Dockerfile:    "./test/mock/grpc/Dockerfile",
 			KeepImage:     false,
 			PrintBuildLog: true,
@@ -290,7 +317,7 @@ func StartAuxiliaryMockManagementPlaneGrpcContainer(ctx context.Context, tb test
 	tb.Helper()
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../../",
+			Context:       dockerContextPath,
 			Dockerfile:    "./test/integration/auxiliarycommandserver/Dockerfile",
 			KeepImage:     false,
 			PrintBuildLog: true,
@@ -325,7 +352,7 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 	otel, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			FromDockerfile: testcontainers.FromDockerfile{
-				Context:       "../../../",
+				Context:       dockerContextPath,
 				Dockerfile:    "./test/mock/collector/mock-collector/Dockerfile",
 				KeepImage:     false,
 				PrintBuildLog: true,
@@ -472,4 +499,54 @@ func LogAndTerminateStack(ctx context.Context, tb testing.TB,
 	logAndTerminate("Agent", containers.Agent)
 	logAndTerminate("Otel Collector", containers.Otel)
 	logAndTerminate("Prometheus", containers.Prometheus)
+}
+
+// ExtractFileFromContainer copies a file from the container at the given path and returns its contents as a string.
+func ExtractFileFromContainer(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	containerPath string,
+) string {
+	tb.Helper()
+	fileContent, err := testContainer.CopyFileFromContainer(ctx, containerPath)
+	require.NoError(tb, err)
+
+	content, err := io.ReadAll(fileContent)
+	require.NoError(tb, err)
+	content = bytes.TrimSpace(content)
+
+	return string(content)
+}
+
+// ValidateContainerFiles compares files in the container to expected files on disk.
+func ValidateContainerFiles(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	files []ConfigFileDescriptor,
+) {
+	tb.Helper()
+
+	for _, file := range files {
+		config := ExtractFileFromContainer(ctx, tb, testContainer, file.ContainerPath)
+		expectedConfig, err := os.ReadFile(file.ExpectedPath)
+		require.NoError(tb, err)
+
+		expectedConfig = bytes.TrimSpace(expectedConfig)
+		assert.Equal(tb, string(expectedConfig), config, "Mismatch in file: %s", file.LogLabel)
+	}
+}
+
+// AssertStringInContainerFile asserts that a string exists in a file inside the container.
+func AssertStringInContainerFile(
+	ctx context.Context,
+	tb testing.TB,
+	testContainer testcontainers.Container,
+	containerPath string,
+	searchString string,
+) {
+	tb.Helper()
+	content := ExtractFileFromContainer(ctx, tb, testContainer, containerPath)
+	assert.Contains(tb, content, searchString, "Expected phrase not found in file: %s", containerPath)
 }

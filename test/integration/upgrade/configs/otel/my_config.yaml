@@ -1,0 +1,15 @@
+receivers:
+  host_metrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    metrics:
+      receivers: [host_metrics]
+      exporters: [debug]

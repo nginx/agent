@@ -270,7 +270,7 @@ func (mgs *FileService) sendGetFileStreamChunks(ctx context.Context, fullFilePat
 	defer func() {
 		closeError := f.Close()
 		if closeError != nil {
-			slog.Warn("Failed to close file",
+			slog.WarnContext(ctx, "Failed to close file",
 				"file", filePath,
 				"error", closeError,
 			)

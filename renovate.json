@@ -35,6 +35,14 @@
             "schedule": [
                 "before 3am on Tuesday"
             ]
+        },
+        {
+            "matchBaseBranches": ["main"],
+            "addLabels": ["v3.x"]
+        },
+        {
+            "matchBaseBranches": ["dev-v2"],
+            "addLabels": ["v2.x"]
         }
     ],
     "rebaseWhen": "behind-base-branch",

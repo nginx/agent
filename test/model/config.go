@@ -10,6 +10,8 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 )
 
+const accessLogFormat = "$remote_addr - $remote_user [$time_local]"
+
 func ConfigContext() *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		StubStatus: &model.APIDetails{
@@ -45,7 +47,7 @@ func ConfigContextWithNames(
 		AccessLogs: []*model.AccessLog{
 			{
 				Name:        accessLogName,
-				Format:      "$remote_addr - $remote_user [$time_local]",
+				Format:      accessLogFormat,
 				Readable:    true,
 				Permissions: "0600",
 			},
@@ -97,7 +99,7 @@ func ConfigContextWithoutErrorLog(
 		AccessLogs: []*model.AccessLog{
 			{
 				Name:        accessLogName,
-				Format:      "$remote_addr - $remote_user [$time_local]",
+				Format:      accessLogFormat,
 				Readable:    true,
 				Permissions: "0600",
 			},
@@ -181,7 +183,7 @@ func ConfigContextWithSysLog(
 		AccessLogs: []*model.AccessLog{
 			{
 				Name:        accessLogName,
-				Format:      "$remote_addr - $remote_user [$time_local]",
+				Format:      accessLogFormat,
 				Readable:    true,
 				Permissions: "0600",
 			},

@@ -1,0 +1,52 @@
+receivers:
+  container_metrics:
+    collection_interval: 1m0s
+  host_metrics:
+    collection_interval: 1m0s
+    initial_delay: 1s
+    scrapers:
+      network:
+
+processors:
+  batch/default_logs:
+    send_batch_size: 100
+    timeout: 1m0s
+    send_batch_max_size: 100
+  batch/default_metrics:
+    send_batch_size: 1000
+    timeout: 30s
+    send_batch_max_size: 1000
+  securityviolationsfilter/default: {}
+
+exporters:
+  otlp_grpc/default:
+    endpoint: "managementPlane:9092"
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 10s
+      max_interval: 60s
+      max_elapsed_time: 10m
+    tls:
+      insecure: true
+extensions:
+
+service:
+  telemetry:
+    metrics:
+      level: none
+    logs:
+      level: DEBUG
+      output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]
+      error_output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]
+  extensions:
+
+  pipelines:
+    metrics/default:
+      receivers:
+        - container_metrics
+        - host_metrics
+      processors:
+        - batch/default_metrics
+      exporters:
+        - otlp_grpc/default

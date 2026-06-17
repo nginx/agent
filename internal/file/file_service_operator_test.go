@@ -27,7 +27,8 @@ import (
 func TestFileServiceOperator_UpdateOverview(t *testing.T) {
 	ctx := context.Background()
 
-	filePath := filepath.Join(t.TempDir(), "nginx.conf")
+	tempDir := t.TempDir()
+	filePath := filepath.Join(tempDir, "nginx.conf")
 	fileMeta := protos.FileMeta(filePath, "")
 
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
@@ -47,7 +48,10 @@ func TestFileServiceOperator_UpdateOverview(t *testing.T) {
 
 	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+
+	fileServiceOperator := NewFileServiceOperator(agentConfig, fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(true)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
@@ -63,7 +67,8 @@ func TestFileServiceOperator_UpdateOverview(t *testing.T) {
 func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 	ctx := context.Background()
 
-	filePath := filepath.Join(t.TempDir(), "nginx.conf")
+	tempDir := t.TempDir()
+	filePath := filepath.Join(tempDir, "nginx.conf")
 	fileMeta := protos.FileMeta(filePath, "")
 
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
@@ -85,7 +90,10 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 
 	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+
+	fileServiceOperator := NewFileServiceOperator(agentConfig, fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(true)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{

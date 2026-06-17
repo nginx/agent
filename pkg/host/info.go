@@ -339,15 +339,16 @@ func containsContainerID(slices []string) bool {
 func readOsRelease(path string) (map[string]string, error) {
 	var errs error
 	f, err := os.Open(path)
+	if err != nil {
+		return nil, errors.Join(errs, fmt.Errorf("release file %s is unreadable: %w", path, err))
+	}
+
 	defer func(f *os.File) {
 		closeErr := f.Close()
 		if closeErr != nil {
 			errs = errors.Join(err, closeErr)
 		}
 	}(f)
-	if err != nil {
-		return nil, errors.Join(errs, fmt.Errorf("release file %s is unreadable: %w", path, err))
-	}
 
 	info, err := parseOsReleaseFile(f)
 	if err != nil {
@@ -358,7 +359,7 @@ func readOsRelease(path string) (map[string]string, error) {
 }
 
 func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
-	osReleaseInfoMap := map[string]string{"NAME": "unix"}
+	osReleaseInfoMap := map[string]string{name: "unix"}
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())

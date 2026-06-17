@@ -6,6 +6,7 @@
 package record
 
 import (
+	"github.com/nginx/agent/v3/internal/collector/metricsutil"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 	plusapi "github.com/nginx/nginx-plus-go-client/v3/client"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -28,7 +29,7 @@ func (hm *HTTPMetrics) RecordHTTPMetrics(stats *plusapi.Stats, now pcommon.Times
 	hm.mb.RecordNginxHTTPRequestsDataPoint(now, int64(stats.HTTPRequests.Total), "", 0)
 
 	// Request Count
-	requestsDiff := int64(stats.HTTPRequests.Total) - int64(hm.PreviousHTTPRequestsTotal)
+	requestsDiff := metricsutil.Increase(int64(stats.HTTPRequests.Total), int64(hm.PreviousHTTPRequestsTotal))
 	hm.mb.RecordNginxHTTPRequestCountDataPoint(now, requestsDiff, "", 0)
 	hm.PreviousHTTPRequestsTotal = stats.HTTPRequests.Total
 
