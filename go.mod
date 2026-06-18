@@ -38,7 +38,7 @@ require (
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
 	github.com/prometheus/client_golang v1.19.1
-	github.com/rs/cors v1.11.0
+	github.com/rs/cors v1.11.1
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
 	golang.org/x/sys v0.45.0
