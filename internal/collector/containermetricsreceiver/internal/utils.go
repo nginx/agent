@@ -24,6 +24,10 @@ func ReadLines(filename string) ([]string, error) {
 //nolint:revive // cognitive complexity is 16
 func ReadLinesOffsetN(filename string, offset uint, n int) (lines []string, err error) {
 	f, err := os.Open(filename)
+	if err != nil {
+		return []string{}, err
+	}
+
 	defer func() {
 		closeErr := f.Close()
 		if closeErr != nil {
@@ -32,10 +36,6 @@ func ReadLinesOffsetN(filename string, offset uint, n int) (lines []string, err 
 			}
 		}
 	}()
-
-	if err != nil {
-		return []string{}, err
-	}
 
 	var ret []string
 

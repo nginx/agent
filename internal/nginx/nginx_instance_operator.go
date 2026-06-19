@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -46,7 +47,7 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 	slog.InfoContext(ctx, "Validating NGINX configuration")
 	exePath := instance.GetInstanceRuntime().GetBinaryPath()
 
-	out, err := i.executer.RunCmd(ctx, exePath, "-t")
+	out, err := i.executer.RunCmd(ctx, filepath.Clean(exePath), "-t")
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
 	}

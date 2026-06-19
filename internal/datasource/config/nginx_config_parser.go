@@ -252,6 +252,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	}
 
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
+	ignoredAccessLog := make(map[string]struct{})
+	ignoredErrorLog := make(map[string]struct{})
 
 	for _, conf := range payload.Config {
 		slog.DebugContext(ctx, "Traversing NGINX config file", "config", conf)
@@ -274,16 +276,31 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "log_format":
 					formatMap = ncp.formatMap(directive)
 				case "access_log":
+					if _, seen := ignoredAccessLog[directive.Args[0]]; seen {
+						slog.DebugContext(ctx, "Ignoring duplicated access_log entry:", "directive", directive.Args[0])
+
+						return nil
+					}
+
 					if !ncp.ignoreLog(directive.Args[0]) {
 						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
 							formatMap)
 						nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog, nginxConfigContext.AccessLogs)
+					} else {
+						ignoredAccessLog[directive.Args[0]] = struct{}{}
 					}
 				case "error_log":
+					if _, seen := ignoredErrorLog[directive.Args[0]]; seen {
+						slog.DebugContext(ctx, "Ignoring duplicated error_log entry:", "directive", directive.Args[0])
+
+						return nil
+					}
+
 					if !ncp.ignoreLog(directive.Args[0]) {
 						errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
 						nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
 					} else {
+						ignoredErrorLog[directive.Args[0]] = struct{}{}
 						slog.WarnContext(ctx, fmt.Sprintf("Currently error log outputs to %s. Log monitoring "+
 							"is disabled while applying a config; "+"log errors to file to enable error monitoring",
 							directive.Args[0]), "error_log", directive.Args[0])
@@ -920,7 +937,7 @@ func (ncp *NginxConfigParser) parsePathFromLocationDirective(location *crossplan
 	if len(location.Args) > 0 {
 		if location.Args[0] != "=" {
 			path = location.Args[0]
-		} else {
+		} else if len(location.Args) > 1 {
 			path = location.Args[1]
 		}
 	}

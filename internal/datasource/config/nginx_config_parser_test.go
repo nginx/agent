@@ -344,6 +344,17 @@ server {
           allow 127.0.0.1;
           deny all;
        }
+}
+`
+	testConf27 = `http {
+	access_log /var/log/nginx/access.log;
+	access_log /var/log/nginx/access.log; 
+
+}`
+	testConf28 = `http {
+	error_log /var/log/nginx/error.log;
+	error_log /var/log/nginx/error.log; 
+
 }`
 )
 
@@ -1491,6 +1502,64 @@ Reading: 0 Writing: 1 Waiting: 1
 			}
 			result := nginxConfigParser.pingAPIEndpoint(ctx, statusAPI, "stub_status")
 			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestNginxConfigParser_DuplicatedLogPaths(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+
+	file := helpers.CreateFileWithErrorCheck(t, dir, "nginx-parse-config.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
+
+	instance := protos.NginxOssInstance([]string{})
+	instance.InstanceRuntime.ConfigPath = file.Name()
+
+	tests := []struct {
+		name         string
+		conf         string
+		expectedLog  string
+		excludedLogs []string
+	}{
+		{
+			name:         "Test 1: Duplicate access log path is excluded once",
+			conf:         testConf27,
+			expectedLog:  "Ignoring duplicated access_log entry",
+			excludedLogs: []string{"/var/log/nginx/access.log"},
+		},
+		{
+			name:         "Test 2: Duplicate error log path is excluded once",
+			conf:         testConf28,
+			expectedLog:  "Ignoring duplicated error_log entry",
+			excludedLogs: []string{"/var/log/nginx/error.log"},
+		},
+		{
+			name:         "Test 3: Duplicate access log path not excluded is skipped",
+			conf:         testConf27,
+			expectedLog:  "Found duplicate access log, skipping",
+			excludedLogs: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
+			agentConfig := types.AgentConfig()
+			agentConfig.DataPlaneConfig.Nginx.ExcludeLogs = test.excludedLogs
+			agentConfig.AllowedDirectories = []string{dir}
+			nginxConfig := NewNginxConfigParser(agentConfig)
+
+			writeErr := os.WriteFile(file.Name(), []byte(test.conf), 0o600)
+			require.NoError(t, writeErr)
+
+			_, parseError := nginxConfig.Parse(ctx, instance)
+			require.NoError(t, parseError)
+
+			helpers.ValidateLog(t, test.expectedLog, logBuf)
+			logBuf.Reset()
 		})
 	}
 }
