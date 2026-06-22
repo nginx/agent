@@ -225,12 +225,13 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		ContainerMetrics   *ContainerMetricsReceiver  `yaml:"container_metrics" mapstructure:"container_metrics"`
-		HostMetrics        *HostMetrics               `yaml:"host_metrics"      mapstructure:"host_metrics"`
-		OtlpReceivers      map[string]*OtlpReceiver   `yaml:"otlp"              mapstructure:"otlp"`
-		TcplogReceivers    map[string]*TcplogReceiver `yaml:"tcplog"            mapstructure:"tcplog"`
-		NginxReceivers     []NginxReceiver            `yaml:"-"`
-		NginxPlusReceivers []NginxPlusReceiver        `yaml:"-"`
+		ContainerMetrics     *ContainerMetricsReceiver  `yaml:"container_metrics" mapstructure:"container_metrics"`
+		HostMetrics          *HostMetrics               `yaml:"host_metrics"      mapstructure:"host_metrics"`
+		OtlpReceivers        map[string]*OtlpReceiver   `yaml:"otlp"              mapstructure:"otlp"`
+		TcplogReceivers      map[string]*TcplogReceiver `yaml:"tcplog"            mapstructure:"tcplog"`
+		NginxReceivers       []NginxReceiver            `yaml:"-"`
+		NginxPlusReceivers   []NginxPlusReceiver        `yaml:"-"`
+		CertificateReceivers []CertificateReceiver      `yaml:"-"`
 	}
 
 	OtlpReceiver struct {
@@ -278,6 +279,12 @@ type (
 	}
 
 	ContainerMetricsReceiver struct {
+		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
+	}
+
+	CertificateReceiver struct {
+		InstanceID         string        `yaml:"instance_id"         mapstructure:"instance_id"`
+		CertFilePaths      []string      `yaml:"-"`
 		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
 	}
 
@@ -465,16 +472,13 @@ func (c *Config) AreReceiversConfigured() bool {
 		return false
 	}
 
-	return c.Collector.Receivers.NginxPlusReceivers != nil ||
-		len(c.Collector.Receivers.NginxPlusReceivers) > 0 ||
-		c.Collector.Receivers.OtlpReceivers != nil ||
+	return len(c.Collector.Receivers.NginxPlusReceivers) > 0 ||
 		len(c.Collector.Receivers.OtlpReceivers) > 0 ||
-		c.Collector.Receivers.NginxReceivers != nil ||
 		len(c.Collector.Receivers.NginxReceivers) > 0 ||
 		c.Collector.Receivers.HostMetrics != nil ||
 		c.Collector.Receivers.ContainerMetrics != nil ||
-		c.Collector.Receivers.TcplogReceivers != nil ||
-		len(c.Collector.Receivers.TcplogReceivers) > 0
+		len(c.Collector.Receivers.TcplogReceivers) > 0 ||
+		len(c.Collector.Receivers.CertificateReceivers) > 0
 }
 
 func (c *Config) NewContextWithLabels(ctx context.Context) context.Context {
