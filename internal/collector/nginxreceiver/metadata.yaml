@@ -45,6 +45,8 @@ metrics:
   nginx.http.connection.count:
     enabled: true
     description: The current number of connections.
+    stability:
+      level: development
     gauge:
       value_type: int
     unit: connections
@@ -53,6 +55,8 @@ metrics:
   nginx.http.connections:
     enabled: true
     description: The total number of connections, since NGINX was last started or reloaded.
+    stability:
+      level: development
     sum:
       value_type: int
       monotonic: true
@@ -63,12 +67,16 @@ metrics:
   nginx.http.request.count:
     enabled: true
     description: The total number of client requests received, since the last collection interval.
+    stability:
+      level: development
     gauge:
       value_type: int
     unit: requests
   nginx.http.requests:
     enabled: true
     description: The total number of client requests received, since NGINX was last started or reloaded.
+    stability:
+      level: development
     sum:
       value_type: int
       monotonic: true
@@ -77,6 +85,8 @@ metrics:
   nginx.http.response.count:
     enabled: true
     description: The total number of HTTP responses since the last collection interval, grouped by status code range.
+    stability:
+      level: development
     gauge:
       value_type: int
     unit: responses
