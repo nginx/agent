@@ -68,7 +68,7 @@ jobs:
       create_pull_request: ${{steps.vars.outputs.create_pull_request }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -91,7 +91,7 @@ jobs:
       release_id: ${{ steps.vars.outputs.RELEASE_ID }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         with:
           ref: ${{ inputs.releaseBranch }}
@@ -187,7 +187,7 @@ jobs:
       contents: write # Needed to tag a release
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ needs.vars.outputs.tag_release == 'true' }}
         with:
           ref: ${{ inputs.releaseBranch }}
@@ -208,7 +208,7 @@ jobs:
       id-token: write # Needed to get a token to upload packages to NGINX repo
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -304,7 +304,7 @@ jobs:
       pull-requests: write # Needed to create pull request back into main branch
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.releaseBranch }}
 
