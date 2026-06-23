@@ -39,7 +39,9 @@ func (grpcService *MetricsGrpcService) Stream(stream proto.MetricsService_Stream
 			break
 		}
 		log.Info("Got metrics")
+		grpcService.Lock()
 		grpcService.reports = append(grpcService.reports, report)
+		grpcService.Unlock()
 		grpcService.fromClient <- report
 	}
 	return nil
@@ -62,6 +64,8 @@ func (grpcService *MetricsGrpcService) StreamEvents(stream proto.MetricsService_
 }
 
 func (grpcService *MetricsGrpcService) GetMetrics() []*proto.MetricsReport {
+	grpcService.RLock()
+	defer grpcService.RUnlock()
 	return grpcService.reports
 }
 

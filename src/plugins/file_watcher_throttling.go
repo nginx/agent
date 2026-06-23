@@ -107,8 +107,7 @@ func (fwt *FileWatchThrottle) waitUntilNoMoreSignals() {
 }
 
 func (fwt *FileWatchThrottle) retry() error {
-	since := time.Since(fwt.last.Load())
-	if since.Milliseconds() >= 0 {
+	if time.Since(fwt.last.Load()) >= 0 {
 		fwt.canSend.Store(true)
 		return nil
 	}

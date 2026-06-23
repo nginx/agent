@@ -10,6 +10,7 @@ package services
 import (
 	"encoding/json"
 	"io"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 
@@ -27,6 +28,7 @@ type CommandGrpcService struct {
 	configData       *proto.NginxConfig
 	nginxes          []*proto.NginxDetails
 	configChunks     []*proto.DataChunk
+	chunkMutex       sync.Mutex
 }
 
 func NewCommandService() *CommandGrpcService {
@@ -35,6 +37,7 @@ func NewCommandService() *CommandGrpcService {
 		uploadChannel:   make(chan *proto.DataChunk, 100),
 		toClient:        make(chan *proto.Command, 100),
 		fromClient:      make(chan *proto.Command, 100),
+		chunkMutex:      sync.Mutex{},
 	}
 }
 
@@ -103,10 +106,14 @@ func (grpcService *CommandGrpcService) Upload(upload proto.Commander_UploadServe
 			if chunk != nil {
 				if _, header := chunk.Chunk.(*proto.DataChunk_Header); header {
 					// if a header, reset chunks
+					grpcService.chunkMutex.Lock()
 					grpcService.configChunks = make([]*proto.DataChunk, 0)
+					grpcService.chunkMutex.Unlock()
 				}
 
+				grpcService.chunkMutex.Lock()
 				grpcService.configChunks = append(grpcService.configChunks, chunk)
+				grpcService.chunkMutex.Unlock()
 			}
 		default:
 		}

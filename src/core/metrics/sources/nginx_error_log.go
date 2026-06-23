@@ -116,6 +116,7 @@ func (c *NginxErrorLog) Stop() {
 
 func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	c.baseDimensions = dimensions
 
@@ -128,7 +129,6 @@ func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *met
 		// add, remove or update existing log trailers
 		c.syncLogs()
 	}
-	c.mu.Unlock()
 }
 
 func (c *NginxErrorLog) recreateLogs() {

@@ -44,6 +44,7 @@ type OneTimeRegistration struct {
 	dataplaneSoftwareDetails      map[string]*proto.DataplaneSoftwareDetails
 	pipeline                      core.MessagePipeInterface
 	dataplaneSoftwareDetailsMutex sync.Mutex
+	processMutex                  sync.RWMutex
 	processes                     []*core.Process
 	logOnce                       sync.Once
 }
@@ -67,6 +68,7 @@ func NewOneTimeRegistration(
 		binary:                        binary,
 		dataplaneSoftwareDetails:      make(map[string]*proto.DataplaneSoftwareDetails),
 		dataplaneSoftwareDetailsMutex: sync.Mutex{},
+		processMutex:                  sync.RWMutex{},
 		processes:                     processes,
 	}
 }
@@ -97,6 +99,8 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 			r.dataplaneSoftwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
 		}
 	case msg.Exact(core.NginxDetailProcUpdate):
+		r.processMutex.Lock()
+		defer r.processMutex.Unlock()
 		if processes, ok := msg.Data().([]*core.Process); ok {
 			r.processes = processes
 		}
@@ -169,6 +173,8 @@ func (r *OneTimeRegistration) registerAgent() {
 	}
 
 	findNginxMasterProcess := func() error {
+		r.processMutex.RLock()
+		defer r.processMutex.RUnlock()
 		for _, proc := range r.processes {
 			// only need master process for registration
 			if proc.IsMaster {

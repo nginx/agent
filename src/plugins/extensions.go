@@ -75,10 +75,12 @@ func (e *Extensions) Process(msg *core.Message) {
 					nap, err := extensions.NewNginxAppProtect(e.conf, e.env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
 					if err != nil {
 						log.Warnf("Unable to load the Nginx App Protect plugin due to the following error: %v", err)
+						break
 					}
 					err = e.pipeline.Register(e.conf.QueueSize, nil, []core.ExtensionPlugin{nap})
 					if err != nil {
 						log.Errorf("Unable to register %s extension, %v", data, err)
+						break
 					}
 					nap.Init(e.pipeline)
 				}

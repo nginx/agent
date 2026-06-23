@@ -82,6 +82,10 @@ func getMemOOMStats(statFile string, oom_key string, kill_key string) (map[strin
 
 	for _, line := range lines {
 		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return memOOMStats, fmt.Errorf("%+v required 2 fields", fields)
+		}
+
 		if fields[0] == oom_key {
 			oom, err := strconv.ParseFloat(fields[1], 64)
 			if err != nil {

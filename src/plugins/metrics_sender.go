@@ -85,13 +85,18 @@ func (r *MetricsSender) Process(msg *core.Message) {
 				err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))
 				if err != nil {
 					l := len(report.Events)
-					var sb strings.Builder
-					for i := 0; i < l-1; i++ {
-						sb.WriteString(report.Events[i].GetSecurityViolationEvent().SupportID)
-						sb.WriteString(", ")
+					if l > 0 {
+						var sb strings.Builder
+						for i := 0; i < l-1; i++ {
+							sb.WriteString(report.Events[i].GetSecurityViolationEvent().SupportID)
+							sb.WriteString(", ")
+						}
+						sb.WriteString(report.Events[l-1].GetSecurityViolationEvent().SupportID)
+						log.Errorf("Failed to send EventReport with error: %v, supportID list: %s", err, sb.String())
+					} else {
+						log.Errorf("Failed to send EventReport with error: %v", err)
 					}
-					sb.WriteString(report.Events[l-1].GetSecurityViolationEvent().SupportID)
-					log.Errorf("Failed to send EventReport with error: %v, supportID list: %s", err, sb.String())
+
 				}
 			}
 		}

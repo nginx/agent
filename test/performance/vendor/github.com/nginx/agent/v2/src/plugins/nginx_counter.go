@@ -116,9 +116,9 @@ func (nc *NginxCounter) Close() {
 		log.Warn("Error removing socket")
 	}
 
-	nc.processMutex.RLock()
+	nc.processMutex.Lock()
 	nc.nginxes = nil
-	nc.processMutex.RUnlock()
+	nc.processMutex.Unlock()
 	log.Info("NGINX Counter is closed")
 }
 

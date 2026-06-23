@@ -92,7 +92,7 @@ func (r *metricReporter) createClient() error {
 	grpc, err := sdkGRPC.NewGrpcConnectionWithContext(r.ctx, r.server, r.DialOptions())
 	if err != nil {
 		log.Errorf("Unable to create client connection to %s: %s", r.server, err)
-		log.Infof("Metric reporter retrying to connect to %s", r.grpc.Target())
+		log.Infof("Metric reporter retrying to connect to %s", r.server)
 		return err
 	}
 	r.grpc = grpc
