@@ -9,7 +9,7 @@ require (
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.36.0
 	google.golang.org/grpc v1.79.3
