@@ -95,6 +95,7 @@ const (
 	DefCollectorConfigPath  = "/etc/nginx-agent/opentelemetry-collector-agent.yaml"
 	DefCollectorLogLevel    = "INFO"
 	DefCollectorLogPath     = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
+	DefCollectorLogStdout   = "stdout"
 	DefCollectorTLSCertPath = "/var/lib/nginx-agent/cert.pem"
 	DefCollectorTLSKeyPath  = "/var/lib/nginx-agent/key.pem"
 	DefCollectorTLSCAPath   = "/var/lib/nginx-agent/ca.pem"
