@@ -346,7 +346,9 @@ func ValidateGrpcError(err error) error {
 	if err != nil {
 		if statusError, ok := status.FromError(err); ok {
 			if statusError.Code() == codes.InvalidArgument || statusError.Code() == codes.Unimplemented ||
-				statusError.Code() == codes.Canceled {
+				statusError.Code() == codes.Canceled || statusError.Code() == codes.NotFound ||
+				statusError.Code() == codes.AlreadyExists || statusError.Code() == codes.PermissionDenied ||
+				statusError.Code() == codes.Unauthenticated {
 				return backoff.Permanent(err)
 			}
 		}
