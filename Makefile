@@ -31,7 +31,7 @@ GOTIDY  = ${GOMOD} tidy
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 22.04, 24.04 25.04, 25.10                 |                                                                |
+# | ubuntu           | 22.04, 24.04 25.04, 25.10 26.04           |                                                                |
 # | debian           | bullseye-slim, bookworm-slim, trixie-slim |                                                                |
 # | redhatenterprise | 8, 9, 10                                  |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |
