@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,11 @@ const (
 	containerNginxImageRegKey = "CONTAINER_NGINX_IMAGE_REGISTRY"
 	imagePathKey              = "IMAGE_PATH"
 	tagKey                    = "TAG"
+)
+
+const (
+	extractFileMaxAttempts = 10
+	extractFileRetryDelay  = 200 * time.Millisecond
 )
 
 type Parameters struct {
@@ -509,8 +515,24 @@ func ExtractFileFromContainer(
 	containerPath string,
 ) string {
 	tb.Helper()
-	fileContent, err := testContainer.CopyFileFromContainer(ctx, containerPath)
-	require.NoError(tb, err)
+
+	var fileContent io.ReadCloser
+	totalTimeout := time.Duration(extractFileMaxAttempts) * extractFileRetryDelay
+
+	assert.Eventually(tb, func() bool {
+		var err error
+		fileContent, err = testContainer.CopyFileFromContainer(ctx, containerPath)
+
+		return err == nil
+	}, totalTimeout, extractFileRetryDelay, "Failed to extract file %s", containerPath)
+
+	if fileContent == nil {
+		tb.Fatalf("Unable to extract file %s", containerPath)
+	}
+
+	defer func() {
+		require.NoError(tb, fileContent.Close())
+	}()
 
 	content, err := io.ReadAll(fileContent)
 	require.NoError(tb, err)

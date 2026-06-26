@@ -8,25 +8,13 @@ ARG OS_VERSION
 ARG OS_RELEASE
 
 WORKDIR /agent
-COPY ./ /agent
-COPY $ENTRY_POINT /agent/entrypoint.sh
+COPY ./build /agent/build
 
-RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
-        then yum install -y oracle-epel-release-el7; \
-    fi
-
-RUN if [ "$OS_VERSION" = "2" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
-        then amazon-linux-extras enable epel && yum clean metadata \
-        && yum install -y epel-release; \
-    fi
-
-RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
-        then yum install -y shadow-utils; \
-    fi
-
-RUN if [ "$OS_RELEASE" = "centos" ] && [ "$OS_VERSION" = "7" ]; \
-        then yum install -y epel-release; \
-    fi
+RUN set -x \
+    && if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; then yum install -y oracle-epel-release-el7; fi \
+    && if [ "$OS_VERSION" = "2" ] && [ "$OS_RELEASE" = "amazonlinux" ]; then amazon-linux-extras enable epel && yum clean metadata && yum install -y epel-release; fi \
+    && if [ "$OS_RELEASE" = "amazonlinux" ]; then yum install -y shadow-utils; fi \
+    && if [ "$OS_RELEASE" = "centos" ] && [ "$OS_VERSION" = "7" ]; then yum install -y epel-release; fi
 
 RUN if [ "$OS_RELEASE" = "redhatenterprise" ] && [ "$OS_VERSION" != "9" ]; \
         then printf "[nginx] \n\
@@ -42,11 +30,10 @@ RUN set -x \
     && adduser -g nginx --system --no-create-home --home /nonexistent --shell /bin/false --uid 101 nginx 2>/dev/null || true \
     && usermod -s /sbin/nologin nginx 2>/dev/null || true \
     && usermod -L nginx 2>/dev/null || true \
-    && yum install -y git \
-                      wget \
-                      procps \
-                      make \
-                      nginx
+    && yum install -y procps-ng \
+                      nginx \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 # Setup nginx agent repository
 RUN if [ "$OS_VERSION" = "2023" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
@@ -74,6 +61,7 @@ gpgkey=https://nginx.org/keys/nginx_signing.key \n\
 module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo; \
     fi
 
+COPY $ENTRY_POINT /agent/entrypoint.sh
 RUN chmod +x /agent/entrypoint.sh
 
 STOPSIGNAL SIGTERM
@@ -87,6 +75,7 @@ FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
+COPY ./build /agent/build
 RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
 
 
