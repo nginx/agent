@@ -7,6 +7,7 @@ package metrics
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"testing"
@@ -68,6 +69,27 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
 	s.T().Logf("NGINX HTTP request count total: %v", got[0])
 	s.Require().Greater(got[0], baselineMetric[0])
 	slog.Info("finished nginx request count metric test")
+}
+
+// Check that Agent is logging collector logs to stdout by default
+func (s *MetricsTestSuite) TestCollectorLogs_TestDefaultStdout() {
+	if os.Getenv("TEST_ENV") != "Container" {
+		s.T().Skip("Skipping test for container environment only")
+	}
+	slog.Info("starting collector logs stdout test")
+
+	logReader, err := utils.MockCollectorStack.Agent.Logs(s.ctx)
+	s.Require().NoError(err, "Failed to read agent container logs")
+	defer logReader.Close()
+
+	buf, err := io.ReadAll(logReader)
+	s.Require().NoError(err, "Failed to read agent container logs")
+	logs := string(buf)
+	
+	s.Require().Contains(logs, "Starting otel-nginx-agent")
+	slog.Info("finished collector logs stdout test")
+
+	utils.GenerateMetrics(s.ctx, s.T(), utils.MockCollectorStack.Agent, 5, "2xx")
 }
 
 // Check that the NGINX response count metric increases after generating requests for each response code
