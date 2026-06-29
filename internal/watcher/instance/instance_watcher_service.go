@@ -126,8 +126,6 @@ func (iw *InstanceWatcherService) Watch(
 	for {
 		select {
 		case <-ctx.Done():
-			close(instancesChannel)
-			close(nginxConfigContextChannel)
 
 			return
 		case <-instanceWatcherTicker.C:
@@ -202,9 +200,13 @@ func (iw *InstanceWatcherService) HandleNginxConfigContextUpdate(ctx context.Con
 		iw.updateInstanceInResource(ctx, instance)
 		instanceUpdates := InstanceUpdates{}
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
-		iw.instancesChannel <- ResourceUpdatesMessage{
+		select {
+		case iw.instancesChannel <- ResourceUpdatesMessage{
 			CorrelationID: correlationID,
 			Resource:      iw.resource,
+		}:
+		case <-ctx.Done():
+			return
 		}
 	}
 }
@@ -259,9 +261,13 @@ func (iw *InstanceWatcherService) checkForUpdates(
 	if len(instanceUpdates.UpdatedInstances) > 0 {
 		iw.updateResourceInstanceList(ctx, instanceUpdates.UpdatedInstances)
 
-		iw.instancesChannel <- ResourceUpdatesMessage{
+		select {
+		case iw.instancesChannel <- ResourceUpdatesMessage{
 			CorrelationID: correlationID,
 			Resource:      iw.resource,
+		}:
+		case <-ctx.Done():
+			return
 		}
 	}
 }
@@ -321,9 +327,13 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 			"nginx_config_context", nginxConfigContext,
 		)
 
-		iw.nginxConfigContextChannel <- NginxConfigContextMessage{
+		select {
+		case iw.nginxConfigContextChannel <- NginxConfigContextMessage{
 			CorrelationID:      logger.CorrelationIDAttr(ctx),
 			NginxConfigContext: nginxConfigContext,
+		}:
+		case <-ctx.Done():
+			return
 		}
 	}
 }
