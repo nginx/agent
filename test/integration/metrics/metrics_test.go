@@ -85,7 +85,7 @@ func (s *MetricsTestSuite) TestCollectorLogs_TestDefaultStdout() {
 	buf, err := io.ReadAll(logReader)
 	s.Require().NoError(err, "Failed to read agent container logs")
 	logs := string(buf)
-	
+
 	s.Require().Contains(logs, "Starting otel-nginx-agent")
 	slog.Info("finished collector logs stdout test")
 
