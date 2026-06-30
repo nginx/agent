@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/datasource/config/configfakes"
@@ -108,6 +109,41 @@ func TestResourceService_Instance(t *testing.T) {
 			assert.Equal(tt, test.result, instance)
 		})
 	}
+}
+
+func TestNginxService_UpdateResource_ConcurrentRead(t *testing.T) {
+	ctx := t.Context()
+
+	resourceService := NewNginxService(ctx, types.AgentConfig())
+	instance := protos.NginxOssInstance([]string{})
+	resourceService.resource = &mpi.Resource{
+		Instances: []*mpi.Instance{instance},
+	}
+
+	updatedResource := &mpi.Resource{
+		Instances: []*mpi.Instance{protos.NginxPlusInstance([]string{})},
+	}
+
+	const iterations = 200
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			resourceService.UpdateResource(ctx, updatedResource)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			resourceService.Instance(instance.GetInstanceMeta().GetInstanceId())
+		}
+	}()
+
+	wg.Wait()
 }
 
 func TestResourceService_GetResource(t *testing.T) {
