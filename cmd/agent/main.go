@@ -52,5 +52,6 @@ func main() {
 	err := app.Run(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "NGINX Agent exiting due to error", "error", err)
+		os.Exit(1)
 	}
 }
