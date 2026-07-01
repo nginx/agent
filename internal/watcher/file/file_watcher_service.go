@@ -68,6 +68,8 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create file watcher", "error", err)
+
+		return
 	}
 
 	fws.mu.Lock()
@@ -210,12 +212,13 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	slog.DebugContext(ctx, "Checking for file watcher updates")
 
 	fws.mu.Lock()
-	defer fws.mu.Unlock()
 
 	if fws.watcher == nil {
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to create file watcher", "error", err)
+			fws.mu.Unlock()
+
 			return
 		}
 
@@ -228,7 +231,14 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	// Check if directories no longer need to be watched
 	fws.removeWatchers(ctx)
 
-	if fws.filesChanged.Load() && fws.enabled.Load() {
+	shouldSend := fws.filesChanged.Load() && fws.enabled.Load()
+	if shouldSend {
+		fws.filesChanged.Store(false)
+	}
+
+	fws.mu.Unlock()
+
+	if shouldSend {
 		newCtx := context.WithValue(
 			ctx,
 			logger.CorrelationIDContextKey,
@@ -236,8 +246,11 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 		)
 
 		slog.DebugContext(newCtx, "File watcher detected a file change")
-		ch <- FileUpdateMessage{CorrelationID: logger.CorrelationIDAttr(newCtx)}
-		fws.filesChanged.Store(false)
+
+		select {
+		case ch <- FileUpdateMessage{CorrelationID: logger.CorrelationIDAttr(newCtx)}:
+		case <-ctx.Done():
+		}
 	}
 }
 

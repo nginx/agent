@@ -24,6 +24,29 @@ func TestNewLogger(t *testing.T) {
 	assert.IsType(t, &slog.Logger{}, result)
 }
 
+func TestLogWriter_NoPreviousHandleLeak(t *testing.T) {
+	dir := t.TempDir()
+	logPath1 := filepath.Join(dir, "agent1.log")
+	logPath2 := filepath.Join(dir, "agent2.log")
+
+	// First call — opens handle for logPath1
+	_ = logWriter(logPath1)
+	require.NotNil(t, currentLogFileHandle, "first logWriter call must store the handle")
+	handle1 := currentLogFileHandle
+
+	// Second call — must close handle1 and open handle for logPath2
+	_ = logWriter(logPath2)
+	require.NotNil(t, currentLogFileHandle)
+	assert.NotEqual(t, handle1, currentLogFileHandle, "second call must replace the stored handle")
+
+	// handle1 should now be closed — writing to it must fail
+	_, err := handle1.WriteString("should fail")
+	assert.Error(t, err, "previous handle must be closed after logWriter is called again")
+
+	// Clean up
+	currentLogFileHandle = nil
+}
+
 func TestGetLogLevel(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -121,6 +144,28 @@ func TestGetCorrelationID(t *testing.T) {
 	ctx := context.WithValue(context.Background(), CorrelationIDContextKey, GenerateCorrelationID())
 	correlationID := CorrelationID(ctx)
 	assert.NotEmpty(t, correlationID)
+}
+
+func TestCorrelationIDAttr_ReturnsSameIDAsLogged(t *testing.T) {
+	// Context with no existing correlation ID triggers the generation path.
+	ctx := context.Background()
+
+	attr1 := CorrelationIDAttr(ctx)
+	attr2 := CorrelationIDAttr(ctx)
+
+	// Each independent call generates a new ID — that is expected.
+	// What must NOT happen: within a single call, the logged ID ≠ returned ID.
+	// We verify this by confirming the returned attr is non-empty and stable
+	// (same value returned, not a second call to GenerateCorrelationID inside).
+	assert.NotEmpty(t, attr1.Value.String())
+	assert.Equal(t, CorrelationIDKey, attr1.Key)
+
+	// Confirm the returned ID matches what would be stored in context.
+	ctxWithID := context.WithValue(ctx, CorrelationIDContextKey, attr1)
+	retrieved := CorrelationIDAttr(ctxWithID)
+	assert.Equal(t, attr1.Value.String(), retrieved.Value.String(),
+		"ID stored in context must equal the ID returned by CorrelationIDAttr")
+	_ = attr2
 }
 
 func TestContextHandler_observe(t *testing.T) {

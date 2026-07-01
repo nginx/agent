@@ -99,6 +99,18 @@ func TestStubStatusScraperError(t *testing.T) {
 	nginxMock.Close()
 }
 
+func TestStubStatusScraper_StartCACertError(t *testing.T) {
+	sc := NewScraper(receivertest.NewNopSettings(component.Type{}), &config.Config{
+		APIDetails: config.APIDetails{
+			URL: "http://localhost/status",
+			Ca:  "/nonexistent/ca.pem",
+		},
+	})
+
+	err := sc.Start(t.Context(), componenttest.NewNopHost())
+	require.Error(t, err, "Start must return an error when the CA cert file cannot be read")
+}
+
 func newMockServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {

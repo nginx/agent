@@ -70,7 +70,9 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 
 		// persist headers if present
 		if headers.ETag != "" || headers.LastModified != "" {
+			efo.fileManagerService.filesMutex.Lock()
 			efo.fileManagerService.externalFileHeaders[fileName] = headers
+			efo.fileManagerService.filesMutex.Unlock()
 		}
 
 		return nil
@@ -81,7 +83,9 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 		return fmt.Errorf("downloaded file validation failed for %s: %w", fileName, err)
 	}
 
+	efo.fileManagerService.filesMutex.Lock()
 	efo.fileManagerService.externalFileHeaders[fileName] = headers
+	efo.fileManagerService.filesMutex.Unlock()
 
 	writeErr := efo.fileManagerService.fileOperator.Write(
 		ctx,
