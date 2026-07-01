@@ -288,6 +288,10 @@ func containerIDFromMountInfo(mountInfo string) (string, error) {
 		lines = append(lines, fileScanner.Text())
 	}
 
+	if scanErr := fileScanner.Err(); err != nil {
+		return "", errors.Join(errs, fmt.Errorf("failed to read mount info %s: %w", mountInfo, scanErr))
+	}
+
 	for _, line := range lines {
 		splitLine := strings.Split(line, " ")
 		for _, word := range splitLine {
@@ -363,7 +367,7 @@ func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		field := strings.Split(line, "=")
+		field := strings.SplitN(line, "=", numberOfKeysAndValues)
 		if len(field) < numberOfKeysAndValues {
 			continue
 		}
