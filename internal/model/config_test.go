@@ -85,12 +85,19 @@ func TestNginxConfigContext_Equal(t *testing.T) {
 	nginxConfigContextWithNilValues.StubStatus = nil
 	nginxConfigContextWithNilValues.PlusAPI = nil
 
+	nginxConfigContextWithRenamedFile := *nginxConfigContext
+	nginxConfigContextWithRenamedFile.Files = []*mpi.File{
+		{FileMeta: protos.FileMeta("test1", "fef4e")},
+		{FileMeta: protos.FileMeta("test3", "vre8e")},
+	}
+
 	assert.True(t, nginxConfigContext.Equal(&nginxConfigContextWithSameValues))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentStubStatus))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentPlusAPI))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentInstanceID))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentNumberOfFiles))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentFileHashes))
+	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithRenamedFile))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentAccessLogs))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentErrorLogs))
 	assert.True(t, nginxConfigContext.Equal(&nginxConfigContextWithNilValues))

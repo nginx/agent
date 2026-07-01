@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint:gocognit,revive //  cognitive complexity is 24
+//nolint:gocognit,revive,maintidx //  cognitive complexity is 24
 func TestGenerateSelfSignedCert(t *testing.T) {
 	// Setup temp file paths
 	caPath := "/tmp/test_ca.pem"
@@ -211,6 +211,32 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			hostNames:     hostNames,
 			existingCert:  false,
 			expectedError: "error decoding certificate PEM block",
+		},
+		{
+			name: "Test case 9: Valid cert exists but key file is missing",
+			setup: func() error {
+				os.Remove(caPath)
+				os.Remove(certPath)
+				os.Remove(keyPath)
+
+				keyBytes, certBytes := helpers.GenerateSelfSignedCert(t)
+				caPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
+				certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
+				_ = keyBytes
+
+				if caErr := os.WriteFile(caPath, caPEM, 0o600); caErr != nil {
+					return caErr
+				}
+
+				// Write cert but intentionally omit keyPath
+				return os.WriteFile(certPath, certPEM, 0o600)
+			},
+			caPath:        caPath,
+			certPath:      certPath,
+			keyPath:       keyPath,
+			hostNames:     hostNames,
+			existingCert:  false, // must regenerate — key is absent
+			expectedError: "",
 		},
 	}
 	// Iterate over the test cases
