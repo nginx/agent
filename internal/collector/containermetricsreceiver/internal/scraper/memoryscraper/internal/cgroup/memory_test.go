@@ -131,3 +131,90 @@ func TestVirtualMemoryStat(t *testing.T) {
 		})
 	}
 }
+
+func TestSaturatingSub(t *testing.T) {
+	tests := []struct {
+		name     string
+		a, b     uint64
+		expected uint64
+	}{
+		{
+			name:     "normal subtraction",
+			a:        100,
+			b:        40,
+			expected: 60,
+		},
+		{
+			name:     "equal values return zero",
+			a:        100,
+			b:        100,
+			expected: 0,
+		},
+		{
+			name:     "b greater than a clamps to zero (cached exceeds usage)",
+			a:        100,
+			b:        200,
+			expected: 0,
+		},
+		{
+			name:     "b greater than a clamps to zero (used exceeds limit)",
+			a:        400,
+			b:        500,
+			expected: 0,
+		},
+		{
+			name:     "zero minus zero returns zero",
+			a:        0,
+			b:        0,
+			expected: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, saturatingSub(test.a, test.b))
+		})
+	}
+}
+
+func TestVirtualMemoryStat_CachedExceedsUsage(t *testing.T) {
+	dir := t.TempDir()
+
+	// cgroup.controllers marks basePath as v2
+	require.NoError(t, os.WriteFile(path.Join(dir, "cgroup.controllers"), []byte(""), 0o600))
+	require.NoError(t, os.WriteFile(path.Join(dir, "memory.max"), []byte("1000\n"), 0o600))
+	require.NoError(t, os.WriteFile(path.Join(dir, "memory.current"), []byte("100\n"), 0o600))
+	require.NoError(t, os.WriteFile(path.Join(dir, "memory.stat"), []byte("file 200\nshmem 0\n"), 0o600))
+
+	src := NewMemorySource(dir)
+	stat, err := src.VirtualMemoryStatWithContext(t.Context())
+	require.NoError(t, err)
+
+	// usedMemory = saturatingSub(100, 200) = 0 — must not wrap to 2^64
+	assert.Equal(t, uint64(0), stat.Used, "Used must clamp to 0 when cached > usage")
+	// Free = saturatingSub(1000, 0) = 1000 — no secondary underflow
+	assert.Equal(t, uint64(1000), stat.Free, "Free must equal limit when usedMemory is 0")
+	assert.InDelta(t, float64(0), stat.UsedPercent, 0.001, "UsedPercent must be 0")
+}
+
+func TestVirtualMemoryStat_UsedExceedsLimit(t *testing.T) {
+	dir := t.TempDir()
+
+	// cgroup.controllers marks basePath as v2
+	require.NoError(t, os.WriteFile(path.Join(dir, "cgroup.controllers"), []byte(""), 0o600))
+	// usage (500) > limit (400) — OOM/transient cgroup state
+	require.NoError(t, os.WriteFile(path.Join(dir, "memory.max"), []byte("400\n"), 0o600))
+	require.NoError(t, os.WriteFile(path.Join(dir, "memory.current"), []byte("500\n"), 0o600))
+	require.NoError(t, os.WriteFile(path.Join(dir, "memory.stat"), []byte("file 0\nshmem 0\n"), 0o600))
+
+	src := NewMemorySource(dir)
+	stat, err := src.VirtualMemoryStatWithContext(t.Context())
+	require.NoError(t, err)
+
+	// usedMemory = saturatingSub(500, 0) = 500 — no underflow
+	assert.Equal(t, uint64(500), stat.Used, "Used = usage - cached = 500")
+	// Free = saturatingSub(400, 500) = 0 — must not wrap to 2^64
+	assert.Equal(t, uint64(0), stat.Free, "Free must clamp to 0 when used > limit")
+	// Available = saturatingSub(400, 500) = 0 — same expression
+	assert.Equal(t, uint64(0), stat.Available, "Available must clamp to 0 when used > limit")
+}
