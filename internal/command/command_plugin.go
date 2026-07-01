@@ -50,6 +50,7 @@ type (
 		commandServerType model.ServerType
 		subscribeMutex    sync.Mutex
 		agentConfigMutex  sync.RWMutex
+		subscribeWg       sync.WaitGroup
 	}
 )
 
@@ -195,7 +196,11 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctx)
 		cp.subscribeMutex.Unlock()
 
-		go cp.commandService.Subscribe(subscribeCtx)
+		cp.subscribeWg.Add(1)
+		go func() {
+			defer cp.subscribeWg.Done()
+			cp.commandService.Subscribe(subscribeCtx)
+		}()
 
 		cp.messagePipe.Process(ctx, &bus.Message{
 			Topic: bus.ConnectionCreatedTopic,
@@ -296,18 +301,14 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		cp.subscribeMutex.Lock()
 		defer cp.subscribeMutex.Unlock()
 
-		// Update the command service with the new client first
-		err := cp.commandService.UpdateClient(ctxWithMetadata, newConnection.CommandServiceClient())
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
-			return
-		}
-
-		// Once the command service is updated, we close the old connection
-		slog.InfoContext(ctx, "Canceling old subscribe stream after connection reset")
+		// Cancel the old subscribe stream and close the old connection first, so the server removes
+		// the connection from its tracker before we call CreateConnection
+		// with the same UUID in UpdateClient. Without this ordering, the server would track the UUID
+		// from CreateConnection and then immediately remove it when the old stream exits.
+		slog.InfoContext(ctx, "Canceling old subscribe stream before connection reset")
 		if cp.subscribeCancel != nil {
 			cp.subscribeCancel()
-			slog.InfoContext(ctxWithMetadata, "Successfully canceled old subscribe stream after connection reset")
+			slog.InfoContext(ctxWithMetadata, "Successfully canceled old subscribe stream before connection reset")
 		}
 
 		connectionErr := cp.conn.Close(ctx)
@@ -316,9 +317,24 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 
 		cp.conn = newConnection
+
+		// Wait for the old Subscribe goroutine to fully exit before creating a new one with the new connection.
+		cp.subscribeWg.Wait()
+
+		// Update the command service with the new client after the old stream has been torn down
+		err := cp.commandService.UpdateClient(ctxWithMetadata, newConnection.CommandServiceClient())
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
+			return
+		}
+
 		slog.InfoContext(ctxWithMetadata, "Starting new subscribe stream after connection reset")
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctxWithMetadata)
-		go cp.commandService.Subscribe(subscribeCtx)
+		cp.subscribeWg.Add(1)
+		go func() {
+			defer cp.subscribeWg.Done()
+			cp.commandService.Subscribe(subscribeCtx)
+		}()
 
 		slog.InfoContext(ctx, "Command plugin connection reset finished successfully")
 	}
