@@ -6,6 +6,9 @@
       "docker:enableMajor",
       ":gitSignOff"
   ], 
+  "postUpdateOptions": [
+      "gomodTidy"
+  ],
     "packageRules": [
         {
             "groupName": "GitHub Actions",
