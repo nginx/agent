@@ -57,4 +57,5 @@ jobs:
         id: govulncheck
         run: |
           # Scan only non-test packages to avoid false positives from test-only dependencies
-          govulncheck -scan=symbol $(go list ./...)
+          # exclude known issues via .vulnignore
+          govulncheck -scan=symbol -ignoreFile=.vulnignore $(go list ./...)

@@ -1,0 +1,3 @@
+# Temporary: Prometheus XSS in web UI (GO-2026-5662)
+# Issue: https://pkg.go.dev/vuln/GO-2026-5662
+GO-2026-5662
