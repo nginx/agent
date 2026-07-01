@@ -131,7 +131,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(
 	slog.DebugContext(
 		ctx,
 		"Successfully updated stream upstream servers",
-		"http_upstream_name", action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
+		"stream_upstream_name", action.GetUpdateStreamServers().GetUpstreamStreamName(),
 		"add", len(add),
 		"update", len(update),
 		"delete", len(del),

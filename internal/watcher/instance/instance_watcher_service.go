@@ -171,7 +171,7 @@ func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 					"error", parseErr,
 				)
 
-				return
+				continue
 			}
 		}
 

@@ -236,7 +236,10 @@ func readDirectory(dir, extension string) (files []string, err error) {
 	}
 
 	for _, file := range dirInfo {
-		files = append(files, strings.ReplaceAll(file.Name(), extension, ""))
+		if !strings.HasSuffix(file.Name(), extension) {
+			continue
+		}
+		files = append(files, strings.TrimSuffix(file.Name(), extension))
 	}
 
 	return files, err
