@@ -58,8 +58,8 @@ var domainRegex = regexp.MustCompile(
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
-func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
-	RootCommand.Run = r
+func RegisterRunner(r func(cmd *cobra.Command, args []string) error) {
+	RootCommand.RunE = r
 }
 
 func Execute(ctx context.Context) error {
