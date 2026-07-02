@@ -6,7 +6,7 @@ toolchain go1.26.4
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/fsnotify/fsnotify v1.7.0
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.7.0
