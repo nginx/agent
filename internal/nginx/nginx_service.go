@@ -94,14 +94,14 @@ type NginxService struct {
 	instanceOperator  instanceOperator
 	info              host.InfoInterface
 	manifestFilePath  string
-	resourceMutex     sync.Mutex
+	resourceMutex     sync.RWMutex
 	operatorsMutex    sync.Mutex
 }
 
 func NewNginxService(ctx context.Context, agentConfig *config.Config) *NginxService {
 	resourceService := &NginxService{
 		resource:          &mpi.Resource{},
-		resourceMutex:     sync.Mutex{},
+		resourceMutex:     sync.RWMutex{},
 		info:              host.NewInfo(),
 		operatorsMutex:    sync.Mutex{},
 		instanceOperator:  NewInstanceOperator(agentConfig),
@@ -116,7 +116,11 @@ func NewNginxService(ctx context.Context, agentConfig *config.Config) *NginxServ
 }
 
 func (n *NginxService) Instance(instanceID string) *mpi.Instance {
-	for _, instance := range n.resource.GetInstances() {
+	n.resourceMutex.RLock()
+	res := n.resource
+	n.resourceMutex.RUnlock()
+
+	for _, instance := range res.GetInstances() {
 		if instance.GetInstanceMeta().GetInstanceId() == instanceID {
 			return instance
 		}
@@ -142,7 +146,11 @@ func (n *NginxService) ApplyConfig(ctx context.Context, instanceID string) (*mod
 		return nil, errors.New("instance operator is nil")
 	}
 
-	for _, resourceInstance := range n.resource.GetInstances() {
+	n.resourceMutex.RLock()
+	res := n.resource
+	n.resourceMutex.RUnlock()
+
+	for _, resourceInstance := range res.GetInstances() {
 		if resourceInstance.GetInstanceMeta().GetInstanceId() == instanceID {
 			instance = resourceInstance
 		}
