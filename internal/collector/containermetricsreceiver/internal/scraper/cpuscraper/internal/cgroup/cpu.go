@@ -175,6 +175,10 @@ func systemCPUUsage(clockTicks int) (float64, error) {
 
 	for _, line := range lines {
 		parts := strings.Fields(line)
+		if len(parts) == 0 {
+			continue
+		}
+
 		if parts[0] == "cpu" {
 			if len(parts) < CPUStatsFileLineLength {
 				return 0, errors.New("unable to process " + CPUStatsPath + ". Invalid number of fields for cpu line")
