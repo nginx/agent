@@ -6,7 +6,10 @@ package nginxplusreceiver
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/record"
@@ -94,4 +97,78 @@ func TestScraper(t *testing.T) {
 		pmetrictest.IgnoreMetricsOrder(),
 		pmetrictest.IgnoreResourceAttributeValue("instance.id")),
 	)
+}
+
+func TestScraper_InitRetryOnFailure(t *testing.T) {
+	ctx := context.Background()
+
+	// statsAvailable controls whether the mock server serves real stats.
+	// Starts false → first GetStats fails; set to true → subsequent calls succeed.
+	var statsAvailable atomic.Bool
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/":
+			// Always serve — plusapi.WithMaxAPIVersion() calls this during Start().
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`[1,2,3,4,5,6,7,8,9]`))
+
+			return
+		case "/api/9/":
+			// Always serve — client uses this to discover available sub-endpoints.
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(
+				`["nginx","processes","connections","slabs","http","stream","resolvers","ssl","workers"]`,
+			))
+
+			return
+		}
+
+		if !statsAvailable.Load() {
+			// Simulate Plus API not yet ready.
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		// Minimal valid responses — enough for GetStats to succeed and for
+		// NewHTTPMetrics / NewLocationZoneMetrics / NewServerZoneMetrics to initialize
+		switch r.URL.Path {
+		case "/api/9/stream", "/api/9/workers":
+			// These endpoints return JSON arrays; empty array = no sub-resources.
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`[]`))
+		default:
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{}`))
+		}
+	}))
+	defer server.Close()
+
+	cfg, ok := createDefaultConfig().(*Config)
+	require.True(t, ok)
+	cfg.APIDetails.URL = server.URL + "/api"
+
+	scraper := newNginxPlusScraper(receivertest.NewNopSettings(component.Type{}), cfg)
+	require.NoError(t, scraper.Start(ctx, componenttest.NewNopHost()))
+
+	// ── First scrape: Plus API unavailable ──────────────────────────────────
+	// Expect an error to be returned (not a panic), and helpers to stay nil
+	// so the next tick can retry initialisation.
+	_, err := scraper.Scrape(ctx)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to initialize plus metrics helpers")
+	assert.Nil(t, scraper.httpMetrics, "httpMetrics must stay nil after failed init")
+	assert.Nil(t, scraper.locationZoneMetrics, "locationZoneMetrics must stay nil after failed init")
+	assert.Nil(t, scraper.serverZoneMetrics, "serverZoneMetrics must stay nil after failed init")
+
+	// ── Plus API becomes available ──────────────────────────────────────────
+	statsAvailable.Store(true)
+
+	// ── Second scrape: initialisation succeeds ──────────────────────────────
+	// Helpers must be set and no panic must occur
+	_, err = scraper.Scrape(ctx)
+	require.NoError(t, err)
+	assert.NotNil(t, scraper.httpMetrics, "httpMetrics must be set after successful init")
+	assert.NotNil(t, scraper.locationZoneMetrics, "locationZoneMetrics must be set after successful init")
+	assert.NotNil(t, scraper.serverZoneMetrics, "serverZoneMetrics must be set after successful init")
 }
