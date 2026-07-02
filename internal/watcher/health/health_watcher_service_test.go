@@ -6,9 +6,11 @@
 package health
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -171,9 +173,22 @@ func TestHealthWatcherService_health(t *testing.T) {
 			healthWatcher := NewHealthWatcherService(agentConfig)
 			fakeHealthWatcher := healthfakes.FakeHealthWatcherOperator{}
 
-			fakeHealthWatcher.HealthReturnsOnCall(0, protos.HealthyInstanceHealth(), nil)
-			fakeHealthWatcher.HealthReturnsOnCall(1, protos.UnhealthyInstanceHealth(), nil)
-			fakeHealthWatcher.HealthReturnsOnCall(2, nil, errors.New("unable to determine health"))
+			ossID := ossInstance.GetInstanceMeta().GetInstanceId()
+			plusID := plusInstance.GetInstanceMeta().GetInstanceId()
+			fakeHealthWatcher.HealthStub = func(_ context.Context, inst *mpi.Instance) (*mpi.InstanceHealth, error) {
+				switch inst.GetInstanceMeta().GetInstanceId() {
+				case ossID:
+					return protos.HealthyInstanceHealth(), nil
+				case plusID:
+					return protos.UnhealthyInstanceHealth(), nil
+				default:
+					return nil, errors.New("unable to determine health")
+				}
+			}
+
+			healthWatcher.instances = test.instances
+			healthWatcher.updateCache(test.cache)
+			healthWatcher.watcher = &fakeHealthWatcher
 
 			healthWatcher.instances = test.instances
 			healthWatcher.updateCache(test.cache)
@@ -276,4 +291,39 @@ func TestHealthWatcherService_GetInstancesHealth(t *testing.T) {
 	result := healthWatcher.InstancesHealth()
 
 	assert.ElementsMatch(t, expectedInstancesHealth, result)
+}
+
+func TestHealthWatcherService_health_ConcurrentUpdate(t *testing.T) {
+	agentConfig := types.AgentConfig()
+	healthWatcher := NewHealthWatcherService(agentConfig)
+
+	instance := protos.NginxOssInstance([]string{})
+	healthWatcher.instances = map[string]*mpi.Instance{
+		instance.GetInstanceMeta().GetInstanceId(): instance,
+	}
+
+	fakeWatcher := &healthfakes.FakeHealthWatcherOperator{}
+	fakeWatcher.HealthReturns(protos.HealthyInstanceHealth(), nil)
+	healthWatcher.watcher = fakeWatcher
+
+	const iterations = 200
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			healthWatcher.UpdateHealthWatcher(t.Context(), []*mpi.Instance{instance})
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			healthWatcher.health(t.Context())
+		}
+	}()
+
+	wg.Wait()
 }
