@@ -26,14 +26,14 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
-// MetricsConfig provides config for memory metrics.
+// MetricsConfig provides config for certificate metrics.
 type MetricsConfig struct {
-	SystemMemoryUsage MetricConfig `mapstructure:"system.memory.usage"`
+	NginxCertificateExpiry MetricConfig `mapstructure:"nginx.certificate.expiry"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		SystemMemoryUsage: MetricConfig{
+		NginxCertificateExpiry: MetricConfig{
 			Enabled: true,
 		},
 	}
@@ -65,20 +65,20 @@ func (rac *ResourceAttributeConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
-// ResourceAttributesConfig provides config for memory resource attributes.
+// ResourceAttributesConfig provides config for certificate resource attributes.
 type ResourceAttributesConfig struct {
-	ResourceID ResourceAttributeConfig `mapstructure:"resource.id"`
+	InstanceID ResourceAttributeConfig `mapstructure:"instance.id"`
 }
 
 func DefaultResourceAttributesConfig() ResourceAttributesConfig {
 	return ResourceAttributesConfig{
-		ResourceID: ResourceAttributeConfig{
+		InstanceID: ResourceAttributeConfig{
 			Enabled: true,
 		},
 	}
 }
 
-// MetricsBuilderConfig is a configuration for memory metrics builder.
+// MetricsBuilderConfig is a configuration for certificate metrics builder.
 type MetricsBuilderConfig struct {
 	Metrics            MetricsConfig            `mapstructure:"metrics"`
 	ResourceAttributes ResourceAttributesConfig `mapstructure:"resource_attributes"`

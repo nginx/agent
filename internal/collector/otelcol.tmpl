@@ -119,6 +119,24 @@ receivers:
     {{- end }}
 {{- end }}
 
+{{- range .Receivers.CertificateReceivers }}
+{{- if gt (len $.Receivers.CertificateReceivers) 1 }}
+  certificate/{{- .InstanceID -}}:
+{{- else }}
+  certificate:
+{{- end}}
+    instance_id: "{{- .InstanceID -}}"
+    {{- if .CollectionInterval }}
+    collection_interval: {{ .CollectionInterval }}
+    {{- end }}
+    {{- if .CertFilePaths }}
+    cert_file_paths:
+      {{- range .CertFilePaths }}
+      - "{{- . -}}"
+      {{- end }}
+    {{- end }}
+{{- end }}
+
 {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
   tcp_log/{{$index}}:
     listen_address: "{{- .ListenAddress -}}"
@@ -271,7 +289,7 @@ service:
 
   pipelines:
     {{- range $pipelineName, $pipeline := .Pipelines.Metrics }}
-      {{- if or (ne $.Receivers.HostMetrics nil) (ne $.Receivers.ContainerMetrics nil) (gt (len $.Receivers.OtlpReceivers) 0) (gt (len $.Receivers.NginxReceivers) 0) (gt (len $.Receivers.NginxPlusReceivers) 0) }}
+      {{- if or (ne $.Receivers.HostMetrics nil) (ne $.Receivers.ContainerMetrics nil) (gt (len $.Receivers.OtlpReceivers) 0) (gt (len $.Receivers.NginxReceivers) 0) (gt (len $.Receivers.NginxPlusReceivers) 0) (gt (len $.Receivers.CertificateReceivers) 0) }}
     metrics/{{$pipelineName}}:
       receivers:
         {{- range $receiver := $pipeline.Receivers }}
@@ -284,10 +302,17 @@ service:
             {{- end }}
             {{- end }}
             {{- range $.Receivers.NginxPlusReceivers }}
-            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
+            {{- if gt (len $.Receivers.NginxPlusReceivers) 1 }}
         - nginxplus/{{- .InstanceID -}}
             {{- else }}
         - nginxplus
+            {{- end }}
+            {{- end }}
+            {{- range $.Receivers.CertificateReceivers }}
+            {{- if gt (len $.Receivers.CertificateReceivers) 1 }}
+        - certificate/{{- .InstanceID -}}
+            {{- else }}
+        - certificate
             {{- end }}
             {{- end }}
           {{- else }}

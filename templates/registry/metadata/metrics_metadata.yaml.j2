@@ -5,6 +5,8 @@ metrics:
   {{group.metric_name | safe}}:
     enabled: true
     description: {{group.brief | trim}}
+    stability:
+      level: {{group.stability | replace("experimental", "development") | safe}}
 {%- if group.instrument == "counter" %}
     sum:
       value_type: int

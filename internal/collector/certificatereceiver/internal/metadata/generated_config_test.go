@@ -27,10 +27,10 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					SystemMemoryUsage: MetricConfig{Enabled: true},
+					NginxCertificateExpiry: MetricConfig{Enabled: true},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
-					ResourceID: ResourceAttributeConfig{Enabled: true},
+					InstanceID: ResourceAttributeConfig{Enabled: true},
 				},
 			},
 		},
@@ -38,10 +38,10 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					SystemMemoryUsage: MetricConfig{Enabled: false},
+					NginxCertificateExpiry: MetricConfig{Enabled: false},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
-					ResourceID: ResourceAttributeConfig{Enabled: false},
+					InstanceID: ResourceAttributeConfig{Enabled: false},
 				},
 			},
 		},
@@ -77,13 +77,13 @@ func TestResourceAttributesConfig(t *testing.T) {
 		{
 			name: "all_set",
 			want: ResourceAttributesConfig{
-				ResourceID: ResourceAttributeConfig{Enabled: true},
+				InstanceID: ResourceAttributeConfig{Enabled: true},
 			},
 		},
 		{
 			name: "none_set",
 			want: ResourceAttributesConfig{
-				ResourceID: ResourceAttributeConfig{Enabled: false},
+				InstanceID: ResourceAttributeConfig{Enabled: false},
 			},
 		},
 	}

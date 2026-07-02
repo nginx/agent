@@ -6,6 +6,7 @@
 package collector
 
 import (
+	"github.com/nginx/agent/v3/internal/collector/certificatereceiver"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxreceiver"
@@ -89,6 +90,7 @@ func createReceiverFactories() map[component.Type]receiver.Factory {
 		nginxplusreceiver.NewFactory(),
 		tcplogreceiver.NewFactory(),
 		filelogreceiver.NewFactory(),
+		certificatereceiver.NewFactory(),
 	}
 
 	receivers := make(map[component.Type]receiver.Factory)
