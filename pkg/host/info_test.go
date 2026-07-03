@@ -624,6 +624,17 @@ func TestInfo_ParseOsReleaseFile(t *testing.T) {
 				"ID":               "ubuntu",
 			},
 		},
+		{
+			name: "Test 4: os-release value containing = is not truncated",
+			osReleaseContent: `NAME="Test OS"
+								VERSION_ID="22.04=LTS"
+								CUSTOM="value=with=equals"`,
+			expect: map[string]string{
+				"NAME":       "Test OS",
+				"VERSION_ID": "22.04=LTS",
+				"CUSTOM":     "value=with=equals",
+			},
+		},
 	}
 
 	for _, tt := range tests {

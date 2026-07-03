@@ -1109,7 +1109,7 @@ func resolveEnvironmentVariableLabels() map[string]string {
 	labels := strings.Split(envInput, ",")
 	if len(labels) > 0 && labels[0] != "" {
 		for _, label := range labels {
-			splitLabel := strings.Split(label, "=")
+			splitLabel := strings.SplitN(label, "=", KeyValueNumber)
 			if len(splitLabel) == KeyValueNumber {
 				envLabels[splitLabel[0]] = splitLabel[1]
 			} else {
