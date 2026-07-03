@@ -6,16 +6,15 @@
 package internal
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestApp(t *testing.T) {
+func TestApp_ConfigFileMissing(t *testing.T) {
 	app := NewApp("1234", "1.2.3")
 
-	err := app.Run(context.Background())
+	err := app.Run(t.Context())
 
-	require.NoError(t, err)
+	require.Error(t, err, "app.Run must propagate the config-not-found error, not return nil")
 }

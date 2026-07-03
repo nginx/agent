@@ -32,17 +32,17 @@ func NewApp(commit, version string) *App {
 func (a *App) Run(ctx context.Context) error {
 	config.Init(a.version, a.commit)
 
-	config.RegisterRunner(func(_ *cobra.Command, _ []string) {
+	config.RegisterRunner(func(_ *cobra.Command, _ []string) error {
 		err := config.RegisterConfigFile()
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to load configuration file", "error", err)
-			return
+			return err
 		}
 
 		agentConfig, err := config.ResolveConfig()
 		if err != nil {
 			slog.ErrorContext(ctx, "Invalid config", "error", err)
-			return
+			return err
 		}
 
 		slog.InfoContext(ctx, "Starting NGINX Agent",
@@ -54,10 +54,12 @@ func (a *App) Run(ctx context.Context) error {
 		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(ctx, agentConfig))
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to register plugins", "error", err)
-			return
+			return err
 		}
 
 		messagePipe.Run(ctx)
+
+		return nil
 	})
 	err := config.Execute(ctx)
 	if err != nil {
