@@ -199,11 +199,35 @@ var luaDirectives = map[string][]uint{
     "lua_transform_underscores_in_response_headers": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfFlag,
     },
+    "lua_upstream_skip_openssl_default_verify": {
+        ngxHTTPLocConf | ngxHTTPLifConf | ngxConfFlag,
+    },
     "lua_use_default_type": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfFlag,
     },
     "lua_worker_thread_vm_pool_size": {
         ngxHTTPMainConf | ngxConfTake1,
+    },
+    "precontent_by_lua_block": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfBlock | ngxConfNoArgs,
+    },
+    "precontent_by_lua_file": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,
+    },
+    "precontent_by_lua_no_postpone": {
+        ngxHTTPMainConf | ngxConfFlag,
+    },
+    "proxy_ssl_certificate_by_lua_block": {
+        ngxHTTPLocConf | ngxHTTPLifConf | ngxConfBlock | ngxConfNoArgs,
+    },
+    "proxy_ssl_certificate_by_lua_file": {
+        ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,
+    },
+    "proxy_ssl_verify_by_lua_block": {
+        ngxHTTPLocConf | ngxHTTPLifConf | ngxConfBlock | ngxConfNoArgs,
+    },
+    "proxy_ssl_verify_by_lua_file": {
+        ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,
     },
     "rewrite_by_lua": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,

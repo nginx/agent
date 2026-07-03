@@ -38,8 +38,14 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "add_header": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake23,
     },
+    "add_header_inherit": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,
+    },
     "add_trailer": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake23,
+    },
+    "add_trailer_inherit": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,
     },
     "addition_types": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
@@ -247,6 +253,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxMailMainConf | ngxMailSrvConf | ngxConf1More,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConf1More,
     },
+    "error_log_tag": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake2,
+    },
     "error_page": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConf2More,
     },
@@ -268,8 +277,14 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "f4f_buffer_size": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
     },
+    "fastcgi_allow_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
     "fastcgi_bind": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+    },
+    "fastcgi_bind_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "fastcgi_buffer_size": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -394,6 +409,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "fastcgi_request_buffering": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
+    "fastcgi_request_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
+    },
     "fastcgi_send_lowat": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
     },
@@ -421,6 +439,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "flv": {
         ngxHTTPLocConf | ngxConfNoArgs,
     },
+    "frontchannel_logout_uri": {
+        ngxHTTPOIDCConf | ngxConfTake1,
+    },
     "geo": {
         ngxHTTPMainConf | ngxConfBlock | ngxConfTake12,
         ngxStreamMainConf | ngxConfBlock | ngxConfTake12,
@@ -446,8 +467,14 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "google_perftools_profiles": {
         ngxMainConf | ngxDirectConf | ngxConfTake1,
     },
+    "grpc_allow_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
     "grpc_bind": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+    },
+    "grpc_bind_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "grpc_buffer_size": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -481,6 +508,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
     },
     "grpc_read_timeout": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "grpc_request_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "grpc_send_timeout": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -713,7 +743,7 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxHTTPOIDCConf | ngxConfTake1,
     },
     "keepalive": {
-        ngxHTTPUpsConf | ngxConfTake1,
+        ngxHTTPUpsConf | ngxConfTake12,
     },
     "keepalive_disable": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
@@ -862,11 +892,20 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "max_errors": {
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
     },
+    "max_headers": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
+    },
     "max_ranges": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
     },
+    "memcached_allow_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
     "memcached_bind": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+    },
+    "memcached_bind_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "memcached_buffer_size": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -964,6 +1003,10 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "ntlm": {
         ngxHTTPUpsConf | ngxConfNoArgs,
     },
+    "num_map": {
+        ngxHTTPMainConf | ngxConfBlock | ngxConfTake2,
+        ngxStreamMainConf | ngxConfBlock | ngxConfTake2,
+    },
     "oidc_provider": {
         ngxHTTPMainConf | ngxConfBlock | ngxConfTake1,
     },
@@ -1010,6 +1053,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "pid": {
         ngxMainConf | ngxDirectConf | ngxConfTake1,
     },
+    "pkce": {
+        ngxHTTPOIDCConf | ngxConfFlag,
+    },
     "pop3_auth": {
         ngxMailMainConf | ngxMailSrvConf | ngxConf1More,
     },
@@ -1038,9 +1084,16 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxMailMainConf | ngxMailSrvConf | ngxConfFlag,
         ngxMgmtMainConf | ngxConfTake1,
     },
+    "proxy_allow_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
     "proxy_bind": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake12,
+    },
+    "proxy_bind_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfFlag,
     },
     "proxy_buffer": {
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
@@ -1209,6 +1262,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
     },
     "proxy_request_buffering": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
+    },
+    "proxy_request_dynamic": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "proxy_requests": {
@@ -1411,8 +1467,14 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "satisfy": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
     },
+    "scgi_allow_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
     "scgi_bind": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+    },
+    "scgi_bind_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "scgi_buffer_size": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -1526,6 +1588,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
     },
     "scgi_request_buffering": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
+    },
+    "scgi_request_dynamic": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "scgi_send_timeout": {
@@ -1680,6 +1745,11 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake123,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake123,
     },
+    "ssl_certificate_compression": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfFlag,
+        ngxMailMainConf | ngxMailSrvConf | ngxConfFlag,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfFlag,
+    },
     "ssl_certificate_key": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
@@ -1720,6 +1790,10 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "ssl_ecdh_curve": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+    },
+    "ssl_ech_file": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
     },
     "ssl_engine": {
@@ -1898,6 +1972,45 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "try_files": {
         ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf2More,
     },
+    "tunnel_allow_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
+    "tunnel_bind": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+    },
+    "tunnel_bind_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
+    },
+    "tunnel_buffer_size": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_connect_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_next_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
+    "tunnel_next_upstream_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_next_upstream_tries": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_pass": {
+        ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfNoArgs | ngxConfTake1,
+    },
+    "tunnel_read_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_send_lowat": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_send_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_socket_keepalive": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
+    },
     "types": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfBlock | ngxConfNoArgs,
     },
@@ -1959,8 +2072,14 @@ var nginxPlusLatestDirectives = map[string][]uint{
     "uuid_file": {
         ngxMgmtMainConf | ngxConfNoArgs | ngxConfTake1,
     },
+    "uwsgi_allow_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
     "uwsgi_bind": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+    },
+    "uwsgi_bind_dynamic": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "uwsgi_buffer_size": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -2080,6 +2199,9 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
     },
     "uwsgi_request_buffering": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
+    },
+    "uwsgi_request_dynamic": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "uwsgi_send_timeout": {

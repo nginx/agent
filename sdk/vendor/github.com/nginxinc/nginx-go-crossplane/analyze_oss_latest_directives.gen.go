@@ -38,8 +38,14 @@ var ossLatestDirectives = map[string][]uint{
     "add_header": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake23,
     },
+    "add_header_inherit": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,
+    },
     "add_trailer": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake23,
+    },
+    "add_trailer_inherit": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfTake1,
     },
     "addition_types": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
@@ -613,7 +619,7 @@ var ossLatestDirectives = map[string][]uint{
         ngxHTTPUpsConf | ngxConfNoArgs,
     },
     "keepalive": {
-        ngxHTTPUpsConf | ngxConfTake1,
+        ngxHTTPUpsConf | ngxConfTake12,
     },
     "keepalive_disable": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
@@ -639,6 +645,10 @@ var ossLatestDirectives = map[string][]uint{
     "least_conn": {
         ngxHTTPUpsConf | ngxConfNoArgs,
         ngxStreamUpsConf | ngxConfNoArgs,
+    },
+    "least_time": {
+        ngxHTTPUpsConf | ngxConfTake12,
+        ngxStreamUpsConf | ngxConfTake12,
     },
     "limit_conn": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake2,
@@ -736,6 +746,9 @@ var ossLatestDirectives = map[string][]uint{
     },
     "max_errors": {
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
+    },
+    "max_headers": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
     },
     "max_ranges": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -1070,6 +1083,9 @@ var ossLatestDirectives = map[string][]uint{
     },
     "proxy_ssl": {
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfFlag,
+    },
+    "proxy_ssl_alpn": {
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConf1More,
     },
     "proxy_ssl_certificate": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -1508,6 +1524,10 @@ var ossLatestDirectives = map[string][]uint{
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
     },
+    "ssl_ech_file": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+    },
     "ssl_engine": {
         ngxMainConf | ngxDirectConf | ngxConfTake1,
     },
@@ -1605,6 +1625,9 @@ var ossLatestDirectives = map[string][]uint{
     "starttls": {
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
     },
+    "sticky": {
+        ngxHTTPUpsConf | ngxConf2More,
+    },
     "stream": {
         ngxMainConf | ngxConfBlock | ngxConfNoArgs,
     },
@@ -1644,6 +1667,39 @@ var ossLatestDirectives = map[string][]uint{
     },
     "try_files": {
         ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf2More,
+    },
+    "tunnel_bind": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+    },
+    "tunnel_buffer_size": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_connect_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_next_upstream": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
+    },
+    "tunnel_next_upstream_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_next_upstream_tries": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_pass": {
+        ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConfNoArgs | ngxConfTake1,
+    },
+    "tunnel_read_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_send_lowat": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_send_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+    },
+    "tunnel_socket_keepalive": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
     "types": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfBlock | ngxConfNoArgs,
