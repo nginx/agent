@@ -15,7 +15,7 @@
 
 package crossplane
 
-var nginxPlusLatestDirectives = map[string][]uint{
+var nginxPlusR36Directives = map[string][]uint{
     "absolute_redirect": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
     },
@@ -252,9 +252,6 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
         ngxMailMainConf | ngxMailSrvConf | ngxConf1More,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConf1More,
-    },
-    "error_log_tag": {
-        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake2,
     },
     "error_page": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLifConf | ngxConf2More,
@@ -743,7 +740,7 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxHTTPOIDCConf | ngxConfTake1,
     },
     "keepalive": {
-        ngxHTTPUpsConf | ngxConfTake12,
+        ngxHTTPUpsConf | ngxConfTake1,
     },
     "keepalive_disable": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
@@ -891,9 +888,6 @@ var nginxPlusLatestDirectives = map[string][]uint{
     },
     "max_errors": {
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
-    },
-    "max_headers": {
-        ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
     },
     "max_ranges": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -1792,10 +1786,6 @@ var nginxPlusLatestDirectives = map[string][]uint{
         ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
     },
-    "ssl_ech_file": {
-        ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
-        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
-    },
     "ssl_engine": {
         ngxMainConf | ngxDirectConf | ngxConfTake1,
     },
@@ -2395,8 +2385,8 @@ var nginxPlusLatestDirectives = map[string][]uint{
     },
 }
 
-// MatchNginxPlusLatest contains directives in latest version of Nginx Plus source code(including GEOIP, Perl, and XSLT)
-func MatchNginxPlusLatest(directive string) ([]uint, bool) {
-    m, ok := nginxPlusLatestDirectives[directive]
+// MatchNginxPlusR36 contains directives in Nginx Plus R36 source code(including GEOIP, Perl, and XSLT)
+func MatchNginxPlusR36(directive string) ([]uint, bool) {
+    m, ok := nginxPlusR36Directives[directive]
     return m, ok
 }

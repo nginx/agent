@@ -81,8 +81,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/nginx/nginx-plus-go-client/v3 v3.0.1 h1:SU8MoRQVSa1aXqNUI3fc+OA9GM30aqAhV4yBWs9tD2s=
 github.com/nginx/nginx-plus-go-client/v3 v3.0.1/go.mod h1:PjlGB6drb5RCWnUp1XDTlzKFPRI2a3ePg2kNCb1AN94=
-github.com/nginxinc/nginx-go-crossplane v0.4.84 h1:dULo8OXAglRdZ0Tabs8TXDpw8KhEtlH8ENim5QYCdig=
-github.com/nginxinc/nginx-go-crossplane v0.4.84/go.mod h1:YW/lk3F6/HUSQyfB6bFPnL9TkLcyfRXWfBNgirZmFfI=
+github.com/nginxinc/nginx-go-crossplane v0.4.89 h1:ISWwck/oFJkOVYJOxJlf1dBXGsFjZLbMIECuZC7ZoG4=
+github.com/nginxinc/nginx-go-crossplane v0.4.89/go.mod h1:YW/lk3F6/HUSQyfB6bFPnL9TkLcyfRXWfBNgirZmFfI=
 github.com/nginxinc/nginx-prometheus-exporter v1.2.0 h1:jmu63tEm3hcupIpaIH72NEdwuNgGaQ/9q0IrnNqaPto=
 github.com/nginxinc/nginx-prometheus-exporter v1.2.0/go.mod h1:y8KANg4+7e/9HxT3vZDetjETLR5YhU0zv2WhZquo7C0=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=

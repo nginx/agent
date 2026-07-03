@@ -17,6 +17,7 @@ package crossplane
 
 var njsDirectives = map[string][]uint{
     "js_access": {
+        ngxHTTPLocConf | ngxHTTPLifConf | ngxHTTPLmtConf | ngxConfTake1,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
     },
     "js_body_filter": {
@@ -45,6 +46,22 @@ var njsDirectives = map[string][]uint{
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
     },
+    "js_fetch_keepalive": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+    },
+    "js_fetch_keepalive_requests": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+    },
+    "js_fetch_keepalive_time": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+    },
+    "js_fetch_keepalive_timeout": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+    },
     "js_fetch_max_response_buffer_size": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
@@ -52,6 +69,10 @@ var njsDirectives = map[string][]uint{
     "js_fetch_protocols": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConf1More,
+    },
+    "js_fetch_proxy": {
+        ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+        ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
     },
     "js_fetch_timeout": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -78,6 +99,12 @@ var njsDirectives = map[string][]uint{
     "js_import": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake13,
         ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake13,
+    },
+    "js_load_http_native_module": {
+        ngxMainConf | ngxDirectConf | ngxConfTake13,
+    },
+    "js_load_stream_native_module": {
+        ngxMainConf | ngxDirectConf | ngxConfTake13,
     },
     "js_path": {
         ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
