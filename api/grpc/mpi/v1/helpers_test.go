@@ -102,6 +102,59 @@ func TestConvertToMaps(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Test 2: fractional number preserved as float64 whole number stays int",
+			expected: map[string]any{
+				"pi":    float64(3.14),
+				"count": int(42),
+			},
+			input: []*structpb.Struct{
+				{
+					Fields: map[string]*structpb.Value{
+						"pi": structpb.NewNumberValue(3.14),
+					},
+				},
+				{
+					Fields: map[string]*structpb.Value{
+						"count": structpb.NewNumberValue(42),
+					},
+				},
+			},
+		},
+		{
+			name: "Test 3: Struct List and Null kinds are converted not dropped",
+			expected: map[string]any{
+				"nested":  map[string]any{"inner": "value"},
+				"list":    []any{"a", float64(1)},
+				"nil_val": nil,
+			},
+			input: []*structpb.Struct{
+				{
+					Fields: map[string]*structpb.Value{
+						"nested": structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"inner": structpb.NewStringValue("value"),
+							},
+						}),
+					},
+				},
+				{
+					Fields: map[string]*structpb.Value{
+						"list": structpb.NewListValue(&structpb.ListValue{
+							Values: []*structpb.Value{
+								structpb.NewStringValue("a"),
+								structpb.NewNumberValue(1),
+							},
+						}),
+					},
+				},
+				{
+					Fields: map[string]*structpb.Value{
+						"nil_val": structpb.NewNullValue(),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

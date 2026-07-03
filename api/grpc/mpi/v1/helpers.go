@@ -48,6 +48,7 @@ func ConvertToStructs(input map[string]any) ([]*structpb.Struct, error) {
 	return structs, nil
 }
 
+//nolint:revive // cognitive-complexity of 14 max is 12, required for readability
 func ConvertToMap(input []*structpb.Struct) map[string]any {
 	convertedMap := make(map[string]any)
 	for _, value := range input {
@@ -57,9 +58,24 @@ func ConvertToMap(input []*structpb.Struct) map[string]any {
 			case *structpb.Value_StringValue:
 				convertedMap[key] = field.GetStringValue()
 			case *structpb.Value_NumberValue:
-				convertedMap[key] = int(field.GetNumberValue())
+				num := field.GetNumberValue()
+				if num == float64(int(num)) {
+					convertedMap[key] = int(num)
+				} else {
+					convertedMap[key] = num
+				}
 			case *structpb.Value_BoolValue:
 				convertedMap[key] = field.GetBoolValue()
+			case *structpb.Value_StructValue:
+				convertedMap[key] = field.GetStructValue().AsMap()
+			case *structpb.Value_ListValue:
+				list := make([]any, 0, len(field.GetListValue().GetValues()))
+				for _, v := range field.GetListValue().GetValues() {
+					list = append(list, v.AsInterface())
+				}
+				convertedMap[key] = list
+			case *structpb.Value_NullValue:
+				convertedMap[key] = nil
 			default:
 				slog.Warn("Unknown type for map conversion", "value", kind)
 			}

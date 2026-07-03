@@ -665,6 +665,47 @@ func TestResolveLabels(t *testing.T) {
 	}
 }
 
+func TestResolveEnvironmentVariableLabels(t *testing.T) {
+	tests := []struct {
+		expected map[string]string
+		name     string
+		input    string
+	}{
+		{
+			name:  "Test 1: simple key=value pairs",
+			input: "key1=value1,key2=value2",
+			expected: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		{
+			name:  "Test 2: label value containing = is preserved not dropped",
+			input: "token=abc=base64==,env=prod",
+			expected: map[string]string{
+				"token": "abc=base64==",
+				"env":   "prod",
+			},
+		},
+		{
+			name:     "Test 3: empty input returns empty map",
+			input:    "",
+			expected: make(map[string]string),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			viperInstance = viper.New()
+			viperInstance.Set(LabelsRootKey, tt.input)
+
+			got := resolveEnvironmentVariableLabels()
+
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
 func TestResolveLabelsWithYAML(t *testing.T) {
 	tests := []struct {
 		expected  map[string]interface{}
