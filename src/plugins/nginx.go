@@ -737,7 +737,11 @@ func (n *Nginx) syncAgentConfigChange() {
 func (n *Nginx) ValidateNginxAppProtectVersion(nginxConfig *proto.NginxConfig) (bool, error) {
 	if isFileInDirectoryMap(nginxConfig.GetDirectoryMap(), n.nginxAppProtectSoftwareDetails.GetWafLocation()) {
 		if aux := nginxConfig.GetZaux(); aux != nil && len(aux.Contents) > 0 {
-			auxFiles, err := zip.UnPackWithDirCheck(aux, n.config.AllowedDirectoriesMap)
+			// UnPack (no dir check) is correct here: this is a read-only validation
+			// step. NAP aux files (e.g. /etc/nms/app_protect_metadata.json) live
+			// outside the nginx AllowedDirectoriesMap, so UnPackWithDirCheck would
+			// reject them. Writes are guarded separately at the config-apply layer.
+			auxFiles, err := zip.UnPack(aux)
 			if err != nil {
 				return false, fmt.Errorf("config apply failed (preflight): not able to read unpack aux files %v", nginxConfig.GetZaux())
 			}

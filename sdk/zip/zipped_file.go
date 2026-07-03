@@ -15,7 +15,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -248,7 +247,7 @@ func UnPackWithDirCheck(zipFile *proto.ZippedFile, allowedDirs map[string]struct
 			return false
 		}
 
-		log.Info("zipped file %s", path)
+		log.Infof("zipped file %s", path)
 		rawFiles = append(rawFiles, &proto.File{
 			Name:        path,
 			Permissions: files.GetPermissions(mode),
@@ -275,10 +274,23 @@ func checkDirIsAllowed(path string, allowedDirs []string) bool {
 	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
 }
 
+// checkAllowedFiles checks that every absolute-path file is within an allowed
+// directory. Relative paths are skipped — they are resolved to absolute paths
+// by the caller before writing, and validated there.
+// Note: checkDirIsAllowed is intentionally duplicated from sdk/config_helpers.go
+// because sdk/zip cannot import the sdk root package (circular dependency).
 func checkAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
-	dirs := slices.Collect(maps.Keys(allowedDirs))
+	// Clean all allowed dirs to normalise trailing slashes (e.g. "/dir/" → "/dir").
+	dirs := make([]string, 0, len(allowedDirs))
+	for d := range allowedDirs {
+		dirs = append(dirs, filepath.Clean(d))
+	}
 	for _, file := range files {
 		filePath := file.Name
+		if !filepath.IsAbs(filePath) {
+			// Relative paths are resolved by the caller; skip check here.
+			continue
+		}
 		if !checkDirIsAllowed(filepath.Clean(filePath), dirs) {
 			return fmt.Errorf("write prohibited for: %s, not in allowed config directories", filePath)
 		}

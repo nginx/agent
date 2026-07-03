@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -639,7 +638,10 @@ func GetNginxConfigFilesWithCheck(config *proto.NginxConfig, allowedDirs map[str
 		return nil, nil, errors.New("config is empty")
 	}
 
-	confFiles, err = zip.UnPackWithDirCheck(config.GetZconfig(), allowedDirs)
+	// We do not need allowed-dir check here as Conf files are stored with relative paths in the zip(e.g. "nginx.conf")
+	// The allowed-dir check for these happens downstream in ensureFilesAllowed,
+	// which joins the relative name with the conf dir before validating.
+	confFiles, err = zip.UnPack(config.GetZconfig())
 	if err != nil {
 		return nil, nil, fmt.Errorf("unpack zipped config error: %s", err)
 	}
@@ -1055,7 +1057,10 @@ func GetAccessLogs(accessLogs *proto.AccessLogs) []string {
 // allowedPath return true if the provided path has a prefix in the allowedDirectories, false otherwise. The
 // path could be a filepath or directory.
 func allowedPath(path string, allowedDirectories map[string]struct{}) bool {
-	dirs := slices.Collect(maps.Keys(allowedDirectories))
+	dirs := make([]string, 0, len(allowedDirectories))
+	for d := range allowedDirectories {
+		dirs = append(dirs, filepath.Clean(d))
+	}
 	return checkDirIsAllowed(filepath.Clean(path), dirs)
 }
 
@@ -1066,6 +1071,13 @@ func CheckAllowedPath(path string, allowedDirectories map[string]struct{}) bool 
 func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
 	for _, file := range files {
 		filePath := file.Name
+		if !filepath.IsAbs(filePath) {
+			// Relative paths are resolved to absolute by the caller (e.g. joined
+			// with the conf dir in WriteFile). The resolved path is validated by
+			// ensureFilesAllowed, so we allow relative paths here just as the
+			// original allowedFile implementation in environment.go did.
+			continue
+		}
 		if !allowedPath(filePath, allowedDirs) {
 			return fmt.Errorf("write prohibited for: %s", filePath)
 		}

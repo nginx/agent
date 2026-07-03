@@ -57,15 +57,20 @@ func TestContainerCollector_Collect(t *testing.T) {
 			mockSource1,
 			mockSource2,
 		},
-		buf: make(chan *metrics.StatsEntityWrapper),
+		// Buffered so we can pre-populate before Collect runs (Collect has a
+		// default:return branch that exits immediately if buf is empty).
+		buf: make(chan *metrics.StatsEntityWrapper, 1),
 		dim: &metrics.CommonDim{},
 	}
 
 	ctx := context.TODO()
+
+	// Pre-populate buf before launching Collect to avoid the scheduler race.
+	containerCollector.buf <- &metrics.StatsEntityWrapper{Type: proto.MetricsReport_SYSTEM, Data: &proto.StatsEntity{Dimensions: []*proto.Dimension{{Name: "new_dim", Value: "123"}}}}
+
 	channel := make(chan *metrics.StatsEntityWrapper)
 	go containerCollector.Collect(ctx, channel)
 
-	containerCollector.buf <- &metrics.StatsEntityWrapper{Type: proto.MetricsReport_SYSTEM, Data: &proto.StatsEntity{Dimensions: []*proto.Dimension{{Name: "new_dim", Value: "123"}}}}
 	actual := <-channel
 
 	time.Sleep(100 * time.Millisecond)
