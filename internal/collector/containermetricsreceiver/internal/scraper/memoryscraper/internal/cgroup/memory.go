@@ -104,19 +104,19 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 
 	var usedMemoryPercent float64
 
-	usedMemory := memoryUsageInBytes - memoryStat.cached
+	usedMemory := saturatingSub(memoryUsageInBytes, memoryStat.cached)
 
 	if memoryLimitInBytes > 0 {
 		usedMemoryPercent = float64(100 * usedMemory / memoryLimitInBytes)
 	}
 
 	cgroupStat.Total = memoryLimitInBytes
-	cgroupStat.Available = memoryLimitInBytes - usedMemory
+	cgroupStat.Available = saturatingSub(memoryLimitInBytes, usedMemory)
 	cgroupStat.Used = usedMemory
 	cgroupStat.Cached = memoryStat.cached
 	cgroupStat.Shared = memoryStat.shared
 	cgroupStat.UsedPercent = usedMemoryPercent
-	cgroupStat.Free = memoryLimitInBytes - usedMemory
+	cgroupStat.Free = saturatingSub(memoryLimitInBytes, usedMemory)
 
 	return &cgroupStat, nil
 }
@@ -180,4 +180,13 @@ func CalculateMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, err
 func V1DefaultMaxValue() string {
 	maxInt := int64(math.MaxInt64)
 	return strconv.FormatInt((maxInt/pageSize)*pageSize, 10)
+}
+
+// saturatingSub subtracts b from a, clamping to 0 on underflow.
+func saturatingSub(a, b uint64) uint64 {
+	if a < b {
+		return 0
+	}
+
+	return a - b
 }
