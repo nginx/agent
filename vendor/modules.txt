@@ -102,8 +102,11 @@ github.com/go-logr/stdr
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
 # github.com/go-resty/resty/v2 v2.11.0
-## explicit; go 1.16
+## explicit; go 1.23.0
+# github.com/go-resty/resty/v2 v2.17.2
+## explicit; go 1.23.0
 github.com/go-resty/resty/v2
+github.com/go-resty/resty/v2/shellescape
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
