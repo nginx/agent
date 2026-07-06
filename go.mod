@@ -34,7 +34,7 @@ require (
 )
 
 require (
-	github.com/go-resty/resty/v2 v2.11.0
+	github.com/go-resty/resty/v2 v2.17.2
 	github.com/nginx/agent/sdk/v2 v2.46.6
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
 	github.com/prometheus/client_golang v1.23.2
@@ -84,7 +84,6 @@ require (
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

@@ -6,7 +6,7 @@ toolchain go1.26.4
 
 require (
 	github.com/docker/docker v28.0.1+incompatible
-	github.com/go-resty/resty/v2 v2.11.0
+	github.com/go-resty/resty/v2 v2.17.2
 	github.com/nginx/agent/sdk/v2 v2.46.6
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
