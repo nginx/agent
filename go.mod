@@ -13,7 +13,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/cpuid/v2 v2.2.5
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nginxinc/nginx-prometheus-exporter v1.2.0
+	github.com/nginxinc/nginx-prometheus-exporter v1.5.1
 	github.com/nxadm/tail v1.4.11
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
