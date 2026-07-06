@@ -16,7 +16,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 
-	"github.com/nginxinc/nginx-prometheus-exporter/client"
+	"github.com/nginx/nginx-prometheus-exporter/client"
 	log "github.com/sirupsen/logrus"
 )
 
