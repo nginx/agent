@@ -58,8 +58,8 @@ var domainRegex = regexp.MustCompile(
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
-func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
-	RootCommand.Run = r
+func RegisterRunner(r func(cmd *cobra.Command, args []string) error) {
+	RootCommand.RunE = r
 }
 
 func Execute(ctx context.Context) error {
@@ -1109,7 +1109,7 @@ func resolveEnvironmentVariableLabels() map[string]string {
 	labels := strings.Split(envInput, ",")
 	if len(labels) > 0 && labels[0] != "" {
 		for _, label := range labels {
-			splitLabel := strings.Split(label, "=")
+			splitLabel := strings.SplitN(label, "=", KeyValueNumber)
 			if len(splitLabel) == KeyValueNumber {
 				envLabels[splitLabel[0]] = splitLabel[1]
 			} else {

@@ -79,9 +79,11 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 	for {
 		select {
 		case <-ctx.Done():
-			closeError := fws.watcher.Close()
-			if closeError != nil {
-				slog.ErrorContext(ctx, "Unable to close file watcher", "error", closeError)
+			if fws.watcher != nil {
+				closeError := fws.watcher.Close()
+				if closeError != nil {
+					slog.ErrorContext(ctx, "Unable to close file watcher", "error", closeError)
+				}
 			}
 
 			return
@@ -236,7 +238,7 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 		fws.filesChanged.Store(false)
 	}
 
-	fws.mu.Unlock()
+	fws.mu.Unlock() // release before channel send to avoid deadlock with monitorWatchers→Update
 
 	if shouldSend {
 		newCtx := context.WithValue(
@@ -246,7 +248,6 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 		)
 
 		slog.DebugContext(newCtx, "File watcher detected a file change")
-
 		select {
 		case ch <- FileUpdateMessage{CorrelationID: logger.CorrelationIDAttr(newCtx)}:
 		case <-ctx.Done():
