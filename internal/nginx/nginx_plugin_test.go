@@ -56,9 +56,36 @@ func TestNginx_createPlusAPIError(t *testing.T) {
 	expectedJSON, err := json.Marshal(expectedErr)
 	require.NoError(t, err)
 
-	result := createPlusAPIError(errors.New(s))
+	timeoutErr := errors.New("Get \"http://nginx-plus-api/api/9/http/upstreams/u/servers\": " +
+		"context deadline exceeded (Client.Timeout exceeded while awaiting headers)")
 
-	assert.Equal(t, errors.New(string(expectedJSON)), result)
+	tests := []struct {
+		apiErr   error
+		expected error
+		name     string
+	}{
+		{
+			name:     "Test 1: Structured NGINX Plus API error is reformatted",
+			apiErr:   errors.New(s),
+			expected: errors.New(string(expectedJSON)),
+		},
+		{
+			name:     "Test 2: Non-API error is returned unchanged",
+			apiErr:   timeoutErr,
+			expected: timeoutErr,
+		},
+		{
+			name:     "Test 3: Nil error returns nil",
+			apiErr:   nil,
+			expected: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			assert.Equal(tt, test.expected, createPlusAPIError(test.apiErr))
+		})
+	}
 }
 
 func TestNginx_Process_APIAction_GetHTTPServers(t *testing.T) {

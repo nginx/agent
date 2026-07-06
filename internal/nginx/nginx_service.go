@@ -18,6 +18,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/nginx/agent/v3/pkg/host/exec"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
@@ -41,6 +42,8 @@ import (
 const (
 	apiFormat         = "http://%s%s"
 	unixPlusAPIFormat = "http://nginx-plus-api%s"
+
+	defaultPlusAPITimeout = 30 * time.Second
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
@@ -392,7 +395,13 @@ func (n *NginxService) createPlusClient(ctx context.Context, instance *mpi.Insta
 		endpoint = fmt.Sprintf(apiFormat, plusAPI.GetListen(), plusAPI.GetLocation())
 	}
 
-	httpClient := http.DefaultClient
+	plusAPITimeout := n.agentConfig.Client.HTTP.Timeout
+	if plusAPITimeout <= 0 {
+		plusAPITimeout = defaultPlusAPITimeout
+	}
+	slog.DebugContext(ctx, "Creating NGINX Plus API client", "timeout", plusAPITimeout)
+
+	httpClient := &http.Client{Timeout: plusAPITimeout}
 	caCertLocation := plusAPI.GetCa()
 	if caCertLocation != "" {
 		slog.DebugContext(ctx, "Reading CA certificate", "file_path", caCertLocation)
@@ -404,6 +413,7 @@ func (n *NginxService) createPlusClient(ctx context.Context, instance *mpi.Insta
 		caCertPool.AppendCertsFromPEM(caCert)
 
 		httpClient = &http.Client{
+			Timeout: plusAPITimeout,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					RootCAs:    caCertPool,
@@ -413,7 +423,8 @@ func (n *NginxService) createPlusClient(ctx context.Context, instance *mpi.Insta
 		}
 	}
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
-		httpClient = socketClient(ctx, strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
+		httpClient = socketClient(plusAPITimeout,
+			strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
 	}
 
 	return client.NewNginxClient(endpoint,
@@ -449,11 +460,12 @@ func (n *NginxService) updateResourceInfo(ctx context.Context) {
 	}
 }
 
-func socketClient(ctx context.Context, socketPath string) *http.Client {
+func socketClient(timeout time.Duration, socketPath string) *http.Client {
 	return &http.Client{
+		Timeout: timeout,
 		Transport: &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				dialer := &net.Dialer{}
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				dialer := &net.Dialer{Timeout: timeout}
 				return dialer.DialContext(ctx, "unix", socketPath)
 			},
 		},
@@ -477,7 +489,7 @@ func createPlusAPIError(apiErr error) error {
 
 	if len(errorSlice) < 5 {
 		slog.Error("Unable to marshal NGINX Plus API error")
-		return nil
+		return apiErr
 	}
 
 	plusErr := plusAPIErr{
