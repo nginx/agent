@@ -187,7 +187,7 @@ func systemCPUUsage(clockTicks int) (float64, error) {
 			for _, i := range parts[1:CPUStatsFileLineLength] {
 				v, parseErr := strconv.ParseFloat(i, 64)
 				if parseErr != nil {
-					return 0, err
+					return 0, parseErr
 				}
 				totalClockTicks += v
 			}

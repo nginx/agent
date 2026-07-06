@@ -920,6 +920,21 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 	}
 }
 
+func TestSetExporterProxyEnvVars_HTTPSSchemeNotSet(t *testing.T) {
+	_ = os.Unsetenv("HTTPS_PROXY")
+
+	agentConfig := types.AgentConfig()
+	agentConfig.Command.Server.Proxy = &config.Proxy{
+		URL: "https://proxy.example.com:8080",
+	}
+
+	collector := &Collector{config: agentConfig}
+	collector.setExporterProxyEnvVars(t.Context())
+
+	assert.Empty(t, os.Getenv("HTTPS_PROXY"),
+		"HTTPS_PROXY must not be set when proxy scheme is https (unsupported)")
+}
+
 func TestCollector_findAvailableSyslogServers(t *testing.T) {
 	ctx := context.Background()
 	conf := types.OTelConfig(t)

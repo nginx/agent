@@ -166,12 +166,12 @@ func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	record.RecordSSLMetrics(nps.mb, now, stats)
 }
 
-func socketClient(ctx context.Context, socketPath string) *http.Client {
+func socketClient(_ context.Context, socketPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+			DialContext: func(reqCtx context.Context, _, _ string) (net.Conn, error) {
 				dialer := &net.Dialer{}
-				return dialer.DialContext(ctx, "unix", socketPath)
+				return dialer.DialContext(reqCtx, "unix", socketPath)
 			},
 		},
 	}
