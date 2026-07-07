@@ -203,7 +203,7 @@ func (b *ConfigApply) mapCurrentFiles(confFile string, allowedDirectories map[st
 	}
 	seen := make(map[string]struct{})
 	for _, xpc := range payload.Config {
-		if !allowedPath(xpc.File, allowedDirectories) {
+		if !CheckAllowedPath(xpc.File, allowedDirectories) {
 			continue
 		}
 		log.Debugf("config_apply: marking file (%s): %s", confFile, xpc.File)
@@ -235,7 +235,7 @@ func (b *ConfigApply) walkRoot(dir string, seen, allowedDirectories map[string]s
 		return nil
 	}
 	seen[dir] = struct{}{}
-	if !allowedPath(dir, allowedDirectories) {
+	if !CheckAllowedPath(dir, allowedDirectories) {
 		return nil
 	}
 	return filepath.WalkDir(dir,

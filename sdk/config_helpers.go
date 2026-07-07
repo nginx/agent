@@ -529,7 +529,7 @@ func updateNginxConfigFileWithRoot(
 		return nil
 	}
 	seen[dir] = struct{}{}
-	if !allowedPath(dir, allowedDirectories) {
+	if !CheckAllowedPath(dir, allowedDirectories) {
 		log.Debugf("Directory %s, is not in the allowed directory list so it will be excluded. Please add the directory to config_dirs in nginx-agent.conf", dir)
 		return nil
 	}
@@ -588,7 +588,7 @@ func updateNginxConfigFileWithAuxFile(
 	if _, ok := seen[file]; ok {
 		return nil
 	}
-	if !allowedPath(file, allowedDirectories) {
+	if !CheckAllowedPath(file, allowedDirectories) {
 		log.Warnf("Unable to retrieve the NAP aux file %s as it is not in the allowed directory list. Please add the directory to config_dirs in nginx-agent.conf.", file)
 		return nil
 	}
@@ -1054,18 +1054,14 @@ func GetAccessLogs(accessLogs *proto.AccessLogs) []string {
 	return result
 }
 
-// allowedPath return true if the provided path has a prefix in the allowedDirectories, false otherwise. The
-// path could be a filepath or directory.
-func allowedPath(path string, allowedDirectories map[string]struct{}) bool {
+// CheckAllowedPath returns true if the provided path has a prefix in the
+// allowedDirectories, false otherwise. The path could be a filepath or directory.
+func CheckAllowedPath(path string, allowedDirectories map[string]struct{}) bool {
 	dirs := make([]string, 0, len(allowedDirectories))
 	for d := range allowedDirectories {
 		dirs = append(dirs, filepath.Clean(d))
 	}
 	return checkDirIsAllowed(filepath.Clean(path), dirs)
-}
-
-func CheckAllowedPath(path string, allowedDirectories map[string]struct{}) bool {
-	return allowedPath(path, allowedDirectories)
 }
 
 func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
@@ -1078,7 +1074,7 @@ func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) err
 			// original allowedFile implementation in environment.go did.
 			continue
 		}
-		if !allowedPath(filePath, allowedDirs) {
+		if !CheckAllowedPath(filePath, allowedDirs) {
 			return fmt.Errorf("write prohibited for: %s", filePath)
 		}
 	}

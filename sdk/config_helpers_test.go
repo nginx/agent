@@ -2653,7 +2653,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := allowedPath(test.filePath, test.allowedDirs)
+			result := CheckAllowedPath(test.filePath, test.allowedDirs)
 			require.Equal(t, test.allowed, result)
 		})
 	}

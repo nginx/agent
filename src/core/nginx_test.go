@@ -423,10 +423,10 @@ func TestWriteBackup(t *testing.T) {
 
 func TestWriteConfig(t *testing.T) {
 	tmpDir := t.TempDir()
-	//expectedExisting := map[string]struct{}{}
-	//expectedNotExisting := map[string]struct{}{
-	//	filepath.Join(tmpDir, "/aux/test1.html"): {},
-	//}
+	expectedExisting := map[string]struct{}{}
+	expectedNotExisting := map[string]struct{}{
+		filepath.Join(tmpDir, "/aux/test1.html"): {},
+	}
 
 	allowedDirs := make(map[string]struct{})
 	allowedDirs[tmpDir] = struct{}{}
@@ -468,8 +468,8 @@ func TestWriteConfig(t *testing.T) {
 	configApply, err := n.WriteConfig(nginxConfig)
 
 	// Verify configApply
-	//assert.Equal(t, expectedExisting, configApply.GetExisting())
-	//assert.Equal(t, expectedNotExisting, configApply.GetNotExists())
+	assert.Equal(t, expectedExisting, configApply.GetExisting())
+	assert.Equal(t, expectedNotExisting, configApply.GetNotExists())
 	assert.Nil(t, err)
 
 	err = configApply.Complete()
