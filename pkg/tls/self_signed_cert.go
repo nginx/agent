@@ -114,12 +114,27 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 // GenerateServerCerts creates a server CA, Cert and Key and writes them to specified destinations.
 // Hostnames are a list of subject alternative names.
 // If cert files are already present, does nothing, returns true.
+//
+//nolint:revive,cyclop // cyclomatic complexity is 14
 func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (existingCert bool, err error) {
-	// Check for and return existing cert if it already exists
+	// Check all three paths — cert, key, and CA. Checking only certPath
 	existingCert, existingCertErr := DoesCertAlreadyExist(certPath)
 	if existingCertErr != nil {
 		return false, fmt.Errorf("error reading existing certificate data: %w", existingCertErr)
 	}
+
+	if existingCert {
+		if _, statErr := os.Stat(keyPath); statErr != nil {
+			existingCert = false
+		}
+	}
+
+	if existingCert {
+		if _, statErr := os.Stat(caPath); statErr != nil {
+			existingCert = false
+		}
+	}
+
 	if existingCert {
 		return true, nil
 	}

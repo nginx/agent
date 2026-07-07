@@ -7,6 +7,7 @@ package instance
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"testing"
 
@@ -439,6 +440,30 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 					GetAccessLogs())
 		})
 	}
+}
+
+func TestInstanceWatcherService_ReparseConfigs_ContinuesOnParseError(t *testing.T) {
+	ctx := context.Background()
+
+	instance1 := protos.NginxOssInstance([]string{})
+	instance2 := protos.NginxPlusInstance([]string{})
+
+	fakeParser := &configfakes.FakeConfigParser{}
+	fakeParser.ParseReturns(nil, errors.New("parse error"))
+
+	instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
+	instanceWatcherService.nginxConfigParser = fakeParser
+	instanceWatcherService.instancesChannel = make(chan ResourceUpdatesMessage, 2)
+	instanceWatcherService.nginxConfigContextChannel = make(chan NginxConfigContextMessage, 2)
+	instanceWatcherService.instanceCache = map[string]*mpi.Instance{
+		instance1.GetInstanceMeta().GetInstanceId(): instance1,
+		instance2.GetInstanceMeta().GetInstanceId(): instance2,
+	}
+
+	instanceWatcherService.ReparseConfigs(ctx)
+
+	assert.Equal(t, 2, fakeParser.ParseCallCount(),
+		"ReparseConfigs must attempt all instances — continue not return on parse failure")
 }
 
 func compareInstances(t *testing.T, expected, actual []*mpi.Instance) {
