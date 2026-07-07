@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       security-events: write # for reporting vulnerabilities via code-scanning API
+      contents: read
     env:
       GOPROXY: "https://proxy.golang.org,direct"
     steps:
