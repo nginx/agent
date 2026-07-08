@@ -90,6 +90,7 @@ func WaitUntil(
 	_, err := backoff.Retry(ctx, func() (struct{}, error) {
 		return struct{}{}, operation()
 	}, retryOpts...)
+
 	return err
 }
 

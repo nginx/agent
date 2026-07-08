@@ -384,7 +384,6 @@ func (cs *CommandService) handleConfigApplyResponse(
 			cfg.Client.Backoff,
 			cs.sendDataPlaneResponseCallback(ctx, newResponse),
 		)
-
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
 
