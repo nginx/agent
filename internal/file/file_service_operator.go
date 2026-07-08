@@ -19,7 +19,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v7"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/config"
@@ -105,9 +105,10 @@ func (fso *FileServiceOperator) File(
 		return response, nil
 	}
 
-	getFileResp, getFileErr := backoff.RetryWithData(
+	getFileResp, getFileErr := backoff.Retry(
+		backOffCtx,
 		getFile,
-		backoffHelpers.Context(backOffCtx, fso.agentConfig.Client.Backoff),
+		backoffHelpers.RetryOptions(backOffCtx, fso.agentConfig.Client.Backoff)...,
 	)
 
 	if getFileErr != nil {
@@ -215,9 +216,10 @@ func (fso *FileServiceOperator) UpdateOverview(
 		return response, nil
 	}
 
-	response, err := backoff.RetryWithData(
+	response, err := backoff.Retry(
+		newCtx,
 		sendUpdateOverview,
-		backoffHelpers.Context(newCtx, backoffSettings),
+		backoffHelpers.RetryOptions(newCtx, backoffSettings)...,
 	)
 	if err != nil {
 		return err
@@ -399,7 +401,6 @@ func (fso *FileServiceOperator) sendUpdateFileRequest(
 		},
 		MessageMeta: messageMeta,
 	}
-
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fso.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
@@ -431,9 +432,10 @@ func (fso *FileServiceOperator) sendUpdateFileRequest(
 		return response, nil
 	}
 
-	response, err := backoff.RetryWithData(
+	response, err := backoff.Retry(
+		backOffCtx,
 		sendUpdateFile,
-		backoffHelpers.Context(backOffCtx, fso.agentConfig.Client.Backoff),
+		backoffHelpers.RetryOptions(backOffCtx, fso.agentConfig.Client.Backoff)...,
 	)
 	if err != nil {
 		return err
@@ -522,7 +524,7 @@ func (fso *FileServiceOperator) sendUpdateFileStreamHeader(
 		return nil
 	}
 
-	return backoff.Retry(sendUpdateFileHeader, backoffHelpers.Context(backOffCtx, fso.agentConfig.Client.Backoff))
+	return backoffHelpers.WaitUntil(backOffCtx, fso.agentConfig.Client.Backoff, sendUpdateFileHeader)
 }
 
 func (fso *FileServiceOperator) sendFileUpdateStreamChunks(
@@ -616,7 +618,7 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunk(
 		return nil
 	}
 
-	return backoff.Retry(sendUpdateFileChunk, backoffHelpers.Context(backOffCtx, fso.agentConfig.Client.Backoff))
+	return backoffHelpers.WaitUntil(backOffCtx, fso.agentConfig.Client.Backoff, sendUpdateFileChunk)
 }
 
 func (fso *FileServiceOperator) setupIdentifiers(ctx context.Context, iteration int) (context.Context, string) {

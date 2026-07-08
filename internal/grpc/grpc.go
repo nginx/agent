@@ -20,7 +20,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/datasource/file"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v7"
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 
 	"buf.build/go/protovalidate"

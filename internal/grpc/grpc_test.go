@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v7"
 	"github.com/nginx/agent/v3/test/stub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -391,7 +391,7 @@ func Test_ValidateGrpcError(t *testing.T) {
 		require.ErrorIs(t, TestError{}, result)
 	}
 	result = ValidateGrpcError(status.Errorf(codes.InvalidArgument, "error"))
-	require.ErrorIs(t, &backoff.PermanentError{}, result)
+	require.ErrorIs(t, result, backoff.ErrPermanent)
 }
 
 func Test_transportCredentials(t *testing.T) {

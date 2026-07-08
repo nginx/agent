@@ -13,7 +13,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v7"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
@@ -116,9 +116,10 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		return response, nil
 	}
 
-	response, err := backoff.RetryWithData(
+	response, err := backoff.Retry(
+		backOffCtx,
 		sendDataPlaneStatus,
-		backoffHelpers.Context(backOffCtx, cfg.Client.Backoff),
+		backoffHelpers.RetryOptions(backOffCtx, cfg.Client.Backoff)...,
 	)
 	if err != nil {
 		return err
@@ -152,9 +153,10 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
-	response, err := backoff.RetryWithData(
+	response, err := backoff.Retry(
+		backOffCtx,
 		cs.dataPlaneHealthCallback(ctx, request),
-		backoffHelpers.Context(backOffCtx, cfg.Client.Backoff),
+		backoffHelpers.RetryOptions(backOffCtx, cfg.Client.Backoff)...,
 	)
 	if err != nil {
 		return err
@@ -167,19 +169,16 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 
 func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error {
 	slog.DebugContext(ctx, "Sending data plane response", "response", response)
-
 	cfg := cs.config()
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
-	defer backoffCancel()
-
 	err := cs.handleConfigApplyResponse(ctx, response)
 	if err != nil {
 		return err
 	}
 
-	return backoff.Retry(
+	return backoffHelpers.WaitUntil(
+		ctx,
+		cfg.Client.Backoff,
 		cs.sendDataPlaneResponseCallback(ctx, response),
-		backoffHelpers.Context(backOffCtx, cfg.Client.Backoff),
 	)
 }
 
@@ -209,7 +208,7 @@ func (cs *CommandService) Subscribe(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			retryError := backoff.Retry(cs.receiveCallback(ctx), backoffHelpers.Context(ctx, commonSettings))
+			retryError := backoffHelpers.WaitUntil(ctx, commonSettings, cs.receiveCallback(ctx))
 			if retryError != nil {
 				slog.WarnContext(ctx, "Failed to receive messages from subscribe stream", "error", retryError)
 			}
@@ -281,9 +280,10 @@ func (cs *CommandService) createConnectionCall(ctx context.Context) (*mpi.Create
 	}
 
 	slog.DebugContext(ctx, "Sending create connection request", "request", request)
-	resp, err := backoff.RetryWithData(
+	resp, err := backoff.Retry(
+		ctx,
 		cs.connectCallback(ctx, request),
-		backoffHelpers.Context(ctx, commonSettings),
+		backoffHelpers.RetryOptions(ctx, commonSettings)...,
 	)
 	if err != nil {
 		cs.isConnected.Store(false)
@@ -379,13 +379,11 @@ func (cs *CommandService) handleConfigApplyResponse(
 
 		slog.DebugContext(ctx, "Sending data plane response for queued config apply request", "response", newResponse)
 
-		backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
-
-		err := backoff.Retry(
+		err := backoffHelpers.WaitUntil(
+			ctx,
+			cfg.Client.Backoff,
 			cs.sendDataPlaneResponseCallback(ctx, newResponse),
-			backoffHelpers.Context(backOffCtx, cfg.Client.Backoff),
 		)
-		backoffCancel()
 
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
