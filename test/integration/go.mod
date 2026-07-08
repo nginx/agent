@@ -6,8 +6,8 @@ toolchain go1.26.4
 
 require (
 	github.com/docker/docker v28.0.1+incompatible
-	github.com/go-resty/resty/v2 v2.11.0
-	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
+	github.com/go-resty/resty/v2 v2.17.2
+	github.com/nginx/agent/sdk/v2 v2.46.6
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
@@ -43,7 +43,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/magiconair/properties v1.8.9 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
