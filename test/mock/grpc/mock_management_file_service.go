@@ -323,6 +323,9 @@ func (mgs *FileService) sendGetFileStreamHeader(ctx context.Context,
 		},
 	}
 
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, mgs.agentConfig.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
+
 	sendGetFileHeader := func() error {
 		slog.DebugContext(ctx, "Sending update file stream header", "header", header)
 		err := streamingServer.Send(
@@ -343,7 +346,7 @@ func (mgs *FileService) sendGetFileStreamHeader(ctx context.Context,
 		return nil
 	}
 
-	return backoffHelpers.WaitUntil(ctx, mgs.agentConfig.Client.Backoff, sendGetFileHeader)
+	return backoffHelpers.WaitUntil(backOffCtx, mgs.agentConfig.Client.Backoff, sendGetFileHeader)
 }
 
 func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.FileDataChunk_Content,
@@ -354,6 +357,10 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx,
+		mgs.agentConfig.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
 
 	sendGetFileChunk := func() error {
 		slog.DebugContext(ctx, "Sending get file stream chunk", "chunk_id", chunk.Content.GetChunkId())
@@ -372,7 +379,7 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 		return nil
 	}
 
-	return backoffHelpers.WaitUntil(ctx, mgs.agentConfig.Client.Backoff, sendGetFileChunk)
+	return backoffHelpers.WaitUntil(backOffCtx, mgs.agentConfig.Client.Backoff, sendGetFileChunk)
 }
 
 func readChunk(

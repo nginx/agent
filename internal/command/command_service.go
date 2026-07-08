@@ -170,13 +170,16 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error {
 	slog.DebugContext(ctx, "Sending data plane response", "response", response)
 	cfg := cs.config()
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
+
 	err := cs.handleConfigApplyResponse(ctx, response)
 	if err != nil {
 		return err
 	}
 
 	return backoffHelpers.WaitUntil(
-		ctx,
+		backOffCtx,
 		cfg.Client.Backoff,
 		cs.sendDataPlaneResponseCallback(ctx, response),
 	)
@@ -378,12 +381,15 @@ func (cs *CommandService) handleConfigApplyResponse(
 		}
 
 		slog.DebugContext(ctx, "Sending data plane response for queued config apply request", "response", newResponse)
+		backOffCtx, backoffCancel := context.WithTimeout(ctx, cfg.Client.Backoff.MaxElapsedTime)
 
 		err := backoffHelpers.WaitUntil(
-			ctx,
+			backOffCtx,
 			cfg.Client.Backoff,
 			cs.sendDataPlaneResponseCallback(ctx, newResponse),
 		)
+		backoffCancel()
+
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
 
