@@ -637,6 +637,14 @@ func TestInfo_ParseOsReleaseFile(t *testing.T) {
 	}
 }
 
+func TestInfo_containerIDFromMountInfo(t *testing.T) {
+	t.Run("Test 1: non-existent mountinfo file returns error without panic", func(t *testing.T) {
+		_, err := containerIDFromMountInfo("/non/existent/mountinfo/path")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "container ID not found in")
+	})
+}
+
 func TestInfo_containerIDFromECS(t *testing.T) {
 	ctx := context.Background()
 

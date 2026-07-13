@@ -267,18 +267,16 @@ func containsContainerReference(cgroupFile string) (bool, error) {
 // Supports cgroup v1 and v2. Reading "/proc/1/cpuset" would only work for cgroups v1
 // mountInfo is the path: "/proc/self/mountinfo"
 func containerIDFromMountInfo(mountInfo string) (string, error) {
-	var errs error
 	mInfoFile, err := os.Open(mountInfo)
+	if err != nil {
+		return "", fmt.Errorf("container ID not found in %s: %w", mountInfo, err)
+	}
 	defer func(f *os.File) {
 		closeErr := f.Close()
 		if closeErr != nil {
-			errs = errors.Join(err, closeErr)
+			err = errors.Join(err, closeErr)
 		}
 	}(mInfoFile)
-
-	if err != nil {
-		return "", errors.Join(errs, err)
-	}
 
 	fileScanner := bufio.NewScanner(mInfoFile)
 	fileScanner.Split(bufio.ScanLines)
@@ -298,7 +296,7 @@ func containerIDFromMountInfo(mountInfo string) (string, error) {
 		}
 	}
 
-	return "", errors.Join(errs, fmt.Errorf("container ID not found in %s", mountInfo))
+	return "", fmt.Errorf("container ID not found in %s", mountInfo)
 }
 
 // containerIDFromPatterns checks a word against multiple regex patterns to extract the container ID.
