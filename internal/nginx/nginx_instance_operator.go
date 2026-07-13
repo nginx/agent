@@ -78,14 +78,19 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 	errorLogs := i.errorLogs(instance)
 
 	logErrorChannel := make(chan error, len(errorLogs))
-	defer close(logErrorChannel)
 
 	go i.monitorLogs(ctx, errorLogs, logErrorChannel)
 
 	err := i.executer.KillProcess(pid)
 	if err != nil {
+		for range errorLogs {
+			<-logErrorChannel
+		}
+		close(logErrorChannel)
+
 		return err
 	}
+	defer close(logErrorChannel)
 
 	processes, procErr := i.nginxProcessOperator.FindNginxProcesses(ctx)
 	if procErr != nil {

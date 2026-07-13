@@ -35,10 +35,14 @@ format_log() {
         line="${line#*"${key}=${value}"}"
         
         if [[ "$value" == \"*\" ]]; then
-            value="${value:1:${#value}-2}"
-            value="${value//\"/\\\"}"
-        fi
-        json+="\"$key\":\"$value\","
+                    value="${value:1:${#value}-2}"
+                    value="${value//\\/\\\\}"
+                    value="${value//\"/\\\"}"
+                else
+                    value="${value//\\/\\\\}"
+                    value="${value//\"/\\\"}"
+                fi
+                json+="\"$key\":\"$value\","
     done
 
     json="${json%,}}"    
@@ -61,13 +65,15 @@ write_result() {
     if [[ "$start_at" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ && \
           "$end_at" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
       duration_seconds=$(( $(date -d "$end_at" +%s) - $(date -d "$start_at" +%s) ))
-      start_iso=""
-      end_iso=""
+      local start_iso=""
+      local end_iso=""
       start_iso=$(date -d "$start_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
       end_iso=$(date -d "$end_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
-    else
-      duration_seconds=0
-    fi
+      else
+        duration_seconds=0
+        local start_iso=""
+        local end_iso=""
+      fi
     
     if [[ ${msg} == "msg" ]]; then
         msg=""

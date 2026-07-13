@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -88,14 +89,16 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	helpers.CreateDirWithErrorCheck(t, noModulesPath)
 	defer helpers.RemoveFileWithErrorCheck(t, noModulesPath)
 
-	testModule := helpers.CreateFileWithErrorCheck(t, modulePath, "test.so")
-	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
+	const testModuleFile = "testmodule.so"
+	testModulePath := filepath.Join(modulePath, testModuleFile)
+	require.NoError(t, os.WriteFile(testModulePath, []byte{}, 0o600))
+	defer os.Remove(testModulePath)
 
 	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
 	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
 	noModuleArgs := fmt.Sprintf(ossConfigArgs, noModulesPath)
 
-	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
+	expectedModules := strings.TrimSuffix(testModuleFile, ".so")
 	processes := []*nginxprocess.Process{
 		{
 			PID:  789,
@@ -452,13 +455,15 @@ func TestGetInfo(t *testing.T) {
 	helpers.CreateDirWithErrorCheck(t, modulePath)
 	defer helpers.RemoveFileWithErrorCheck(t, modulePath)
 
-	testModule := helpers.CreateFileWithErrorCheck(t, modulePath, "test.so")
-	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
+	const testModuleFile = "testmodule.so"
+	testModulePath := filepath.Join(modulePath, testModuleFile)
+	require.NoError(t, os.WriteFile(testModulePath, []byte{}, 0o600))
+	defer os.Remove(testModulePath)
 
 	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
 	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
 
-	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
+	expectedModules := strings.TrimSuffix(testModuleFile, ".so")
 
 	tests := []struct {
 		process                   *nginxprocess.Process
@@ -625,5 +630,30 @@ func TestGetInfo(t *testing.T) {
 			assert.Equal(tt, test.expected, result)
 			require.NoError(tt, err)
 		})
+	}
+}
+
+func TestReadDirectory(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create files: two .so modules and one non-.so file
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "ngx_http_module.so"), []byte{}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "ngx_stream_module.so"), []byte{}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "readme.txt"), []byte{}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "libfoo.so.1.so"), []byte{}, 0o600))
+
+	files, err := readDirectory(dir, ".so")
+	require.NoError(t, err)
+
+	assert.ElementsMatch(t, []string{
+		"ngx_http_module",
+		"ngx_stream_module",
+		"libfoo.so.1", // TrimSuffix removes only the trailing .so
+	}, files, "only .so files must be returned with extension stripped via TrimSuffix")
+
+	// Verify non-.so file is excluded
+	for _, f := range files {
+		assert.NotEqual(t, "readme", f, "non-.so files must not be included")
+		assert.NotEqual(t, "readme.txt", f, "non-.so files must not be included")
 	}
 }

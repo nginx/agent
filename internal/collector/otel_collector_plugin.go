@@ -854,6 +854,8 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 	if parsedProxyURL.Scheme == "https" {
 		slog.ErrorContext(ctx, "HTTPS protocol not supported by OTLP exporter, unable to configure proxy for "+
 			"OTLP exporter", "url", proxyURL)
+
+		return
 	}
 
 	auth := ""
