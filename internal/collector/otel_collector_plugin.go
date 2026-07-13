@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -32,9 +33,10 @@ import (
 )
 
 const (
-	maxTimeToWaitForShutdown  = 30 * time.Second
-	defaultCollectionInterval = 1 * time.Minute
-	filePermission            = 0o600
+	maxTimeToWaitForShutdown      = 30 * time.Second
+	defaultCollectionInterval     = 1 * time.Minute
+	defaultCertCollectionInterval = 15 * time.Second
+	filePermission                = 0o600
 	// To conform to the rfc3164 spec the timestamp in the logs need to be formatted correctly.
 	// Here are some examples of what the timestamp conversions look like.
 	// Notice how if the day begins with a zero that the zero is replaced with an empty space.
@@ -542,6 +544,10 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 		slog.DebugContext(ctx, "NAP logs feature disabled", "enabled_features", oc.config.Features)
 	}
 
+	if oc.config.IsFeatureEnabled(pkgConfig.FeatureCertificates) {
+		reloadCollector = reloadCollector || oc.updateCertificateReceivers(nginxConfigContext)
+	}
+
 	return reloadCollector
 }
 
@@ -761,6 +767,72 @@ func (oc *Collector) doesTcplogReceiverAlreadyExist(listenAddress string) bool {
 	}
 
 	return false
+}
+
+func (oc *Collector) updateCertificateReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+	certFilePaths := certFilePathsFromFiles(nginxConfigContext.Files)
+
+	for i, certReceiver := range oc.config.Collector.Receivers.CertificateReceivers {
+		if certReceiver.InstanceID == nginxConfigContext.InstanceID {
+			if len(certFilePaths) == 0 {
+				// No certs remaining — remove the receiver
+				oc.config.Collector.Receivers.CertificateReceivers = append(
+					oc.config.Collector.Receivers.CertificateReceivers[:i],
+					oc.config.Collector.Receivers.CertificateReceivers[i+1:]...,
+				)
+
+				return true
+			}
+
+			// Update existing receiver's cert file paths if changed
+			if !certFilePathsEqual(certReceiver.CertFilePaths, certFilePaths) {
+				oc.config.Collector.Receivers.CertificateReceivers[i].CertFilePaths = certFilePaths
+
+				return true
+			}
+
+			return false
+		}
+	}
+
+	if len(certFilePaths) == 0 {
+		return false
+	}
+
+	oc.config.Collector.Receivers.CertificateReceivers = append(
+		oc.config.Collector.Receivers.CertificateReceivers,
+		config.CertificateReceiver{
+			InstanceID:         nginxConfigContext.InstanceID,
+			CollectionInterval: defaultCertCollectionInterval,
+			CertFilePaths:      certFilePaths,
+		},
+	)
+
+	return true
+}
+
+func certFilePathsEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	sortedA := slices.Clone(a)
+	sortedB := slices.Clone(b)
+	slices.Sort(sortedA)
+	slices.Sort(sortedB)
+
+	return slices.Equal(sortedA, sortedB)
+}
+
+func certFilePathsFromFiles(files []*v1.File) []string {
+	var paths []string
+	for _, f := range files {
+		if _, ok := f.GetFileMeta().GetFileType().(*v1.FileMeta_CertificateMeta); ok {
+			paths = append(paths, f.GetFileMeta().GetName())
+		}
+	}
+
+	return paths
 }
 
 func (oc *Collector) updateResourceAttributes(

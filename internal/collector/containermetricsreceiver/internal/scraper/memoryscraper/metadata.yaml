@@ -12,6 +12,7 @@ resource_attributes:
   resource.id:
     description: The resource id.
     type: string
+    enabled: true
 
 attributes:
   state:
@@ -23,6 +24,8 @@ metrics:
   system.memory.usage:
     enabled: true
     description: Bytes of memory in use.
+    stability:
+      level: development
     unit: By
     sum:
       value_type: int
