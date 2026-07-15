@@ -26,7 +26,7 @@ require (
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.22.0
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
