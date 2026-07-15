@@ -89,16 +89,23 @@ func TestSystemCollector_Collect(t *testing.T) {
 			mockSource1,
 			mockSource2,
 		},
-		buf: make(chan *metrics.StatsEntityWrapper),
+		// Use a buffered channel (matching production behaviour) so we can
+		// pre-populate buf before Collect runs. Collect has a default:return
+		// branch — if buf is empty when Collect starts it exits immediately,
+		// causing the subsequent send to block forever on multi-core systems.
+		buf: make(chan *metrics.StatsEntityWrapper, 1),
 		dim: &metrics.CommonDim{},
 	}
 
 	ctx := context.TODO()
 
+	// Pre-populate buf before launching Collect so data is guaranteed to be
+	// present when Collect enters its select, regardless of goroutine scheduling.
+	systemCollector.buf <- &metrics.StatsEntityWrapper{Type: proto.MetricsReport_SYSTEM, Data: &proto.StatsEntity{Dimensions: []*proto.Dimension{{Name: "new_dim", Value: "123"}}}}
+
 	channel := make(chan *metrics.StatsEntityWrapper)
 	go systemCollector.Collect(ctx, channel)
 
-	systemCollector.buf <- &metrics.StatsEntityWrapper{Type: proto.MetricsReport_SYSTEM, Data: &proto.StatsEntity{Dimensions: []*proto.Dimension{{Name: "new_dim", Value: "123"}}}}
 	actual := <-channel
 
 	time.Sleep(100 * time.Millisecond)

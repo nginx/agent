@@ -305,9 +305,14 @@ func TestConfig_IsFileAllowed(t *testing.T) {
 			expect: false,
 		},
 		{
-			name:   "prefix-only match (current behaviour)",
+			name:   "dot-relative",
+			path:   "../etc/nginx.conf",
+			expect: false,
+		},
+		{
+			name:   "prefix-only match",
 			path:   "/etc/nginxfoo/x.conf",
-			expect: true,
+			expect: false,
 		},
 	}
 

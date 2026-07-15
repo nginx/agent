@@ -39,17 +39,22 @@ func CheckForProcesses(processesToCheck []string) ([]string, error) {
 			continue
 		}
 
+		if found, idx := SliceContainsString(processCheckCopy, procName); found {
+			processCheckCopy = append(processCheckCopy[:idx], processCheckCopy[idx+1:]...)
+			continue
+		}
+
+		// Name didn't match — fall back to cmdline (only called when necessary,
+		// avoids the expensive syscall for every process on the system).
 		procCmd, err := process.CmdlineSliceWithContext(ctx)
 		if err != nil {
 			continue
 		}
 
-		if found, idx := SliceContainsString(processCheckCopy, procName); found {
-			processCheckCopy = append(processCheckCopy[:idx], processCheckCopy[idx+1:]...)
-		} else if len(procCmd) > 0 {
+		if len(procCmd) > 0 {
 			splitCmd := strings.Split(procCmd[0], "/")
-			procName = splitCmd[len(splitCmd)-1]
-			if found, idx := SliceContainsString(processCheckCopy, procName); found {
+			cmdName := splitCmd[len(splitCmd)-1]
+			if found, idx := SliceContainsString(processCheckCopy, cmdName); found {
 				processCheckCopy = append(processCheckCopy[:idx], processCheckCopy[idx+1:]...)
 			}
 		}
