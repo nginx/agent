@@ -23,6 +23,8 @@ contents:
     packager: apk
   - src: ./scripts/nginx-agent.logrotate
     dst: /etc/logrotate.d/nginx-agent
+    file_info:
+      mode: 0644
   - src: ./scripts/selinux/nginx_agent_selinux.8
     dst: /usr/share/man/man8/nginx_agent_selinux.8
     packager: rpm
