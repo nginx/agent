@@ -66,7 +66,7 @@ ${CONTAINER_TOOL} run quay.io/skopeo/stable list-tags docker://${IMAGE_PATH} | j
 echo $(wc -l < ${IMAGE_NAME}_tags.txt) "tags fetched."
 
 # Filter out tags that end with four or more digits (nightly/build tags)
-grep -Ev '\d{4,}$' ${IMAGE_NAME}_tags.txt | sort -u > ${IMAGE_NAME}_filteredtags.txt
+grep -Ev '[0-9]{4,}$' ${IMAGE_NAME}_tags.txt | sort -u > ${IMAGE_NAME}_filteredtags.txt
 echo $(wc -l < ${IMAGE_NAME}_filteredtags.txt) "tags after filtering."
 
 # Search for tags matching the provided pattern

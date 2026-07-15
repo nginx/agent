@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/record"
@@ -40,7 +39,6 @@ type NginxPlusScraper struct {
 	rb                  *metadata.ResourceBuilder
 	logger              *zap.Logger
 	settings            receiver.Settings
-	init                sync.Once
 }
 
 func newNginxPlusScraper(
@@ -110,17 +108,16 @@ func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error 
 func (nps *NginxPlusScraper) Scrape(ctx context.Context) (pmetric.Metrics, error) {
 	// nps.init.Do is ran only once, it is only ran the first time scrape is called to set the previous responses
 	// metric value
-	nps.init.Do(func() {
-		stats, err := nps.plusClient.GetStats(ctx)
+	if nps.httpMetrics == nil {
+		initStats, err := nps.plusClient.GetStats(ctx)
 		if err != nil {
-			nps.logger.Error("Failed to get stats from plus API", zap.Error(err))
-			return
+			return pmetric.NewMetrics(), fmt.Errorf("failed to initialize plus metrics helpers: %w", err)
 		}
 
-		nps.httpMetrics = record.NewHTTPMetrics(stats, nps.mb)
-		nps.locationZoneMetrics = record.NewLocationZoneMetrics(stats, nps.mb)
-		nps.serverZoneMetrics = record.NewServerZoneMetrics(stats, nps.mb)
-	})
+		nps.httpMetrics = record.NewHTTPMetrics(initStats, nps.mb)
+		nps.locationZoneMetrics = record.NewLocationZoneMetrics(initStats, nps.mb)
+		nps.serverZoneMetrics = record.NewServerZoneMetrics(initStats, nps.mb)
+	}
 
 	stats, err := nps.plusClient.GetStats(ctx)
 	if err != nil {
@@ -147,11 +144,18 @@ func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	// NGINX config reloads
 	nps.mb.RecordNginxConfigReloadsDataPoint(now, int64(stats.NginxInfo.Generation))
 
-	nps.httpMetrics.RecordHTTPMetrics(stats, now)
-	nps.httpMetrics.RecordHTTPLimitMetrics(stats, now)
+	if nps.httpMetrics != nil {
+		nps.httpMetrics.RecordHTTPMetrics(stats, now)
+		nps.httpMetrics.RecordHTTPLimitMetrics(stats, now)
+	}
 
-	nps.locationZoneMetrics.RecordLocationZoneMetrics(stats, now)
-	nps.serverZoneMetrics.RecordServerZoneMetrics(stats, now)
+	if nps.locationZoneMetrics != nil {
+		nps.locationZoneMetrics.RecordLocationZoneMetrics(stats, now)
+	}
+
+	if nps.serverZoneMetrics != nil {
+		nps.serverZoneMetrics.RecordServerZoneMetrics(stats, now)
+	}
 
 	record.RecordCacheMetrics(nps.mb, stats, now)
 
@@ -162,12 +166,12 @@ func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	record.RecordSSLMetrics(nps.mb, now, stats)
 }
 
-func socketClient(ctx context.Context, socketPath string) *http.Client {
+func socketClient(_ context.Context, socketPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+			DialContext: func(reqCtx context.Context, _, _ string) (net.Conn, error) {
 				dialer := &net.Dialer{}
-				return dialer.DialContext(ctx, "unix", socketPath)
+				return dialer.DialContext(reqCtx, "unix", socketPath)
 			},
 		},
 	}

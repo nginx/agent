@@ -144,12 +144,15 @@ func (ncc *NginxConfigContext) areFileEqual(files []*v1.File) bool {
 		return false
 	}
 
+	otherByName := make(map[string]string, len(files))
+	for _, f := range files {
+		otherByName[f.GetFileMeta().GetName()] = f.GetFileMeta().GetHash()
+	}
+
 	for _, file := range ncc.Files {
-		for _, otherFile := range files {
-			if file.GetFileMeta().GetName() == otherFile.GetFileMeta().GetName() &&
-				file.GetFileMeta().GetHash() != otherFile.GetFileMeta().GetHash() {
-				return false
-			}
+		hash, exists := otherByName[file.GetFileMeta().GetName()]
+		if !exists || hash != file.GetFileMeta().GetHash() {
+			return false
 		}
 	}
 
