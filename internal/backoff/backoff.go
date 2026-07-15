@@ -51,13 +51,6 @@ func WaitUntil(
 	backoffSettings *config.BackOff,
 	operation backoff.Operation,
 ) error {
-	eb := backoff.NewExponentialBackOff()
-	eb.InitialInterval = backoffSettings.InitialInterval
-	eb.MaxInterval = backoffSettings.MaxInterval
-	eb.MaxElapsedTime = backoffSettings.MaxElapsedTime
-	eb.RandomizationFactor = backoffSettings.RandomizationFactor
-	eb.Multiplier = backoffSettings.Multiplier
-
 	backoffWithContext := Context(ctx, backoffSettings)
 
 	return backoff.Retry(operation, backoffWithContext)

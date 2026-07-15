@@ -75,7 +75,7 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 			s.settings.Logger.Error("Error starting NGINX stub status scraper. "+
 				"Failed to read CA certificate", zap.Error(err))
 
-			return nil
+			return err
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)

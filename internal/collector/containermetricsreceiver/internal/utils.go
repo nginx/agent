@@ -7,6 +7,7 @@ package internal
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -62,6 +63,10 @@ func ReadSingleValueCgroupFile(filename string) (string, error) {
 	lines, err := ReadLinesOffsetN(filename, 0, 1)
 	if err != nil {
 		return "", err
+	}
+
+	if len(lines) == 0 {
+		return "", fmt.Errorf("empty cgroup file: %s", filename)
 	}
 
 	return strings.TrimSpace(lines[0]), nil

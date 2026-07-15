@@ -90,6 +90,9 @@ func LogLevel(level string) slog.Level {
 	return logLevels[strings.ToLower(level)]
 }
 
+var currentLogFileHandle *os.File
+
+//nolint:nestif // complexity is 5 , required for readability
 func logWriter(logFile string) io.Writer {
 	if logFile != "" && filepath.IsAbs(logFile) {
 		logFilePath, err := logFilePath(logFile)
@@ -106,10 +109,15 @@ func logWriter(logFile string) io.Writer {
 			return os.Stderr
 		}
 
-		// Use io.MultiWriter to log to both Stdout and the file
-		multiWriter := io.MultiWriter(os.Stdout, logFileHandle)
+		if currentLogFileHandle != nil {
+			if closeErr := currentLogFileHandle.Close(); closeErr != nil {
+				slog.Error("Failed to close previous log file handle", "error", closeErr)
+			}
+		}
 
-		return multiWriter
+		currentLogFileHandle = logFileHandle
+
+		return io.MultiWriter(os.Stdout, logFileHandle)
 	}
 
 	return os.Stderr
@@ -172,7 +180,7 @@ func CorrelationIDAttr(ctx context.Context) slog.Attr {
 			"Correlation ID not found in context, generating new correlation ID",
 			correlationID)
 
-		return GenerateCorrelationID()
+		return correlationID
 	}
 
 	return value

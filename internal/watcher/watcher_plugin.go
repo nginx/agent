@@ -47,6 +47,7 @@ type (
 		auxiliaryCredentialUpdatesChannel  chan credentials.CredentialUpdateMessage
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
+		wg                                 sync.WaitGroup
 		watcherMutex                       sync.Mutex
 		agentConfigMutex                   sync.Mutex
 	}
@@ -100,22 +101,48 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	watcherContext, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 
-	go w.instanceWatcherService.Watch(watcherContext, w.resourceUpdatesChannel, w.nginxConfigContextChannel)
-	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
-	go w.commandCredentialWatcherService.Watch(watcherContext, w.commandCredentialUpdatesChannel)
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
+		w.instanceWatcherService.Watch(watcherContext, w.resourceUpdatesChannel, w.nginxConfigContextChannel)
+	}()
+
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
+		w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
+	}()
+
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
+		w.commandCredentialWatcherService.Watch(watcherContext, w.commandCredentialUpdatesChannel)
+	}()
 
 	if w.agentConfig.AuxiliaryCommand != nil {
-		go w.auxiliaryCredentialWatcherService.Watch(watcherContext, w.auxiliaryCredentialUpdatesChannel)
+		w.wg.Add(1)
+		go func() {
+			defer w.wg.Done()
+			w.auxiliaryCredentialWatcherService.Watch(watcherContext, w.auxiliaryCredentialUpdatesChannel)
+		}()
 	}
 
 	if w.agentConfig.IsFeatureEnabled(pkgConfig.FeatureFileWatcher) {
-		go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
+		w.wg.Add(1)
+		go func() {
+			defer w.wg.Done()
+			w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
+		}()
 	} else {
 		slog.DebugContext(watcherContext, "File watcher feature is disabled",
 			"enabled_features", w.agentConfig.Features)
 	}
 
-	go w.monitorWatchers(watcherContext)
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
+		w.monitorWatchers(watcherContext)
+	}()
 
 	return nil
 }
@@ -125,6 +152,7 @@ func (w *Watcher) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing watcher plugin")
 
 	w.cancel()
+	w.wg.Wait()
 
 	return nil
 }
@@ -249,7 +277,11 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		case message := <-w.resourceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.handleInstanceUpdates(newCtx, message)
-		case message := <-w.nginxConfigContextChannel:
+		case message, ok := <-w.nginxConfigContextChannel:
+			if !ok || message.NginxConfigContext == nil {
+				return
+			}
+
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.watcherMutex.Lock()
 
@@ -284,7 +316,11 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			// Running this in a separate go routine otherwise we get into a deadlock
 			// since the ReparseConfigs function could add new messages to one of the other watcher channels
-			go w.instanceWatcherService.ReparseConfigs(newCtx)
+			w.wg.Add(1)
+			go func() {
+				defer w.wg.Done()
+				w.instanceWatcherService.ReparseConfigs(newCtx)
+			}()
 		}
 	}
 }
