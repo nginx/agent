@@ -2494,3 +2494,167 @@ func TestSslDirectiveMetaDedup(t *testing.T) {
 		})
 	}
 }
+
+func TestTypes_isAllowedDir(t *testing.T) {
+	tests := []struct {
+		name        string
+		filePath    string
+		allowedDirs map[string]struct{}
+		allowed     bool
+	}{
+		{
+			name:    "Test 1: File is in allowed directory",
+			allowed: true,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/etc/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 2: File is in allowed directory with hyphen",
+			allowed: true,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx-agent": {},
+			},
+			filePath: "/etc/nginx-agent/nginx.conf",
+		},
+		{
+			name:    "Test 3: File exists and is in a subdirectory of allowed directory",
+			allowed: true,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/etc/nginx/conf.d/nginx.conf",
+		},
+		{
+			name:    "Test 4: File exists and is outside allowed directory",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/etc/test/nginx.conf",
+		},
+		{
+			name:    "Test 5: File does not exist but is in allowed directory",
+			allowed: true,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/etc/nginx/idontexist.conf",
+		},
+		{
+			name:    "Test 6: Test File does not exist and is outside allowed directory",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/not-nginx-test/idontexist.conf",
+		},
+		{
+			name:    "Test 7: Prefix match not allowed",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/etc/nginx-test/nginx.conf",
+		},
+		{
+			name:    "Test 8: Empty allowed directories",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"": {},
+			},
+			filePath: "/etc/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 9: Multiple allowed directories, file in one of them",
+			allowed: true,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx":       {},
+				"/usr/local/nginx": {},
+			},
+			filePath: "/usr/local/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 10: Multiple allowed directories, file not in any of them",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx":       {},
+				"/usr/local/nginx": {},
+			},
+			filePath: "/opt/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 11: Path is root directory, not in allowed directories",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/",
+		},
+		{
+			name:    "Test 12: File is in directory nested 5 levels deep within allowed directory",
+			allowed: true,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "/etc/nginx/level1/level2/level3/level4/nginx.conf",
+		},
+		{
+			name:    "Test 13: Root directory is allowed, file in subdirectory",
+			allowed: true,
+			allowedDirs: map[string]struct{}{
+				"/": {},
+			},
+			filePath: "/etc/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 14: Root directory is allowed, file in subdirectory",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "\"/etc/nginxmalicious/../../../tmp/evil.conf\"",
+		},
+		{
+			name:    "Test 14: Root directory is allowed, file in subdirectory",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: "..",
+		},
+		{
+			name:    "Test 14: Root directory is allowed, file in subdirectory",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: ".",
+		},
+		{
+			name:    "Test 14: Root directory is allowed, file in subdirectory",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx": {},
+			},
+			filePath: ".test",
+		},
+		{
+			name:    "Test 14: Root directory is allowed, file in subdirectory",
+			allowed: false,
+			allowedDirs: map[string]struct{}{
+				"/etc/nginx":     {},
+				"/var/log/nginx": {},
+			},
+			filePath: "../etc/nginx.conf",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := CheckAllowedPath(test.filePath, test.allowedDirs)
+			require.Equal(t, test.allowed, result)
+		})
+	}
+}

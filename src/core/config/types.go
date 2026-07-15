@@ -8,10 +8,9 @@
 package config
 
 import (
-	"path/filepath"
-	"strings"
 	"time"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/backoff"
 )
 
@@ -93,17 +92,7 @@ func (c *Config) GetMetricsBackoffSettings() backoff.BackoffSettings {
 }
 
 func (c *Config) IsFileAllowed(path string) bool {
-	if !filepath.IsAbs(path) {
-		return false
-	}
-
-	for dir := range c.AllowedDirectoriesMap {
-		if strings.HasPrefix(path, dir) {
-			return true
-		}
-	}
-
-	return false
+	return sdk.CheckAllowedPath(path, c.AllowedDirectoriesMap)
 }
 
 type Server struct {
