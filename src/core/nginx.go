@@ -412,7 +412,6 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 
 	if !sdk.CheckAllowedPath(filepath.Dir(details.ConfPath), n.config.AllowedDirectoriesMap) {
 		return nil, fmt.Errorf("config directory %s not allowed", filepath.Dir(details.ConfPath))
-
 	}
 
 	n.unpackMutex.Lock()

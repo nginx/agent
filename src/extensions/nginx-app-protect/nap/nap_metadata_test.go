@@ -166,14 +166,14 @@ func TestUpdateNapMetadata(t *testing.T) {
 
 			cfg, err := sdk.GetNginxConfigWithIgnoreDirectives(configFile, nginxID, systemID, allowedDirs, ignoreDirectives)
 			assert.NoError(t, err)
-				appProtectWAFDetails := &proto.AppProtectWAFDetails{
-					WafVersion:              wafVersion,
-					WafRelease:              wafRelease,
-					AttackSignaturesVersion: wafAttackSignaturesVersion,
-					ThreatCampaignsVersion:  wafThreatCampaignsVersion,
-					WafLocation:             metadataFile,
-					PrecompiledPublication:  tc.precompPub,
-				}
+			appProtectWAFDetails := &proto.AppProtectWAFDetails{
+				WafVersion:              wafVersion,
+				WafRelease:              wafRelease,
+				AttackSignaturesVersion: wafAttackSignaturesVersion,
+				ThreatCampaignsVersion:  wafThreatCampaignsVersion,
+				WafLocation:             metadataFile,
+				PrecompiledPublication:  tc.precompPub,
+			}
 
 			// UpdateMetadata writes to the NAP metadata path, which lives outside
 			// the nginx config dirs. Use a separate allowed-dirs map that includes
