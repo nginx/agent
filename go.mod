@@ -2,7 +2,7 @@ module github.com/nginx/agent/v2
 
 go 1.26.0
 
-toolchain go1.26.4
+toolchain go1.26.5
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -11,7 +11,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/klauspost/cpuid/v2 v2.2.5
+	github.com/klauspost/cpuid/v2 v2.4.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nginx/nginx-prometheus-exporter v1.5.1
 	github.com/nxadm/tail v1.4.11
@@ -26,7 +26,7 @@ require (
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.22.0
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -40,7 +40,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/cors v1.11.1
 	go.uber.org/goleak v1.3.0
-	go.uber.org/mock v0.4.0
+	go.uber.org/mock v0.6.0
 	golang.org/x/sys v0.45.0
 	golang.org/x/text v0.37.0
 	gopkg.in/yaml.v2 v2.4.0

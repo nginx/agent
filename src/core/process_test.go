@@ -64,7 +64,7 @@ func TestCheckForProcesses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			killFakeProcesses := testutils.StartFakeProcesses(tc.procsToCreate, "10")
+			killFakeProcesses := testutils.StartFakeProcesses(tc.procsToCreate, "60")
 			defer killFakeProcesses()
 
 			missingProcesses, err := core.CheckForProcesses(tc.procsToCheck)

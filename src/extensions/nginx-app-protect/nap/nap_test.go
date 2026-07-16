@@ -180,7 +180,7 @@ func TestNAPRunning(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Create fake process(es)
-			killFakeProcesses := testutils.StartFakeProcesses(tc.procsToCreate, "5")
+			killFakeProcesses := testutils.StartFakeProcesses(tc.procsToCreate, "60")
 			t.Cleanup(killFakeProcesses)
 
 			// Get running status

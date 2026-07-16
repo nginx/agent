@@ -26,9 +26,14 @@ func UpdateMetadata(
 	cfg *proto.NginxConfig,
 	appProtectWAFDetails *proto.AppProtectWAFDetails,
 	ignoreDirectives []string,
+	allowedDirectories map[string]struct{},
 ) error {
 	previousPrecompiledPublication := false
 	previousMeta := Metadata{}
+
+	if !sdk.CheckAllowedPath(appProtectWAFDetails.GetWafLocation(), allowedDirectories) {
+		return fmt.Errorf("failed to update metadata: file not in allowed directories")
+	}
 
 	// Read NAP metadata
 	data, err := os.ReadFile(appProtectWAFDetails.GetWafLocation())

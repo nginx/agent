@@ -283,6 +283,7 @@ jobs:
       runs-on: ubuntu-24.04
       permissions:
           id-token: write  # for OIDC authentication
+          contents: read
       if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
       strategy:
           fail-fast: false
@@ -378,6 +379,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       id-token: write  # for OIDC authentication
+      contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Set up Docker Build
