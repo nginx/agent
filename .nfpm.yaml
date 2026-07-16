@@ -20,6 +20,8 @@ contents:
     dst: /etc/systemd/system/nginx-agent.service
   - src: ./scripts/nginx-agent.logrotate
     dst: /etc/logrotate.d/nginx-agent
+    file_info:
+      mode: 0644
   - src: ./scripts/packages/nginx-agent.openrc
     dst: /etc/init.d/nginx-agent
     packager: apk
