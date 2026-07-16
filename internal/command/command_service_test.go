@@ -330,12 +330,32 @@ func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
 		},
 	}
 
+	request4 := &mpi.ManagementPlaneRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     "4",
+			CorrelationId: "1234",
+			Timestamp:     timestamppb.Now(),
+		},
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: &mpi.ConfigApplyRequest{
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{},
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "12314",
+						Version:    "4215432",
+					},
+				},
+			},
+		},
+	}
+
 	commandService.configApplyRequestQueueMutex.Lock()
 	commandService.configApplyRequestQueue = map[string][]*mpi.ManagementPlaneRequest{
 		"12314": {
 			request1,
 			request2,
 			request3,
+			request4,
 		},
 	}
 	commandService.configApplyRequestQueueMutex.Unlock()
@@ -373,7 +393,7 @@ func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
 
 	commandService.configApplyRequestQueueMutex.Lock()
 	defer commandService.configApplyRequestQueueMutex.Unlock()
-	assert.Len(t, commandService.configApplyRequestQueue, 1)
+	assert.Len(t, commandService.configApplyRequestQueue["12314"], 2)
 	assert.Equal(t, request3, commandService.configApplyRequestQueue["12314"][0])
 	wg.Wait()
 }

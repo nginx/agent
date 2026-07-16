@@ -94,3 +94,84 @@ func TestCollectCPUStats(t *testing.T) {
 		})
 	}
 }
+
+func TestCpuUsageTimes_BlankLine(t *testing.T) {
+	cs := &CPUSource{}
+
+	tests := []struct {
+		name     string
+		content  string
+		userKey  string
+		sysKey   string
+		wantUser float64
+		wantSys  float64
+	}{
+		{
+			name:     "v1: blank lines interspersed are skipped",
+			content:  "\nuser 5760\n\nsystem 1753\n",
+			userKey:  V1UserKey,
+			sysKey:   V1SystemKey,
+			wantUser: 5760,
+			wantSys:  1753,
+		},
+		{
+			name:     "v2: blank lines interspersed are skipped",
+			content:  "\nuser_usec 397044377\n\nsystem_usec 364695418\n",
+			userKey:  V2UserKey,
+			sysKey:   V2SystemKey,
+			wantUser: 397044377,
+			wantSys:  364695418,
+		},
+		{
+			name:     "key-only line (no value) is skipped without panic",
+			content:  "user\nsystem 1753\n",
+			userKey:  V1UserKey,
+			sysKey:   V1SystemKey,
+			wantUser: 0,
+			wantSys:  1753,
+		},
+		{
+			name:     "empty file returns zero values without error",
+			content:  "",
+			userKey:  V1UserKey,
+			sysKey:   V1SystemKey,
+			wantUser: 0,
+			wantSys:  0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			f, err := os.CreateTemp(t.TempDir(), "cgroup-stat-*")
+			require.NoError(t, err)
+			_, err = f.WriteString(test.content)
+			require.NoError(t, err)
+			require.NoError(t, f.Close())
+
+			cpuTimes, err := cs.cpuUsageTimes(f.Name(), test.userKey, test.sysKey)
+			require.NoError(t, err)
+			assert.InDelta(t, test.wantUser, cpuTimes.userUsage, 0.001)
+			assert.InDelta(t, test.wantSys, cpuTimes.systemUsage, 0.001)
+		})
+	}
+}
+
+// Tests that a blank line in /proc/stat is skipped without an index-out-of-range panic.
+func TestSystemCPUUsage_BlankLine(t *testing.T) {
+	// proc/stat with a leading blank line followed by the normal cpu line.
+	content := "\ncpu  366663 264 272326 1072402 2744 0 1784 0 0 0\n"
+
+	f, err := os.CreateTemp(t.TempDir(), "proc-stat-*")
+	require.NoError(t, err)
+	_, err = f.WriteString(content)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	original := CPUStatsPath
+	CPUStatsPath = f.Name()
+	defer func() { CPUStatsPath = original }()
+
+	result, err := systemCPUUsage(100)
+	require.NoError(t, err)
+	assert.Greater(t, result, float64(0), "expected non-zero CPU usage from a valid cpu line")
+}

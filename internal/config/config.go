@@ -58,8 +58,8 @@ var domainRegex = regexp.MustCompile(
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
-func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
-	RootCommand.Run = r
+func RegisterRunner(r func(cmd *cobra.Command, args []string) error) {
+	RootCommand.RunE = r
 }
 
 func Execute(ctx context.Context) error {
@@ -365,13 +365,6 @@ func addDefaultContainerHostMetricsReceiver(collector *Collector) {
 			},
 			CollectionInterval: 1 * time.Minute,
 			InitialDelay:       1 * time.Second,
-		}
-	}
-
-	if collector.Log == nil {
-		collector.Log = &Log{
-			Path:  "stdout",
-			Level: "info", //nolint:goconst // value is local to this function
 		}
 	}
 }
@@ -1109,7 +1102,7 @@ func resolveEnvironmentVariableLabels() map[string]string {
 	labels := strings.Split(envInput, ",")
 	if len(labels) > 0 && labels[0] != "" {
 		for _, label := range labels {
-			splitLabel := strings.Split(label, "=")
+			splitLabel := strings.SplitN(label, "=", KeyValueNumber)
 			if len(splitLabel) == KeyValueNumber {
 				envLabels[splitLabel[0]] = splitLabel[1]
 			} else {
@@ -1461,9 +1454,18 @@ func resolveCollectorLog() *Log {
 		viperInstance.Set(CollectorLogLevelKey, strings.ToUpper(viperInstance.GetString(LogLevelKey)))
 	}
 
+	logPath := viperInstance.GetString(CollectorLogPathKey)
+	isContainer, err := host.NewInfo().IsContainer()
+	if err != nil {
+		slog.Debug("No container information found", "error", err)
+	}
+	if isContainer && !viperInstance.IsSet(CollectorLogPathKey) {
+		logPath = DefCollectorLogStdout
+	}
+
 	return &Log{
 		Level: viperInstance.GetString(CollectorLogLevelKey),
-		Path:  viperInstance.GetString(CollectorLogPathKey),
+		Path:  logPath,
 	}
 }
 

@@ -358,7 +358,7 @@ func (cs *CommandService) handleConfigApplyResponse(
 
 	var nextPendingRequest *mpi.ManagementPlaneRequest
 	if len(cs.configApplyRequestQueue[instanceID]) > 0 {
-		nextPendingRequest = cs.configApplyRequestQueue[instanceID][len(cs.configApplyRequestQueue[instanceID])-1]
+		nextPendingRequest = cs.configApplyRequestQueue[instanceID][0]
 	}
 
 	cs.configApplyRequestQueueMutex.Unlock()
@@ -468,9 +468,10 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			}
 		}
 
+		localClient := cs.subscribeClient
 		cs.subscribeClientMutex.Unlock()
 
-		request, recvError := cs.subscribeClient.Recv()
+		request, recvError := localClient.Recv()
 		if recvError != nil {
 			cs.subscribeClientMutex.Lock()
 			cs.subscribeClient = nil
