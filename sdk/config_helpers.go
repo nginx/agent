@@ -1082,16 +1082,18 @@ func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) err
 }
 
 func checkDirIsAllowed(path string, allowedDirs []string) bool {
+	path = filepath.Clean(path)
 
 	if slices.Contains(allowedDirs, path) {
 		return true
 	}
 
-	if path == "/" || !strings.HasPrefix(path, "/") { // root directory reached with no match, path is not allowed
+	parent := filepath.Dir(path)
+	if parent == path {
 		return false
 	}
 
-	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
+	return checkDirIsAllowed(parent, allowedDirs)
 }
 
 func convertToHexFormat(hexString string) string {
