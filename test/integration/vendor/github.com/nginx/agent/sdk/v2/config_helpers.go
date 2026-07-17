@@ -21,6 +21,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -331,12 +332,8 @@ func updateNginxConfigWithCert(
 	}
 
 	isAllowed := false
-	for dir := range allowedDirectories {
-		if strings.HasPrefix(file, dir) {
-			isAllowed = true
-			break
-		}
-	}
+
+	isAllowed = CheckAllowedPath(file, allowedDirectories)
 
 	certDirectives := []string{
 		"ssl_certificate",
@@ -532,7 +529,7 @@ func updateNginxConfigFileWithRoot(
 		return nil
 	}
 	seen[dir] = struct{}{}
-	if !allowedPath(dir, allowedDirectories) {
+	if !CheckAllowedPath(dir, allowedDirectories) {
 		log.Debugf("Directory %s, is not in the allowed directory list so it will be excluded. Please add the directory to config_dirs in nginx-agent.conf", dir)
 		return nil
 	}
@@ -591,7 +588,7 @@ func updateNginxConfigFileWithAuxFile(
 	if _, ok := seen[file]; ok {
 		return nil
 	}
-	if !allowedPath(file, allowedDirectories) {
+	if !CheckAllowedPath(file, allowedDirectories) {
 		log.Warnf("Unable to retrieve the NAP aux file %s as it is not in the allowed directory list. Please add the directory to config_dirs in nginx-agent.conf.", file)
 		return nil
 	}
@@ -636,6 +633,28 @@ func GetNginxConfigFiles(config *proto.NginxConfig) (confFiles, auxFiles []*prot
 	return confFiles, auxFiles, nil
 }
 
+func GetNginxConfigFilesWithCheck(config *proto.NginxConfig, allowedDirs map[string]struct{}) (confFiles, auxFiles []*proto.File, err error) {
+	if config.GetZconfig() == nil {
+		return nil, nil, errors.New("config is empty")
+	}
+
+	// We do not need allowed-dir check here as Conf files are stored with relative paths in the zip(e.g. "nginx.conf")
+	// The allowed-dir check for these happens downstream in ensureFilesAllowed,
+	// which joins the relative name with the conf dir before validating.
+	confFiles, err = zip.UnPack(config.GetZconfig())
+	if err != nil {
+		return nil, nil, fmt.Errorf("unpack zipped config error: %s", err)
+	}
+
+	if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
+		auxFiles, err = zip.UnPackWithDirCheck(aux, allowedDirs)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unpack zipped auxiliary error: %s", err)
+		}
+	}
+	return confFiles, auxFiles, nil
+}
+
 // AddAuxfileToNginxConfig adds the specified newAuxFile to the Nginx Config cfg
 func AddAuxfileToNginxConfig(
 	confFile string,
@@ -654,7 +673,7 @@ func AddAuxfileToNginxConfig(
 		}
 	}
 
-	_, auxFiles, err := GetNginxConfigFiles(cfg)
+	_, auxFiles, err := GetNginxConfigFilesWithCheck(cfg, allowedDirectories)
 	if err != nil {
 		return nil, err
 	}
@@ -1035,15 +1054,46 @@ func GetAccessLogs(accessLogs *proto.AccessLogs) []string {
 	return result
 }
 
-// allowedPath return true if the provided path has a prefix in the allowedDirectories, false otherwise. The
-// path could be a filepath or directory.
-func allowedPath(path string, allowedDirectories map[string]struct{}) bool {
+// CheckAllowedPath returns true if the provided path has a prefix in the
+// allowedDirectories, false otherwise. The path could be a filepath or directory.
+func CheckAllowedPath(path string, allowedDirectories map[string]struct{}) bool {
+	dirs := make([]string, 0, len(allowedDirectories))
 	for d := range allowedDirectories {
-		if strings.HasPrefix(path, d) {
-			return true
+		dirs = append(dirs, filepath.Clean(d))
+	}
+	return checkDirIsAllowed(filepath.Clean(path), dirs)
+}
+
+func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
+	for _, file := range files {
+		filePath := file.Name
+		if !filepath.IsAbs(filePath) {
+			// Relative paths are resolved to absolute by the caller (e.g. joined
+			// with the conf dir in WriteFile). The resolved path is validated by
+			// ensureFilesAllowed, so we allow relative paths here just as the
+			// original allowedFile implementation in environment.go did.
+			continue
+		}
+		if !CheckAllowedPath(filePath, allowedDirs) {
+			return fmt.Errorf("write prohibited for: %s", filePath)
 		}
 	}
-	return false
+	return nil
+}
+
+func checkDirIsAllowed(path string, allowedDirs []string) bool {
+	path = filepath.Clean(path)
+
+	if slices.Contains(allowedDirs, path) {
+		return true
+	}
+
+	parent := filepath.Dir(path)
+	if parent == path {
+		return false
+	}
+
+	return checkDirIsAllowed(parent, allowedDirs)
 }
 
 func convertToHexFormat(hexString string) string {
