@@ -193,8 +193,7 @@ func TestContext(t *testing.T) {
 		RandomizationFactor: config.DefBackoffRandomizationFactor,
 		Multiplier:          config.DefBackoffMultiplier,
 	}
-
-	backoffCtx := Context(context.Background(), settings)
-
+	
+	backoffCtx := RetryOptions(context.Background(), settings)
 	assert.NotEmpty(t, backoffCtx)
 }

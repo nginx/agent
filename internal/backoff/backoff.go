@@ -105,8 +105,3 @@ func WaitUntilWithData[T any](
 ) (T, error) {
 	return backoff.Retry[T](ctx, operation, RetryOptions(ctx, backoffSettings)...)
 }
-
-//nolint:ireturn // must return an interface
-func Context(ctx context.Context, backoffSettings *config.BackOff) []backoff.RetryOption {
-	return RetryOptions(ctx, backoffSettings)
-}
