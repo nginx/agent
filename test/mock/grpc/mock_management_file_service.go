@@ -18,7 +18,6 @@ import (
 
 	"github.com/nginx/agent/v3/pkg/files"
 
-	"github.com/cenkalti/backoff/v4"
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/config"
 	internalgrpc "github.com/nginx/agent/v3/internal/grpc"
@@ -347,7 +346,7 @@ func (mgs *FileService) sendGetFileStreamHeader(ctx context.Context,
 		return nil
 	}
 
-	return backoff.Retry(sendGetFileHeader, backoffHelpers.Context(backOffCtx, mgs.agentConfig.Client.Backoff))
+	return backoffHelpers.WaitUntil(backOffCtx, mgs.agentConfig.Client.Backoff, sendGetFileHeader)
 }
 
 func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.FileDataChunk_Content,
@@ -380,7 +379,7 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 		return nil
 	}
 
-	return backoff.Retry(sendGetFileChunk, backoffHelpers.Context(backOffCtx, mgs.agentConfig.Client.Backoff))
+	return backoffHelpers.WaitUntil(backOffCtx, mgs.agentConfig.Client.Backoff, sendGetFileChunk)
 }
 
 func readChunk(

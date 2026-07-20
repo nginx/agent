@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +20,7 @@ func TestWaitUntil(t *testing.T) {
 	invocations := 0
 	tests := []struct {
 		context         context.Context
-		operation       backoff.Operation
+		operation       func() error
 		name            string
 		initialInterval time.Duration
 		maxInterval     time.Duration
@@ -106,7 +105,7 @@ func TestWaitUntilWithData(t *testing.T) {
 	invocations := -1
 	tests := []struct {
 		context         context.Context
-		operation       backoff.OperationWithData[int]
+		operation       func() (int, error)
 		name            string
 		initialInterval time.Duration
 		maxInterval     time.Duration
@@ -194,8 +193,6 @@ func TestContext(t *testing.T) {
 		RandomizationFactor: config.DefBackoffRandomizationFactor,
 		Multiplier:          config.DefBackoffMultiplier,
 	}
-
-	backoffCtx := Context(context.Background(), settings)
-
+	backoffCtx := RetryOptions(context.Background(), settings)
 	assert.NotEmpty(t, backoffCtx)
 }

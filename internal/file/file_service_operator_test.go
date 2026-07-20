@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v7"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/pkg/files"
@@ -127,7 +128,7 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 		},
 	}, filePath, 0)
 
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.ErrorIs(t, err, backoff.ErrMaxElapsedTime)
 }
 
 func TestFileManagerService_UpdateFile(t *testing.T) {
