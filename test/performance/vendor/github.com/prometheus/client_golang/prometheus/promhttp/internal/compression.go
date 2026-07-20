@@ -11,11 +11,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+<<<<<<<< HEAD:test/performance/vendor/github.com/prometheus/client_golang/prometheus/promhttp/internal/compression.go
 package internal
+========
+//go:build wasip1 || js || ios
+// +build wasip1 js ios
+>>>>>>>> dev-v2:vendor/github.com/prometheus/client_golang/prometheus/process_collector_not_supported.go
 
 import (
 	"io"
 )
 
+<<<<<<<< HEAD:test/performance/vendor/github.com/prometheus/client_golang/prometheus/promhttp/internal/compression.go
 // NewZstdWriter enables zstd write support if non-nil.
 var NewZstdWriter func(rw io.Writer) (_ io.Writer, closeWriter func(), _ error)
+========
+func canCollectProcess() bool {
+	return false
+}
+
+func (c *processCollector) processCollect(ch chan<- Metric) {
+	c.errorCollectFn(ch)
+}
+
+// describe returns all descriptions of the collector for wasip1 and js.
+// Ensure that this list of descriptors is kept in sync with the metrics collected
+// in the processCollect method. Any changes to the metrics in processCollect
+// (such as adding or removing metrics) should be reflected in this list of descriptors.
+func (c *processCollector) describe(ch chan<- *Desc) {
+	c.errorDescribeFn(ch)
+}
+>>>>>>>> dev-v2:vendor/github.com/prometheus/client_golang/prometheus/process_collector_not_supported.go
