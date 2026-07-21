@@ -14,7 +14,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/backoff"
+	"github.com/cenkalti/backoff/v7"
+	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 
 	"github.com/nginx/agent/v3/pkg/host/exec"
@@ -146,7 +147,7 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 	slog.DebugContext(ctx, "Found parent process ID, checking NGINX worker processes have reloaded",
 		"process_id", newPid)
 
-	err := backoff.WaitUntil(ctx, backoffSettings, func() error {
+	err := backoffHelpers.WaitUntil(ctx, backoffSettings, func() error {
 		currentWorkers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, newPid)
 		if len(currentWorkers) == 0 {
 			return errors.New("waiting for NGINX worker processes")
@@ -160,6 +161,10 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 
 		return fmt.Errorf("waiting for NGINX worker to be newer than %v", createdTime)
 	})
+
+	if re := backoff.AsRetryError(err); re != nil {
+		err = re.LastErr
+	}
 	if err != nil {
 		slog.WarnContext(
 			ctx,

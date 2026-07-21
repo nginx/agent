@@ -44,7 +44,7 @@ jobs:
           echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT
 
       - name: Setup Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ steps.get-go-version.outputs.go-version }}
           check-latest: true
@@ -57,5 +57,4 @@ jobs:
         id: govulncheck
         run: |
           # Scan only non-test packages to avoid false positives from test-only dependencies
-          # Temporary: exclude the known issues
-          govulncheck -scan=symbol $(go list ./...) | grep -v "GO-2026-5662" || true
+          govulncheck -scan=symbol $(go list ./...)

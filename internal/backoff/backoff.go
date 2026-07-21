@@ -7,8 +7,9 @@ package backoff
 
 import (
 	"context"
+	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v7"
 	"github.com/nginx/agent/v3/internal/config"
 )
 
@@ -46,14 +47,51 @@ import (
 //	10           19.210              {stop}
 //
 // Information from https://pkg.go.dev/github.com/cenkalti/backoff/v4#section-readme
+// RetryOptions builds a slice of backoff.RetryOption from the config.BackOff
+// settings and the context. Call sites can pass the returned slice to backoff.Retry as
+// variadic options.
+//
+// If the context has a deadline, the elapsed time limit is set to the remaining
+// time until that deadline (if it's less restrictive than the config-based
+// MaxElapsedTime). This mirrors the v4 API behavior where WithContext would
+// respect the context timeout. If the context has no deadline, the config-based
+// MaxElapsedTime is used.
+func RetryOptions(ctx context.Context, backoffSettings *config.BackOff) []backoff.RetryOption {
+	eb := backoff.NewExponentialBackOff()
+	eb.InitialInterval = backoffSettings.InitialInterval
+	eb.MaxInterval = backoffSettings.MaxInterval
+	eb.RandomizationFactor = backoffSettings.RandomizationFactor
+	eb.Multiplier = backoffSettings.Multiplier
+
+	maxElapsedTime := backoffSettings.MaxElapsedTime
+	if deadline, ok := ctx.Deadline(); ok {
+		timeUntilDeadline := time.Until(deadline)
+		// Use the smaller of the two timeouts, but only if deadline is positive
+		if timeUntilDeadline > 0 && (maxElapsedTime == 0 || timeUntilDeadline < maxElapsedTime) {
+			maxElapsedTime = timeUntilDeadline
+		}
+	}
+
+	return []backoff.RetryOption{
+		backoff.WithBackOff(eb),
+		backoff.WithMaxElapsedTime(maxElapsedTime),
+	}
+}
+
+// WaitUntil retries a no-result operation until it succeeds, a permanent
+// error is returned, or the retry options elapse. It adapts the operation to
+// the generic backoff.Retry API.
 func WaitUntil(
 	ctx context.Context,
 	backoffSettings *config.BackOff,
-	operation backoff.Operation,
+	operation func() error,
 ) error {
-	backoffWithContext := Context(ctx, backoffSettings)
+	retryOpts := RetryOptions(ctx, backoffSettings)
+	_, err := backoff.Retry(ctx, func() (struct{}, error) {
+		return struct{}{}, operation()
+	}, retryOpts...)
 
-	return backoff.Retry(operation, backoffWithContext)
+	return err
 }
 
 // WaitUntilWithData Implementation of backoff operations that increases the back off period for each retry
@@ -63,21 +101,7 @@ func WaitUntil(
 func WaitUntilWithData[T any](
 	ctx context.Context,
 	backoffSettings *config.BackOff,
-	operation backoff.OperationWithData[T],
+	operation backoff.Operation[T],
 ) (T, error) {
-	backoffWithContext := Context(ctx, backoffSettings)
-
-	return backoff.RetryWithData(operation, backoffWithContext)
-}
-
-//nolint:ireturn // must return an interface
-func Context(ctx context.Context, backoffSettings *config.BackOff) backoff.BackOffContext {
-	eb := backoff.NewExponentialBackOff()
-	eb.InitialInterval = backoffSettings.InitialInterval
-	eb.MaxInterval = backoffSettings.MaxInterval
-	eb.MaxElapsedTime = backoffSettings.MaxElapsedTime
-	eb.RandomizationFactor = backoffSettings.RandomizationFactor
-	eb.Multiplier = backoffSettings.Multiplier
-
-	return backoff.WithContext(eb, ctx)
+	return backoff.Retry[T](ctx, operation, RetryOptions(ctx, backoffSettings)...)
 }
