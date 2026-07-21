@@ -1057,6 +1057,9 @@ func GetAccessLogs(accessLogs *proto.AccessLogs) []string {
 // CheckAllowedPath returns true if the provided path has a prefix in the
 // allowedDirectories, false otherwise. The path could be a filepath or directory.
 func CheckAllowedPath(path string, allowedDirectories map[string]struct{}) bool {
+	if !filepath.IsAbs(path) {
+		return true
+	}
 	dirs := make([]string, 0, len(allowedDirectories))
 	for d := range allowedDirectories {
 		dirs = append(dirs, filepath.Clean(d))
