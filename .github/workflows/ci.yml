@@ -30,7 +30,7 @@ jobs:
       id-token: write # for OIDC authentication
     if: github.ref == 'refs/heads/main'
     steps:
-        - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
           with:
             fetch-tags: 'true'
 
@@ -73,7 +73,7 @@ jobs:
     permissions:
       id-token: write # for OIDC authentication
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
@@ -118,7 +118,7 @@ jobs:
     permissions:
       id-token: write # for OIDC authentication
     steps:
-        - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         - name: Get Secrets from Azure Key Vault
           if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-')&& !startsWith(github.head_ref, 'renovate/') }}
           uses: ./.github/actions/az-sync
@@ -154,7 +154,7 @@ jobs:
     permissions:
       id-token: write # for OIDC authentication
     steps:
-        - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         - name: Get Secrets from Azure Key Vault
           if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
           uses: ./.github/actions/az-sync
@@ -185,7 +185,7 @@ jobs:
     permissions:
       id-token: write # for OIDC authentication
     steps:
-        - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
           with:
             fetch-tags: 'true'
         - name: Get Secrets from Azure Key Vault
@@ -244,7 +244,7 @@ jobs:
         - image: "alpine"
           version: "3.23"
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
@@ -308,7 +308,7 @@ jobs:
           #- image: "oraclelinux"
           #  version: "8"
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
@@ -377,7 +377,7 @@ jobs:
             version: "mainline"
             release: "alpine"
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
@@ -456,7 +456,7 @@ jobs:
           release: "debian"
           path: "/nginx-plus/agent"
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
@@ -547,7 +547,7 @@ jobs:
             version: "mainline"
             release: "alpine"
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
@@ -626,7 +626,7 @@ jobs:
             release: "debian"
             path: "/nginx-plus/agent"
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
@@ -699,7 +699,7 @@ jobs:
       id-token: write # for OIDC authentication
       contents: write # Needed for pushing benchmark results to github branch
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
         if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
         uses: ./.github/actions/az-sync
