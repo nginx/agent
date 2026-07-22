@@ -58,6 +58,10 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
+        - name: Trim Go build cache
+          run: |
+            go clean -cache
+            echo "Module cache size: $(du -sh ~/go/pkg/mod | cut -f1)"
         - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
           with:
             path: |
