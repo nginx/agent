@@ -18,7 +18,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 
 	"buf.build/go/protovalidate"
@@ -39,6 +39,7 @@ const (
 	keepAliveTimeout = 10 * time.Second
 	testTimeout      = 100 * time.Millisecond
 	connectionType   = "tcp"
+	requestChanSize  = 100
 )
 
 var (
@@ -71,7 +72,7 @@ func NewMockManagementServer(
 	externalFileServer *string,
 ) (*MockManagementServer, error) {
 	var err error
-	requestChan := make(chan *v1.ManagementPlaneRequest)
+	requestChan := make(chan *mpi.ManagementPlaneRequest, requestChanSize)
 
 	commandService := serveCommandService(ctx, apiAddress, agentConfig, requestChan, *configDirectory,
 		*externalFileServer)
@@ -98,8 +99,8 @@ func NewMockManagementServer(
 	healthcheck := health.NewServer()
 	healthgrpc.RegisterHealthServer(grpcServer, healthcheck)
 
-	v1.RegisterCommandServiceServer(grpcServer, commandService)
-	v1.RegisterFileServiceServer(grpcServer, fileServer)
+	mpi.RegisterCommandServiceServer(grpcServer, commandService)
+	mpi.RegisterFileServiceServer(grpcServer, fileServer)
 	go reportHealth(healthcheck, agentConfig)
 
 	go func() {
@@ -187,7 +188,7 @@ func serveCommandService(
 	ctx context.Context,
 	apiAddress string,
 	agentConfig *config.Config,
-	requestChan chan *v1.ManagementPlaneRequest,
+	requestChan chan *mpi.ManagementPlaneRequest,
 	configDirectory string,
 	externalFileServer string,
 ) *CommandService {

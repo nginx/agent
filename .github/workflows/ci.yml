@@ -58,6 +58,10 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
+        - name: Trim Go build cache
+          run: |
+            go clean -cache
+            echo "Module cache size: $(du -sh ~/go/pkg/mod | cut -f1)"
         - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
           with:
             path: |
@@ -282,7 +286,6 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
           make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
@@ -347,7 +350,6 @@ jobs:
 
       - name: Run Upgrade Tests
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
           make upgrade-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
@@ -417,7 +419,6 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
@@ -516,7 +517,6 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
@@ -589,7 +589,6 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
@@ -685,7 +684,6 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \

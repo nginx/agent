@@ -126,7 +126,9 @@ func CreateContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.
 	require.NoError(tb, err)
 	tb.Cleanup(func() {
 		networkErr := containerNetwork.Remove(ctx)
-		tb.Logf("Error removing container network: %v", networkErr)
+		if networkErr != nil {
+			tb.Logf("Error removing container network: %v", networkErr)
+		}
 	})
 
 	return containerNetwork

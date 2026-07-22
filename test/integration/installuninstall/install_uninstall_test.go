@@ -76,6 +76,7 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 }
 
 func TestInstallUninstall(t *testing.T) {
+	t.Parallel()
 	testContainer, teardownTest := installUninstallSetup(t, true)
 	defer teardownTest(t)
 	ctx := context.Background()
