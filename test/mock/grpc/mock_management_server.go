@@ -23,7 +23,6 @@ import (
 
 	"buf.build/go/protovalidate"
 	protovalidateInterceptor "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
-	grpcvalidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
@@ -138,42 +137,39 @@ func (ms *MockManagementServer) Stop() {
 }
 
 func serverOptions(agentConfig *config.Config) []grpc.ServerOption {
-	validator, _ := protovalidate.New()
+	validator, err := protovalidate.New()
+	if err != nil {
+		slog.Error("failed to create protovalidate validator", "error", err)
+	}
 
 	opts := []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
-			grpcvalidator.StreamServerInterceptor(),
 			protovalidateInterceptor.StreamServerInterceptor(validator),
 		),
 		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy),
 		grpc.KeepaliveParams(keepAliveServerParameters),
 	}
 
-	if agentConfig.Command.Auth == nil || agentConfig.Command.Auth.Token == "" {
-		opts = append(opts, grpc.ChainUnaryInterceptor(
-			grpcvalidator.UnaryServerInterceptor(),
-			protovalidateInterceptor.UnaryServerInterceptor(validator),
-			logHeaders,
-		),
-		)
-	} else {
-		opts = append(opts, grpc.ChainUnaryInterceptor(
-			grpcvalidator.UnaryServerInterceptor(),
-			protovalidateInterceptor.UnaryServerInterceptor(validator),
-			ensureValidToken,
-			logHeaders,
-		),
-		)
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		protovalidateInterceptor.UnaryServerInterceptor(validator),
 	}
+
+	if agentConfig.Command.Auth != nil && agentConfig.Command.Auth.Token != "" {
+		unaryInterceptors = append(unaryInterceptors, ensureValidToken)
+	}
+
+	unaryInterceptors = append(unaryInterceptors, logHeaders)
+	opts = append(opts, grpc.ChainUnaryInterceptor(unaryInterceptors...))
 
 	if agentConfig.Client != nil {
 		if agentConfig.Client.Grpc.MaxMessageSize != 0 {
-			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
+			opts = append(opts,
+				grpc.MaxSendMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
 				grpc.MaxRecvMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
 			)
 		} else {
-			// both are defulted to math.MaxInt for ServerOption
-			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.Grpc.MaxMessageSendSize),
+			opts = append(opts,
+				grpc.MaxSendMsgSize(agentConfig.Client.Grpc.MaxMessageSendSize),
 				grpc.MaxRecvMsgSize(agentConfig.Client.Grpc.MaxMessageReceiveSize),
 			)
 		}
