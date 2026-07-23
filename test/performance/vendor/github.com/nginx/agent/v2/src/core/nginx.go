@@ -313,7 +313,7 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 	}
 	response, err := runCmd(bin, cmdArgs...)
 	if err != nil {
-		confFiles, auxFiles, getNginxConfigFilesErr := sdk.GetNginxConfigFiles(config)
+		confFiles, auxFiles, getNginxConfigFilesErr := sdk.GetNginxConfigFilesWithCheck(config, n.config.AllowedDirectoriesMap)
 		if getNginxConfigFilesErr == nil {
 			n.writeBackup(config, confFiles, auxFiles)
 		}
@@ -362,7 +362,8 @@ func ensureFilesAllowed(files []*proto.File, allowList map[string]struct{}, path
 			filename = filepath.Join(path, filename)
 		}
 		log.Tracef("checking file %s is allowed", filename)
-		if !allowedFile(filename, allowList) {
+
+		if !sdk.CheckAllowedPath(filename, allowList) {
 			return fmt.Errorf("the file %s is outside the allowed directory list", filename)
 		}
 	}
@@ -409,7 +410,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		return nil, err
 	}
 
-	if !allowedFile(filepath.Dir(details.ConfPath), n.config.AllowedDirectoriesMap) {
+	if !sdk.CheckAllowedPath(filepath.Dir(details.ConfPath), n.config.AllowedDirectoriesMap) {
 		return nil, fmt.Errorf("config directory %s not allowed", filepath.Dir(details.ConfPath))
 	}
 
@@ -436,7 +437,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 }
 
 func (n *NginxBinaryType) writeConfigWithNoFileActions(details *proto.NginxDetails, config *proto.NginxConfig, systemNginxConfig *proto.NginxConfig) (*sdk.ConfigApply, error) {
-	confFiles, auxFiles, err := sdk.GetNginxConfigFiles(config)
+	confFiles, auxFiles, err := sdk.GetNginxConfigFilesWithCheck(config, n.config.AllowedDirectoriesMap)
 	if err != nil {
 		return nil, err
 	}
@@ -510,7 +511,7 @@ func (n *NginxBinaryType) writeConfigWithWithFileActions(
 	filesToUpdate map[string]proto.File_Action,
 	filesToDelete map[string]proto.File_Action,
 ) (*sdk.ConfigApply, error) {
-	confFiles, auxFiles, err := sdk.GetNginxConfigFiles(config)
+	confFiles, auxFiles, err := sdk.GetNginxConfigFilesWithCheck(config, n.config.AllowedDirectoriesMap)
 	if err != nil {
 		return nil, err
 	}
@@ -604,9 +605,11 @@ func generateDeleteFromDirectoryMap(
 				// can't assume relative path
 				continue
 			}
-			if !allowedFile(path, allowedDirectory) {
+
+			if !sdk.CheckAllowedPath(path, allowedDirectory) {
 				continue
 			}
+
 			deleteFiles = append(deleteFiles, path)
 		}
 	}
@@ -636,7 +639,7 @@ func generateActionMaps(
 				continue
 			}
 
-			if !allowedFile(path, allowedDirectory) {
+			if !sdk.CheckAllowedPath(path, allowedDirectory) {
 				continue
 			}
 

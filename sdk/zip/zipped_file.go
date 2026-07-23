@@ -200,9 +200,9 @@ func UnPack(zipFile *proto.ZippedFile) ([]*proto.File, error) {
 		return nil, err
 	}
 	defer func() {
-    if err := zipContentsReader.Close(); err != nil {
-        log.Errorf("failed to close zip reader: %v", err)
-    	}	
+		if err := zipContentsReader.Close(); err != nil {
+			log.Errorf("failed to close zip reader: %v", err)
+		}
 	}()
 
 	rawFiles := make([]*proto.File, 0)
@@ -233,9 +233,9 @@ func UnPackWithDirCheck(zipFile *proto.ZippedFile, allowedDirs map[string]struct
 		return nil, err
 	}
 	defer func() {
-    if err := zipContentsReader.Close(); err != nil {
-        log.Errorf("failed to close zip reader: %v", err)
-    	}	
+		if err := zipContentsReader.Close(); err != nil {
+			log.Errorf("failed to close zip reader: %v", err)
+		}
 	}()
 
 	rawFiles := make([]*proto.File, 0)
@@ -266,7 +266,6 @@ func UnPackWithDirCheck(zipFile *proto.ZippedFile, allowedDirs map[string]struct
 }
 
 func checkDirIsAllowed(path string, allowedDirs []string) bool {
-
 	if slices.Contains(allowedDirs, path) {
 		return true
 	}
