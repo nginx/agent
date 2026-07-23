@@ -1157,17 +1157,6 @@ func TestGetNginxProcess(t *testing.T) {
 			cmd:    "{nginx-debug} nginx: master process /usr/sbin/nginx-debug -g daemon off;",
 			expect: true,
 		},
-		{
-			// Third-party APM agents (e.g. Dynatrace OneAgent) inject a
-			// helper process that reports itself as "nginx: OneAgent
-			// companion process" with process name "nginx". It must not
-			// be classified as an NGINX process; otherwise it can be
-			// mistaken for a second master and receive the reload SIGHUP.
-			name:   "OneAgent companion process is not nginx",
-			pName:  "nginx",
-			cmd:    "nginx: OneAgent companion process",
-			expect: false,
-		},
 	}
 
 	for _, tt := range tests {
@@ -1178,4 +1167,11 @@ func TestGetNginxProcess(t *testing.T) {
 		})
 		assert.Equal(t, tt.expect, isNginxProcess)
 	}
+}
+
+func TestIsNginxMaster(t *testing.T) {
+	assert.True(t, isNginxMaster("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf"))
+	assert.True(t, isNginxMaster("{nginx-debug} nginx: master process /usr/sbin/nginx-debug -g daemon off;"))
+	assert.False(t, isNginxMaster("nginx: worker process"))
+	assert.False(t, isNginxMaster("nginx: OneAgent companion process"))
 }
