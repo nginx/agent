@@ -597,12 +597,8 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 		user, _ := nginxProcess.UsernameWithContext(ctx)
 		ppid, _ := nginxProcess.PpidWithContext(ctx)
 		cmd, _ := nginxProcess.CmdlineWithContext(ctx)
-		isMaster := false
 
-		_, ok := nginxProcesses[ppid]
-		if !ok {
-			isMaster = true
-		}
+		isMaster := isNginxMaster(cmd)
 
 		var exe string
 		if isMaster {
@@ -633,30 +629,17 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 	return processList
 }
 
-// nginxCmdPrefixes lists the command-line prefixes real NGINX processes use to
-// identify themselves. Restricting the command match to these prefixes prevents
-// third-party processes that borrow the "nginx:" prefix (for example the
-// Dynatrace "nginx: OneAgent companion process") from being classified as
-// NGINX and mistakenly treated as a master, which would cause reload SIGHUPs
-// to be delivered to the wrong PID.
-var nginxCmdPrefixes = []string{
-	"nginx: master process",
-	"nginx: worker process",
-	"nginx: cache manager process",
-	"nginx: cache loader process",
-}
-
 func (env *EnvironmentType) isNginxProcess(name string, cmd string) bool {
 	isNameValid := name == "nginx" || name == "nginx-debug"
-	if !isNameValid || strings.Contains(cmd, "upgrade") {
-		return false
-	}
-	for _, prefix := range nginxCmdPrefixes {
-		if strings.HasPrefix(cmd, prefix) || strings.HasPrefix(cmd, "{nginx-debug} "+prefix) {
-			return true
-		}
-	}
-	return false
+	isCmdValid := strings.HasPrefix(cmd, "nginx:") || strings.HasPrefix(cmd, "{nginx-debug} nginx:")
+	return !strings.Contains(cmd, "upgrade") && isNameValid && isCmdValid
+}
+
+// isNginxMaster reports whether the given process command line belongs to an
+// nginx master process.
+func isNginxMaster(cmd string) bool {
+	return strings.HasPrefix(cmd, "nginx: master") ||
+		strings.HasPrefix(cmd, "{nginx-debug} nginx: master")
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {
