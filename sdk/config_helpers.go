@@ -1082,7 +1082,6 @@ func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) err
 }
 
 func checkDirIsAllowed(path string, allowedDirs []string) bool {
-
 	if slices.Contains(allowedDirs, path) {
 		return true
 	}
