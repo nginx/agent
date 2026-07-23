@@ -127,7 +127,7 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 			FileMeta: fileMeta,
 		},
 	}, filePath, 0)
-	
+
 	assert.ErrorIs(t, err, backoff.ErrMaxElapsedTime)
 }
 
