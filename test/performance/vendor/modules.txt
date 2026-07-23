@@ -161,12 +161,12 @@ github.com/nginx/agent/v2/test/utils/system
 # github.com/nginx/nginx-plus-go-client/v3 v3.0.1
 ## explicit; go 1.24.2
 github.com/nginx/nginx-plus-go-client/v3/client
+# github.com/nginx/nginx-prometheus-exporter v1.5.1
+## explicit; go 1.25.0
+github.com/nginx/nginx-prometheus-exporter/client
 # github.com/nginxinc/nginx-go-crossplane v0.4.89
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
-# github.com/nginxinc/nginx-prometheus-exporter v1.2.0
-## explicit; go 1.21.3
-github.com/nginxinc/nginx-prometheus-exporter/client
 # github.com/nxadm/tail v1.4.11
 ## explicit; go 1.13
 github.com/nxadm/tail
@@ -202,8 +202,8 @@ github.com/prometheus/client_golang/prometheus/promhttp/internal
 # github.com/prometheus/client_model v0.6.2
 ## explicit; go 1.22.0
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.66.1
-## explicit; go 1.23.0
+# github.com/prometheus/common v0.67.1
+## explicit; go 1.24.0
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/model
 # github.com/prometheus/procfs v0.16.1
@@ -303,7 +303,7 @@ github.com/yusufpapurcu/wmi
 # go.uber.org/atomic v1.11.0
 ## explicit; go 1.18
 go.uber.org/atomic
-# go.yaml.in/yaml/v2 v2.4.2
+# go.yaml.in/yaml/v2 v2.4.3
 ## explicit; go 1.15
 go.yaml.in/yaml/v2
 # go.yaml.in/yaml/v3 v3.0.4

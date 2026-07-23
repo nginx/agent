@@ -43,15 +43,15 @@ require (
 	github.com/nats-io/nkeys v0.4.10 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.1 // indirect
+	github.com/nginx/nginx-prometheus-exporter v1.5.1 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.89 // indirect
-	github.com/nginxinc/nginx-prometheus-exporter v1.2.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.66.1 // indirect
+	github.com/prometheus/common v0.67.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
@@ -71,7 +71,7 @@ require (
 	github.com/trivago/grok v1.0.0 // indirect
 	github.com/vardius/message-bus v1.1.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect
