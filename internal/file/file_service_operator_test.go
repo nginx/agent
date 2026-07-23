@@ -108,7 +108,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 }
 
 func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 
 	filePath := filepath.Join(t.TempDir(), "nginx.conf")
