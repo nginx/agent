@@ -119,7 +119,7 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.Client.Backoff.MaxElapsedTime = 200 * time.Millisecond
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
+	fileServiceOperator := NewFileServiceOperator(agentConfig, fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(false)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
@@ -127,7 +127,7 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 			FileMeta: fileMeta,
 		},
 	}, filePath, 0)
-
+	
 	assert.ErrorIs(t, err, backoff.ErrMaxElapsedTime)
 }
 
