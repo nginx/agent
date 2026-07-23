@@ -25,6 +25,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/klauspost/cpuid/v2"
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -262,7 +263,7 @@ func (env *EnvironmentType) ReadDirectory(dir string, ext string) ([]string, err
 }
 
 func (env *EnvironmentType) WriteFiles(backup ConfigApplyMarker, files []*proto.File, confPath string, allowedDirs map[string]struct{}) error {
-	err := allowedFiles(files, allowedDirs)
+	err := sdk.CheckAllowedFiles(files, allowedDirs)
 	if err != nil {
 		return err
 	}
@@ -556,29 +557,6 @@ func (env *EnvironmentType) getFreeBSDDiskDevices() ([]string, error) {
 	}
 
 	return devices, nil
-}
-
-func allowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
-	for _, file := range files {
-		path := file.GetName()
-		if !allowedFile(path, allowedDirs) {
-			return fmt.Errorf("write prohibited for: %s", path)
-		}
-	}
-	return nil
-}
-
-func allowedFile(path string, allowedDirs map[string]struct{}) bool {
-	if !filepath.IsAbs(path) {
-		// if not absolute path, we'll put it at the relative to config dir for the binary
-		return true
-	}
-	for dir := range allowedDirs {
-		if strings.HasPrefix(path, dir) {
-			return true
-		}
-	}
-	return false
 }
 
 func (env *EnvironmentType) FileStat(path string) (os.FileInfo, error) {

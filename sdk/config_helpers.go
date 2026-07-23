@@ -326,6 +326,11 @@ func updateNginxConfigWithCert(
 	if !filepath.IsAbs(file) {
 		file = filepath.Join(rootDir, file)
 	}
+	if !filepath.IsAbs(file) {
+		if abs, err := filepath.Abs(file); err == nil {
+			file = abs
+		}
+	}
 	info, err := os.Stat(file)
 	if err != nil {
 		return err
@@ -1059,7 +1064,13 @@ func GetAccessLogs(accessLogs *proto.AccessLogs) []string {
 func CheckAllowedPath(path string, allowedDirectories map[string]struct{}) bool {
 	dirs := make([]string, 0, len(allowedDirectories))
 	for d := range allowedDirectories {
-		dirs = append(dirs, filepath.Clean(d))
+		d = filepath.Clean(d)
+		if !filepath.IsAbs(d) {
+			if abs, err := filepath.Abs(d); err == nil {
+				d = abs
+			}
+		}
+		dirs = append(dirs, d)
 	}
 	return checkDirIsAllowed(filepath.Clean(path), dirs)
 }
@@ -1082,7 +1093,6 @@ func CheckAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) err
 }
 
 func checkDirIsAllowed(path string, allowedDirs []string) bool {
-
 	if slices.Contains(allowedDirs, path) {
 		return true
 	}

@@ -314,6 +314,16 @@ func TestConfig_IsFileAllowed(t *testing.T) {
 			path:   "/etc/nginxfoo/x.conf",
 			expect: false,
 		},
+		{
+			name:   "path traversal via allowed dir is rejected",
+			path:   "/etc/nginx/../../etc/passwd",
+			expect: false,
+		},
+		{
+			name:   "absolute path in unrelated dir is rejected",
+			path:   "/tmp/nginx/nginx.conf",
+			expect: false,
+		},
 	}
 
 	for _, tt := range tests {

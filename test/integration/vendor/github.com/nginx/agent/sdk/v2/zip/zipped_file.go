@@ -15,13 +15,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 var ErrFlushed = errors.New("zipped file: already flushed")
@@ -197,7 +200,9 @@ func UnPack(zipFile *proto.ZippedFile) ([]*proto.File, error) {
 		return nil, err
 	}
 	defer func() {
-		_ = zipContentsReader.Close()
+		if err := zipContentsReader.Close(); err != nil {
+			log.Errorf("failed to close zip reader: %v", err)
+		}
 	}()
 
 	rawFiles := make([]*proto.File, 0)
@@ -220,4 +225,78 @@ func UnPack(zipFile *proto.ZippedFile) ([]*proto.File, error) {
 		return true
 	})
 	return rawFiles, err
+}
+
+func UnPackWithDirCheck(zipFile *proto.ZippedFile, allowedDirs map[string]struct{}) ([]*proto.File, error) {
+	zipContentsReader, err := NewReader(zipFile)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := zipContentsReader.Close(); err != nil {
+			log.Errorf("failed to close zip reader: %v", err)
+		}
+	}()
+
+	rawFiles := make([]*proto.File, 0)
+
+	zipContentsReader.RangeFileReaders(func(err error, path string, mode os.FileMode, rc io.Reader) bool {
+		if err != nil {
+			log.Print(err)
+		}
+
+		b := bytes.NewBuffer([]byte{})
+		_, err = io.Copy(b, rc)
+		if err != nil {
+			return false
+		}
+
+		log.Debugf("extracted zip entry: path=%s size=%d permissions=%s", path, b.Len(), files.GetPermissions(mode))
+		rawFiles = append(rawFiles, &proto.File{
+			Name:        path,
+			Permissions: files.GetPermissions(mode),
+			Contents:    b.Bytes(),
+		})
+		return true
+	})
+
+	err = checkAllowedFiles(rawFiles, allowedDirs)
+
+	return rawFiles, err
+}
+
+func checkDirIsAllowed(path string, allowedDirs []string) bool {
+	if slices.Contains(allowedDirs, path) {
+		return true
+	}
+
+	if path == "/" || !strings.HasPrefix(path, "/") { // root directory reached with no match, path is not allowed
+		return false
+	}
+
+	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
+}
+
+// checkAllowedFiles checks that every absolute-path file is within an allowed
+// directory. Relative paths are skipped — they are resolved to absolute paths
+// by the caller before writing, and validated there.
+// Note: checkDirIsAllowed is intentionally duplicated from sdk/config_helpers.go
+// because sdk/zip cannot import the sdk root package (circular dependency).
+func checkAllowedFiles(files []*proto.File, allowedDirs map[string]struct{}) error {
+	// Clean all allowed dirs to normalise trailing slashes (e.g. "/dir/" → "/dir").
+	dirs := make([]string, 0, len(allowedDirs))
+	for d := range allowedDirs {
+		dirs = append(dirs, filepath.Clean(d))
+	}
+	for _, file := range files {
+		filePath := file.Name
+		if !filepath.IsAbs(filePath) {
+			// Relative paths are resolved by the caller; skip check here.
+			continue
+		}
+		if !checkDirIsAllowed(filepath.Clean(filePath), dirs) {
+			return fmt.Errorf("write prohibited for: %s, not in allowed config directories", filePath)
+		}
+	}
+	return nil
 }
