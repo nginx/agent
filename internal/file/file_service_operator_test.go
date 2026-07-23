@@ -108,7 +108,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 }
 
 func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 
 	filePath := filepath.Join(t.TempDir(), "nginx.conf")
@@ -119,7 +119,7 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.Client.Backoff.MaxElapsedTime = 200 * time.Millisecond
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
+	fileServiceOperator := NewFileServiceOperator(agentConfig, fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(false)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
