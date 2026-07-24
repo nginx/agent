@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v7"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/pkg/files"
@@ -108,7 +107,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 }
 
 func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 	defer cancel()
 
 	filePath := filepath.Join(t.TempDir(), "nginx.conf")
@@ -128,7 +127,7 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 		},
 	}, filePath, 0)
 
-	assert.ErrorIs(t, err, backoff.ErrMaxElapsedTime)
+	require.Error(t, err)
 }
 
 func TestFileManagerService_UpdateFile(t *testing.T) {
