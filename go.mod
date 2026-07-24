@@ -9,7 +9,7 @@ require (
 	buf.build/go/protovalidate v1.2.0
 	github.com/cenkalti/backoff/v7 v7.0.0
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/gabriel-vasile/mimetype v1.4.13
+	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
