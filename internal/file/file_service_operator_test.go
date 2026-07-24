@@ -12,7 +12,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
@@ -107,8 +106,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 }
 
 func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
-	defer cancel()
+	ctx := context.Background()
 
 	filePath := filepath.Join(t.TempDir(), "nginx.conf")
 	fileMeta := protos.FileMeta(filePath, "")
@@ -116,8 +114,6 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 
 	agentConfig := types.AgentConfig()
-	agentConfig.Client.Backoff.MaxElapsedTime = 200 * time.Millisecond
-
 	fileServiceOperator := NewFileServiceOperator(agentConfig, fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(false)
 
