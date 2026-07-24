@@ -150,7 +150,7 @@ github.com/kelseyhightower/envconfig
 # github.com/klauspost/compress v1.18.0
 ## explicit; go 1.24
 # github.com/klauspost/compress v1.19.1
-## go 1.24
+## explicit; go 1.24
 github.com/klauspost/compress
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/fse
@@ -281,8 +281,6 @@ github.com/pmezard/go-difflib/difflib
 # github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b
 ## explicit; go 1.14
 github.com/power-devops/perfstat
-# github.com/prometheus/client_golang v1.23.2
-## explicit; go 1.25.0
 # github.com/prometheus/client_golang v1.24.1
 ## explicit; go 1.25.0
 github.com/prometheus/client_golang/internal/github.com/golang/gddo/httputil
@@ -295,14 +293,10 @@ github.com/prometheus/client_golang/prometheus/promhttp/internal
 # github.com/prometheus/client_model v0.6.2
 ## explicit; go 1.22.0
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.67.1
-## explicit; go 1.25.0
 # github.com/prometheus/common v0.70.1
 ## explicit; go 1.25.0
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/model
-# github.com/prometheus/procfs v0.16.1
-## explicit; go 1.25.0
 # github.com/prometheus/procfs v0.21.1
 ## explicit; go 1.25.0
 github.com/prometheus/procfs
@@ -470,15 +464,11 @@ go.uber.org/goleak/internal/stack
 # go.uber.org/mock v0.6.0
 ## explicit; go 1.23.0
 go.uber.org/mock/gomock
-# go.yaml.in/yaml/v2 v2.4.3
-## explicit; go 1.15
 # go.yaml.in/yaml/v3 v3.0.4
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/crypto v0.53.0
-## explicit; go 1.25.0
 # golang.org/x/crypto v0.54.0
-## go 1.25.0
+## explicit; go 1.25.0
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
