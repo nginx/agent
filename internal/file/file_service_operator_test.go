@@ -113,8 +113,7 @@ func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 
-	agentConfig := types.AgentConfig()
-	fileServiceOperator := NewFileServiceOperator(agentConfig, fakeFileServiceClient, &sync.RWMutex{})
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(false)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
