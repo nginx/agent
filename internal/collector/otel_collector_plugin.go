@@ -35,6 +35,18 @@ const (
 	maxTimeToWaitForShutdown  = 30 * time.Second
 	defaultCollectionInterval = 1 * time.Minute
 	filePermission            = 0o600
+	// portReleaseDelay is the minimum time to wait between shutting down one OTel
+	// Collector instance and starting the next one.  In OTel v0.157.0 the startup
+	// order changed so that extensions (health_check, etc.) that bind TCP ports are
+	// now started after the pipeline components.  When two restarts fire within
+	// milliseconds of each other the second instance can attempt to bind the same
+	// port before the OS has fully released it from the first instance, causing
+	// service.Start() to block indefinitely and leaving the Collector stuck in
+	// StateStarting.  A brief pause avoids that race.
+	portReleaseDelay = 200 * time.Millisecond
+	// bootupStartTimeout is the maximum time to wait for the OTel Collector to
+	// leave StateStarting before declaring the boot a failure.
+	bootupStartTimeout = 30 * time.Second
 	// To conform to the rfc3164 spec the timestamp in the logs need to be formatted correctly.
 	// Here are some examples of what the timestamp conversions look like.
 	// Notice how if the day begins with a zero that the zero is replaced with an empty space.
@@ -265,7 +277,7 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers map[string]
 	}
 }
 
-//nolint:revive,cyclop // cognitive complexity is 13
+//nolint:revive,cyclop,mnd // cognitive complexity is 13
 func (oc *Collector) bootup(ctx context.Context) error {
 	errChan := make(chan error)
 
@@ -287,10 +299,15 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		slog.InfoContext(ctx, "OTel collector has stopped running")
 	}()
 
+	startTimeout := time.NewTimer(bootupStartTimeout)
+	defer startTimeout.Stop()
+
 	for {
 		select {
 		case err := <-errChan:
 			return err
+		case <-startTimeout.C:
+			return fmt.Errorf("OTel Collector did not reach running state within %s", bootupStartTimeout)
 		default:
 			if oc.service == nil {
 				return errors.New("unable to start otel collector: service is nil")
@@ -299,14 +316,24 @@ func (oc *Collector) bootup(ctx context.Context) error {
 			state := oc.service.GetState()
 			switch state {
 			case otelcol.StateStarting:
-				// NoOp
+				// NoOp — still starting, keep polling.
 				continue
 			case otelcol.StateRunning:
 				oc.stopped = false
 				return nil
 			case otelcol.StateClosing:
+				// Transitioning to closed; wait for errChan or StateClosed.
 			case otelcol.StateClosed:
+				// OTel exited without reaching Running.  The goroutine will
+				// send the cause (if any) to errChan; read it with a short
+				// timeout so we don't spin indefinitely.
 				oc.stopped = true
+				select {
+				case err := <-errChan:
+					return err
+				case <-time.After(5 * time.Second):
+					return errors.New("OTel Collector closed before reaching running state")
+				}
 			default:
 				return fmt.Errorf("unable to start, otelcol state is %s", state)
 			}
@@ -463,6 +490,14 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
 		return
 	}
+
+	// Allow the OS to fully release any TCP ports (health_check, OTLP receiver,
+	// etc.) that were bound by the previous OTel instance before the new one
+	// attempts to bind them.  Without this pause, back-to-back restarts that
+	// fire within a few milliseconds of each other can cause service.Start() to
+	// block indefinitely when it cannot bind a port that the just-stopped
+	// instance held.
+	time.Sleep(portReleaseDelay)
 
 	settings := OTelCollectorSettings(oc.config)
 
