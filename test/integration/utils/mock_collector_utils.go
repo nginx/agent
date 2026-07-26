@@ -222,7 +222,7 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	}
 }
 
-//nolint:revive // cognitive complexity is 14
+//nolint:revive, lll // cognitive complexity is 14
 func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 	t.Helper()
 
@@ -235,10 +235,15 @@ func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 	for {
 		select {
 		case <-waitCtx.Done():
-			// Dump agent logs before failing
+			// Dump agent logs and OTel debug config before failing
 			if MockCollectorStack != nil && MockCollectorStack.Agent != nil {
 				code, reader, err := MockCollectorStack.Agent.Exec(ctx, []string{
-					"sh", "-c", "cat /var/log/nginx-agent/*.log 2>/dev/null || echo 'no log files'",
+					"sh", "-c",
+					"cat /var/log/nginx-agent/*.log 2>/dev/null || echo 'no log files'; " +
+						"echo '=== OTel Debug Config ==='; " +
+						"cat /var/lib/nginx-agent/opentelemetry-collector-agent-debug.yaml 2>/dev/null || echo 'no debug config'; " +
+						"echo '=== OTel Active Config ==='; " +
+						"cat /etc/nginx-agent/opentelemetry-collector-agent.yaml 2>/dev/null || echo 'no active config'",
 				})
 				if err == nil {
 					buf, _ := io.ReadAll(reader)
