@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -221,6 +222,7 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	}
 }
 
+//nolint:revive // cognitive complexity is 14
 func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 	t.Helper()
 
@@ -233,7 +235,18 @@ func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 	for {
 		select {
 		case <-waitCtx.Done():
+			// Dump agent logs before failing
+			if MockCollectorStack != nil && MockCollectorStack.Agent != nil {
+				code, reader, err := MockCollectorStack.Agent.Exec(ctx, []string{
+					"sh", "-c", "cat /var/log/nginx-agent/*.log 2>/dev/null || echo 'no log files'",
+				})
+				if err == nil {
+					buf, _ := io.ReadAll(reader)
+					t.Logf("=== Agent Log (exit %d) ===\n%s", code, string(buf))
+				}
+			}
 			t.Fatal("Timed out waiting for NGINX metrics to exist")
+
 			return
 		case <-ticker.C:
 			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count"]
