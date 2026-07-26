@@ -94,8 +94,13 @@ func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error 
 		httpClient = socketClient(ctx, strings.TrimPrefix(nps.cfg.APIDetails.Listen, "unix:"))
 	}
 
+	// WithHTTPClient must be applied before WithMaxAPIVersion so that the
+	// version-discovery GET uses our client (with its configured timeout and a
+	// fresh connection pool) rather than http.DefaultClient, which may hold
+	// stale connections from a previous OTel instance that was shut down within
+	// the same process.
 	plusClient, err := plusapi.NewNginxClient(endpoint,
-		plusapi.WithMaxAPIVersion(), plusapi.WithHTTPClient(httpClient),
+		plusapi.WithHTTPClient(httpClient), plusapi.WithMaxAPIVersion(),
 	)
 	nps.plusClient = plusClient
 	if err != nil {
