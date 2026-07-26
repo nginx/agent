@@ -124,7 +124,16 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test3_DataplaneHealthRequest() {
 	s.Equal("Successfully sent health status update", commandResponses[0].GetCommandResponse().GetMessage())
 	s.False(s.T().Failed())
 
-	// Check auxiliary server still only has 1 ManagementPlaneResponses as it didn't send the request
+	// The OTel collector may have restarted during the above wait (e.g. to add a nginx
+	// receiver or update headers), triggering a nginx-config re-parse.  Both the primary
+	// and auxiliary NginxPlugin instances call UpdateOverview on every config-update event,
+	// so the auxiliary plane can receive incidental file-sync ("Successfully updated all
+	// files") messages that are unrelated to the health request being tested here.
+	// Clear those before asserting that the health request itself was NOT forwarded to
+	// the auxiliary plane.
+	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
+
+	// Check auxiliary server has 0 ManagementPlaneResponses as it didn't receive the health request
 	utils.ManagementPlaneResponses(s.T(), 0, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.False(s.T().Failed())
 	slog.Info("finished auxiliary command server data plane health request test")
