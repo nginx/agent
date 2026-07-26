@@ -65,13 +65,32 @@ func (nps *NginxPlusScraper) ID() component.ID {
 
 func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error {
 	endpoint := strings.TrimPrefix(nps.cfg.APIDetails.URL, "unix:")
-	httpClient := http.DefaultClient
+
+	// Always start with a fresh HTTP client that has its own connection pool.
+	// Using http.DefaultClient (and therefore http.DefaultTransport) is
+	// dangerous here because OTel may restart this receiver multiple times
+	// within a single process lifetime.  When a previous receiver instance is
+	// shut down abruptly (e.g. because a resource-update fires within
+	// milliseconds of a config-update), the shared DefaultTransport retains
+	// idle connections to the NGINX Plus API.  The next receiver instance then
+	// reuses those stale connections for the WithMaxAPIVersion() discovery
+	// GET, which hangs indefinitely waiting for a response the server will
+	// never send.  A fresh transport avoids this entirely.
+	defaultTransport, ok := http.DefaultTransport.(*http.Transport)
+	var transport http.RoundTripper
+	if ok {
+		transport = defaultTransport.Clone() // inherits proxy/TLS settings, fresh pool
+	} else {
+		transport = http.DefaultTransport
+	}
+	httpClient := &http.Client{Transport: transport}
+
 	caCertLocation := nps.cfg.APIDetails.Ca
 	if caCertLocation != "" {
 		nps.logger.Debug("Reading CA certificate", zap.Any("file_path", caCertLocation))
 		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
-			nps.logger.Error("Error starting NGINX stub status scraper. "+
+			nps.logger.Error("Error starting NGINX Plus scraper. "+
 				"Failed to read CA certificate", zap.Error(err))
 
 			return err
@@ -95,10 +114,8 @@ func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error 
 	}
 
 	// WithHTTPClient must be applied before WithMaxAPIVersion so that the
-	// version-discovery GET uses our client (with its configured timeout and a
-	// fresh connection pool) rather than http.DefaultClient, which may hold
-	// stale connections from a previous OTel instance that was shut down within
-	// the same process.
+	// version-discovery GET uses our freshly-cloned client (with its own
+	// connection pool) rather than http.DefaultClient.
 	plusClient, err := plusapi.NewNginxClient(endpoint,
 		plusapi.WithHTTPClient(httpClient), plusapi.WithMaxAPIVersion(),
 	)
