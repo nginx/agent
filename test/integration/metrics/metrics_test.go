@@ -50,7 +50,7 @@ func (s *MetricsTestSuite) TearDownSuite() {
 // Check that the NGINX request count metric increases after generating requests
 func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
 	slog.Info("starting nginx request count metric test")
-	metricName := "nginx_http_request_count"
+	metricName := "nginx_http_request_count_total"
 	family := s.metricFamilies[metricName]
 	s.Require().NotNil(family)
 
@@ -98,7 +98,7 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestResponseCode() {
 		s.T().Skip("Skipping test for NGINX OSS specific metric")
 	}
 	slog.Info("starting nginx response count metric test")
-	metricName := "nginx_http_response_count"
+	metricName := "nginx_http_response_count_total"
 	family := s.metricFamilies[metricName]
 	s.Require().NotNil(family)
 

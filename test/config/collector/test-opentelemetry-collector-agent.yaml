@@ -2,7 +2,7 @@ receivers:
   container_metrics:
     collection_interval: 1s
   host_metrics:
-    collection_interval: 1m0s
+    collection_interval: 1s
     initial_delay: 1s
     scrapers:
       cpu:
@@ -33,7 +33,7 @@ receivers:
       listen: ""
       location: ""
       ca: ""
-    collection_interval: 30s
+    collection_interval: 1s
     access_logs:
       - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""
         file_path: "/var/log/nginx/access-custom.conf"
@@ -44,7 +44,7 @@ receivers:
       listen: ""
       location: ""
       ca: ""
-    collection_interval: 20s
+    collection_interval: 1s
   nginxplus/789:
     instance_id: "789"
     api_details:
@@ -52,7 +52,7 @@ receivers:
       listen: ""
       location: ""
       ca: ""
-    collection_interval: 20s
+    collection_interval: 1s
   tcp_log/default:
     listen_address: "localhost:151"
     operators:
@@ -70,7 +70,7 @@ processors:
         value: 12345
   batch/default:
     send_batch_size: 1000
-    timeout: 30s
+    timeout: 100ms
     send_batch_max_size: 1000
   securityviolationsfilter/default: {}
 
@@ -92,6 +92,8 @@ exporters:
     endpoint: "localhost:9876"
     resource_to_telemetry_conversion:
       enabled: true
+    translation_strategy: UnderscoreEscapingWithoutSuffixes
+    add_metric_suffixes: false
   debug:
     verbosity: detailed
     sampling_initial: 5
