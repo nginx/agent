@@ -92,6 +92,8 @@ exporters:
     endpoint: "localhost:9876"
     resource_to_telemetry_conversion:
       enabled: true
+    translation_strategy: UnderscoreEscapingWithoutSuffixes
+    add_metric_suffixes: false
   debug:
     verbosity: detailed
     sampling_initial: 5
