@@ -1459,7 +1459,11 @@ func resolveCollectorLog() *Log {
 	if err != nil {
 		slog.Debug("No container information found", "error", err)
 	}
-	if isContainer && !viperInstance.IsSet(CollectorLogPathKey) {
+	// In a container, default to stdout only when no custom log path has been set.
+	// We compare against the built-in default rather than calling viperInstance.IsSet
+	// because IsSet does not reliably detect values that originate from the YAML config
+	// file when the viper instance uses a non-default KeyDelimiter ("_" vs ".").
+	if isContainer && (logPath == "" || logPath == DefCollectorLogPath) {
 		logPath = DefCollectorLogStdout
 	}
 
