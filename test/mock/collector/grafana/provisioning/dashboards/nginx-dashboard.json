@@ -272,7 +272,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_http_request_count{instance_type=\"nginx\"}",
+                    "expr": "nginx_http_request_count_total{instance_type=\"nginx\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{instance_type}} {{instance_id}}",
