@@ -10,12 +10,7 @@ exporters:
     endpoint: "0.0.0.0:9775"
     resource_to_telemetry_conversion:
       enabled: true
-    # In OTel v0.157.0 the feature gate exporter.prometheusexporter.DisableAddMetricSuffixes
-    # moved to Beta (enabled by default), which makes add_metric_suffixes be ignored and
-    # falls back to the default UnderscoreEscapingWithSuffixes strategy. That appends unit
-    # suffixes (e.g. nginx_http_request_count -> nginx_http_request_count_requests) and
-    # _total to counters, so the metric names the tests look for no longer exist.
-    # Explicitly select the no-suffix strategy to preserve the pre-upgrade metric names.
+    # Disable default suffixes in v0.157.0 and retain legacy metric names by choosing the no-suffix strategy.
     translation_strategy: UnderscoreEscapingWithoutSuffixes
     add_metric_suffixes: false
   debug:
