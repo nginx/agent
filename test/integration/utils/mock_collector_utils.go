@@ -254,7 +254,7 @@ func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 
 			return
 		case <-ticker.C:
-			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count"]
+			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count_total"]
 			if family != nil {
 				t.Log("NGINX metrics found")
 				return
@@ -267,9 +267,9 @@ func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 func requestCountMetric(t *testing.T, ctx context.Context) (float64, error) {
 	t.Helper()
 
-	family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count"]
+	family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count_total"]
 	if family == nil {
-		return 0, fmt.Errorf("metric nginx_http_request_count not found: %v", family)
+		return 0, fmt.Errorf("metric nginx_http_request_count_total not found: %v", family)
 	}
 
 	return SumMetricFamily(family), nil
