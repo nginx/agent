@@ -205,6 +205,8 @@ exporters:
     endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
     resource_to_telemetry_conversion:
       enabled: true
+    translation_strategy: UnderscoreEscapingWithoutSuffixes
+    add_metric_suffixes: false
 {{- end }}
 {{- if ne .Exporters.Debug nil }}
   debug:
