@@ -16,6 +16,7 @@ on:
   merge_group:
   schedule:
     - cron: "36 6 * * 4" # run every Thursday at 06:36 UTC
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.ref_name }}-codeql
@@ -28,36 +29,51 @@ jobs:
   checks:
     name: Checks and variables
     runs-on: ubuntu-24.04
+    # ONLY run the docs check job if it's actually a Pull Request
+    if: ${{ github.event_name == 'pull_request' }}
     outputs:
-      docs_only: ${{ github.event.pull_request && steps.docs.outputs.docs_only == 'true' }}
+      docs_only: ${{ steps.docs.outputs.docs_only }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
       - name: Filter only docs changes
         id: docs
         run: |
-          files=$(git diff --name-only HEAD^ | egrep -v "^site/" | egrep -v "^examples/" | egrep -v "^README.md")
+          # Use git diff against the PR target branch instead of HEAD^ for reliability
+          files=$(git diff --name-only origin/${{ github.base_ref }} | egrep -v "^site/" | egrep -v "^examples/" | egrep -v "^README.md")
           if [ -z "$files" ]; then
             echo "docs_only=true" >> $GITHUB_OUTPUT
           else
             echo "docs_only=false" >> $GITHUB_OUTPUT
           fi
-          echo $files
+          echo "Files changed: $files"
           cat $GITHUB_OUTPUT
         shell: bash --noprofile --norc -o pipefail {0}
 
   analyze:
-    if: ${{ needs.checks.outputs.docs_only != 'true' }}
+    # Run IF it is not a PR, OR if it is a PR and the changed files are not docs-only
+    if: ${{ github.event_name != 'pull_request' || needs.checks.outputs.docs_only != 'true' }}
     needs: [checks]
+    # 'needs' is ignored if the preceding job is skipped via its 'if' condition,
+    # but we still want to ensure analyze behaves correctly.
+    # To bypass strict 'needs' failures when checks is skipped:
+    always: true
     permissions:
       actions: read # for github/codeql-action/init to get workflow details
       contents: read # for actions/checkout to fetch code
       packages: read
       security-events: write # for github/codeql-action/autobuild to send a status report
     name: Analyze
-    uses: nginx/compliance-rules/.github/workflows/codeql.yml@543d32464b56e6a695939f41ba8009cbb10e413a # v0.3.3
-    with:
-      requested_languages: go
+    runs-on: ubuntu-24.04
+    steps:
+      # We must re-checkout the code here because the 'analyze' job runs in its own runner
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Analyze with CodeQL
+        uses: nginx/compliance-rules/.github/workflows/codeql.yml@a27656f8f9a8748085b434ebe007f5b572709aad # v0.2
+        with:
+          requested_languages: go
