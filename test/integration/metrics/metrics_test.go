@@ -71,23 +71,26 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
 	slog.Info("finished nginx request count metric test")
 }
 
-// Check that Agent is logging collector logs to stdout by default
+// Check that Agent is logging collector logs to the configured log file
 func (s *MetricsTestSuite) TestCollectorLogs_TestDefaultStdout() {
 	if os.Getenv("TEST_ENV") != "Container" {
 		s.T().Skip("Skipping test for container environment only")
 	}
-	slog.Info("starting collector logs stdout test")
+	slog.Info("starting collector logs file test")
 
-	logReader, err := utils.MockCollectorStack.Agent.Logs(s.ctx)
-	s.Require().NoError(err, "Failed to read agent container logs")
-	defer logReader.Close()
+	// OTel collector logs are written to the path set in nginx-agent.conf
+	// (collector.log.path: /var/log/nginx-agent/otel.log).
+	_, reader, err := utils.MockCollectorStack.Agent.Exec(s.ctx, []string{
+		"sh", "-c", "cat /var/log/nginx-agent/otel.log 2>/dev/null || echo ''",
+	})
+	s.Require().NoError(err, "Failed to exec into agent container")
 
-	buf, err := io.ReadAll(logReader)
-	s.Require().NoError(err, "Failed to read agent container logs")
+	buf, err := io.ReadAll(reader)
+	s.Require().NoError(err, "Failed to read otel log file")
 	logs := string(buf)
 
 	s.Require().Contains(logs, "Starting otel-nginx-agent")
-	slog.Info("finished collector logs stdout test")
+	slog.Info("finished collector logs file test")
 
 	utils.GenerateMetrics(s.ctx, s.T(), utils.MockCollectorStack.Agent, 5, "2xx")
 }
