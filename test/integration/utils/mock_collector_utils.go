@@ -254,7 +254,11 @@ func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 
 			return
 		case <-ticker.C:
-			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count_total"]
+			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)
+			// PRINT ALL AVAILABLE METRICS TO SEE EXACT NAMES
+			for name := range family {
+				t.Logf("Available metric: %s", name)
+			}
 			if family != nil {
 				t.Log("NGINX metrics found")
 				return
