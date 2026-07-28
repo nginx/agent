@@ -37,14 +37,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Default docs_only value
+      - name: Determine whether changes are docs-only
         id: docs
-        run: echo "docs_only=false" >> "$GITHUB_OUTPUT"
-
-      - name: Filter only docs changes
-        if: ${{ github.event_name == 'pull_request' }}
-        id: docs_pr
+        shell: bash --noprofile --norc -o pipefail {0}
         run: |
+          # Non-PR events should always run CodeQL.
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           git fetch origin "${{ github.base_ref }}"
 
           files=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD \
@@ -60,15 +62,7 @@ jobs:
 
           echo "Files changed:"
           echo "$files"
-
-        shell: bash --noprofile --norc -o pipefail {0}
-
-      - name: Copy PR result to job output
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          echo "docs_only=${{ steps.docs_pr.outputs.docs_only }}" >> "$GITHUB_OUTPUT"
-        shell: bash --noprofile --norc -o pipefail {0}
-        id: docs
+          cat "$GITHUB_OUTPUT"
 
   analyze:
     needs: checks
