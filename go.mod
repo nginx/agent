@@ -80,7 +80,7 @@ require (
 	go.opentelemetry.io/collector/scraper/scraperhelper v0.157.0
 	go.opentelemetry.io/collector/scraper/scrapertest v0.157.0
 	go.opentelemetry.io/collector/service v0.157.0
-	go.opentelemetry.io/otel v1.44.1-0.20260723093731-251b96b24897
+	go.opentelemetry.io/otel v1.44.1-0.20260728235821-2f4795fc7dcd
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.28.0
@@ -151,7 +151,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20251226215517-609e4778396f // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
@@ -355,7 +355,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/vardius/message-bus v1.1.5
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.44.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.44.1-0.20260723093731-251b96b24897
+	go.opentelemetry.io/otel/sdk/metric v1.44.1-0.20260728235821-2f4795fc7dcd
 	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
