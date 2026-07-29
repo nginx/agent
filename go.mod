@@ -9,17 +9,16 @@ require (
 	buf.build/go/protovalidate v1.2.0
 	github.com/cenkalti/backoff/v7 v7.0.0
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/gabriel-vasile/mimetype v1.4.13
+	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/leodido/go-syslog/v4 v4.6.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/moby/moby/api v1.55.0
-	github.com/moby/moby/client v0.5.0
+	github.com/moby/moby/client v0.5.1
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
 	github.com/nginx/nginx-prometheus-exporter v1.5.1
 	github.com/nxadm/tail v1.4.11
@@ -42,7 +41,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.157.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.70.0
+	github.com/prometheus/common v0.70.1
 	github.com/shirou/gopsutil/v4 v4.26.6
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
@@ -81,13 +80,13 @@ require (
 	go.opentelemetry.io/collector/scraper/scraperhelper v0.157.0
 	go.opentelemetry.io/collector/scraper/scrapertest v0.157.0
 	go.opentelemetry.io/collector/service v0.157.0
-	go.opentelemetry.io/otel v1.44.1-0.20260622141720-fbe3d073ba93
+	go.opentelemetry.io/otel v1.44.1-0.20260723093731-251b96b24897
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/mod v0.38.0
 	golang.org/x/sync v0.22.0
-	google.golang.org/protobuf v1.36.12-0.20260116114154-8c4c4ae446ca
+	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
 )
 
 require (
@@ -356,7 +355,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/vardius/message-bus v1.1.5
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.44.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.44.1-0.20260622141720-fbe3d073ba93
+	go.opentelemetry.io/otel/sdk/metric v1.44.1-0.20260723093731-251b96b24897
 	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect

@@ -10,6 +10,8 @@ exporters:
     endpoint: "0.0.0.0:9775"
     resource_to_telemetry_conversion:
       enabled: true
+    # Disable default suffixes in v0.157.0 and retain legacy metric names by choosing the no-suffix strategy.
+    translation_strategy: UnderscoreEscapingWithoutSuffixes
     add_metric_suffixes: false
   debug:
     verbosity: detailed
