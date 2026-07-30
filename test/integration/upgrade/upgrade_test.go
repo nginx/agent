@@ -99,6 +99,72 @@ func Test_UpgradeFromV3(t *testing.T) {
 	slog.Info("finished agent v3 upgrade tests")
 }
 
+func Test_UpgradeWithCustomOTELConfig(t *testing.T) {
+	ctx := context.Background()
+
+	containerNetwork := utils.CreateContainerNetwork(ctx, t)
+	utils.SetupMockManagementPlaneGrpc(ctx, t, containerNetwork)
+	defer func(ctx context.Context) {
+		err := utils.MockManagementPlaneGrpcContainer.Terminate(ctx)
+		require.NoError(t, err)
+	}(ctx)
+
+	testContainer, teardownTest := upgradeSetup(t, true, "custom_otel", containerNetwork)
+	defer teardownTest(t)
+
+	slog.Info("starting agent v3 upgrade tests with custom OTEL config")
+
+	// get currently installed agent version
+	oldVersion := agentVersion(ctx, t, testContainer)
+
+	// verify agent upgrade
+	verifyAgentUpgrade(ctx, t, testContainer)
+
+	// verify version of agent
+	verifyAgentVersion(ctx, t, testContainer, oldVersion)
+
+	// Expected files to validate after upgrade
+	files := []helpers.ConfigFileDescriptor{
+		{
+			ContainerPath: agentConfigDir + "/nginx-agent.conf",
+			ExpectedPath:  "./configs/otel/nginx-agent.conf",
+			LogLabel:      "agent config",
+		},
+		{
+			ContainerPath: agentConfigDir + "/my_config.yaml",
+			ExpectedPath:  "./configs/otel/my_config.yaml",
+			LogLabel:      "otel custom config",
+		},
+		{
+			ContainerPath: agentConfigDir + "/opentelemetry-collector-agent.yaml",
+			ExpectedPath:  "./configs/otel/otel-config.yaml",
+			LogLabel:      "otel config",
+		},
+	}
+	// verify agent v3 configs has not changed
+	helpers.ValidateContainerFiles(ctx, t, testContainer, files)
+
+	// Validate agent.log contains OTEL startup log
+	helpers.AssertStringInContainerFile(
+		ctx, t, testContainer, agentLogDir+"/agent.log", "Starting OTel collector",
+	)
+	helpers.AssertStringInContainerFile(
+		ctx,
+		t,
+		testContainer,
+		agentLogDir+"/agent.log",
+		"Merging additional OTel config files",
+	)
+
+	// Validate agent otel log contains specific logs
+	helpers.AssertStringInContainerFile(
+		ctx, t, testContainer, agentLogDir+"/opentelemetry-collector-agent.log",
+		"Everything is ready. Begin running and processing data.",
+	)
+
+	slog.Info("finished agent v3 upgrade tests with custom OTEL config")
+}
+
 func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool, setupType string,
 	containerNetwork *testcontainers.DockerNetwork,
 ) (testcontainers.Container, func(tb testing.TB)) {
@@ -196,8 +262,14 @@ func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontaine
 func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testcontainers.Container, oldVersion string) {
 	tb.Helper()
 
-	newVersion := agentVersion(ctx, tb, testContainer)
-	assert.NotEqual(tb, oldVersion, newVersion)
+	var newVersion string
+
+	assert.Eventually(tb, func() bool {
+		newVersion = agentVersion(ctx, tb, testContainer)
+
+		return newVersion != oldVersion
+	}, maxUpgradeTime, 100*time.Millisecond, "agent version not upgraded, still %s after upgrade", oldVersion)
+
 	tb.Logf("agent upgraded to version %s successfully", newVersion)
 }
 

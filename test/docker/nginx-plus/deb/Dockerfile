@@ -8,8 +8,6 @@ ARG PACKAGE_NAME
 ARG PACKAGES_REPO
 
 WORKDIR /agent
-COPY ./build /agent/build
-COPY $ENTRY_POINT /agent/entrypoint.sh
 
 ENV PLUS_VERSION=R32
 
@@ -57,11 +55,18 @@ EXPOSE 80
 
 STOPSIGNAL SIGQUIT
 
+COPY $ENTRY_POINT /agent/entrypoint.sh
 RUN chmod +x /agent/entrypoint.sh
-RUN apt install -y /agent/build/${PACKAGE_NAME}.deb
 
 STOPSIGNAL SIGTERM
 
 EXPOSE 80 443
 
 ENTRYPOINT ["/agent/entrypoint.sh"]
+
+FROM install-nginx as install-agent-local
+
+ARG PACKAGE_NAME
+
+COPY ./build /agent/build
+RUN apt install -y /agent/build/$PACKAGE_NAME.deb
