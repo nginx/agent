@@ -23,20 +23,21 @@ func TestProcessOperator_Processes(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
 		ctx       func() context.Context
+		name      string
 		wantError bool
 	}{
 		{
 			name:      "Test 1: active context returns no error",
-			ctx:       func() context.Context { return context.Background() },
+			ctx:       context.Background,
 			wantError: false,
 		},
 		{
-			name: "Test 2: cancelled context returns error",
+			name: "Test 2: canceled context returns error",
 			ctx: func() context.Context {
 				ctx, cancel := context.WithCancel(context.Background())
 				cancel()
+
 				return ctx
 			},
 			wantError: true,
@@ -91,7 +92,7 @@ func TestProcessOperator_Process(t *testing.T) {
 			proc, err := po.Process(context.Background(), tt.pid)
 
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, proc)
 			} else {
 				require.NoError(t, err)

@@ -38,17 +38,14 @@ func TestRegisterConfigFile(t *testing.T) {
 	}
 
 	tmpDir := t.TempDir()
-	origDir, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(tmpDir))
-	defer func() { require.NoError(t, os.Chdir(origDir)) }()
+	t.Chdir(tmpDir)
 
 	confFile := filepath.Join(tmpDir, "nginx-agent.conf")
 	require.NoError(t, os.WriteFile(confFile, []byte("log:\n  level: info\n"), 0o600))
 
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
-	err = RegisterConfigFile()
+	err := RegisterConfigFile()
 
 	require.NoError(t, err)
 	assert.Equal(t, confFile, viperInstance.GetString(ConfigPathKey))

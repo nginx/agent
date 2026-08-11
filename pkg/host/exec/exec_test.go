@@ -83,7 +83,7 @@ func TestFindExecutable(t *testing.T) {
 			ex := Exec{}
 			p, err := ex.FindExecutable(tt.exec)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, p)
 			} else {
 				require.NoError(t, err)

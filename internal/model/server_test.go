@@ -16,12 +16,12 @@ func TestServerType_String(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		serverType ServerType
 		expected   string
+		serverType ServerType
 	}{
-		{"Test 1: command type", Command, "command"},
-		{"Test 2: auxiliary type", Auxiliary, "auxiliary"},
-		{"Test 3: unknown type", ServerType(99), ""},
+		{"Test 1: command type", "command", Command},
+		{"Test 2: auxiliary type", "auxiliary", Auxiliary},
+		{"Test 3: unknown type", "", ServerType(99)},
 	}
 
 	for _, tt := range tests {

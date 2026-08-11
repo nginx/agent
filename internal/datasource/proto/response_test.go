@@ -177,9 +177,9 @@ func TestCreateDataPlaneResponse_UniqueMessageIDs(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
 		r1   *mpi.DataPlaneResponse
 		r2   *mpi.DataPlaneResponse
+		name string
 	}{
 		{
 			name: "Test 1: distinct correlation and instance IDs",

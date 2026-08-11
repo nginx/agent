@@ -421,14 +421,14 @@ func TestMapper_MapConfigLogLevelToSlogLevel(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    mpi.Log_LogLevel
 		expected string
+		input    mpi.Log_LogLevel
 	}{
-		{"Test 1: debug level", mpi.Log_LOG_LEVEL_DEBUG, "DEBUG"},
-		{"Test 2: info level", mpi.Log_LOG_LEVEL_INFO, "INFO"},
-		{"Test 3: warn level", mpi.Log_LOG_LEVEL_WARN, "WARN"},
-		{"Test 4: error level", mpi.Log_LOG_LEVEL_ERROR, "ERROR"},
-		{"Test 5: unrecognised value falls back to INFO", mpi.Log_LogLevel(99), "INFO"},
+		{"Test 1: debug level", "DEBUG", mpi.Log_LOG_LEVEL_DEBUG},
+		{"Test 2: info level", "INFO", mpi.Log_LOG_LEVEL_INFO},
+		{"Test 3: warn level", "WARN", mpi.Log_LOG_LEVEL_WARN},
+		{"Test 4: error level", "ERROR", mpi.Log_LOG_LEVEL_ERROR},
+		{"Test 5: unrecognized value falls back to INFO", "INFO", mpi.Log_LogLevel(99)},
 	}
 
 	for _, tt := range tests {
