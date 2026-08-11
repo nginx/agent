@@ -80,6 +80,10 @@ func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless, auxilia
 		tb.Helper()
 
 		if os.Getenv("TEST_ENV") == "Container" {
+			// Add a small delay before terminating containers to allow in-flight gRPC responses to complete gracefully. 
+			// This is needed due to testcontainers v0.44.0 changes in container lifecycle management.
+			time.Sleep(2 * time.Second)
+		
 			helpers.LogAndTerminateContainers(
 				ctx,
 				tb,
