@@ -20,7 +20,7 @@ require (
 	github.com/moby/moby/api v1.55.0
 	github.com/moby/moby/client v0.5.1
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.2
-	github.com/nginx/nginx-prometheus-exporter v1.5.1
+	github.com/nginx/nginx-prometheus-exporter v1.5.2
 	github.com/nxadm/tail v1.4.11
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.157.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.157.0
@@ -180,7 +180,7 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jstemmer/go-junit-report v1.0.0 // indirect
-	github.com/klauspost/compress v1.19.0 // indirect
+	github.com/klauspost/compress v1.19.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
@@ -349,7 +349,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.89
-	github.com/prometheus/client_golang v1.23.3-0.20251103151724-a5ae20370e5e // indirect
+	github.com/prometheus/client_golang v1.24.1 // indirect
 	github.com/samber/slog-gin v1.21.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
