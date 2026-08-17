@@ -20,7 +20,7 @@ require (
 	github.com/moby/moby/api v1.55.0
 	github.com/moby/moby/client v0.5.1
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.2
-	github.com/nginx/nginx-prometheus-exporter v1.5.2
+	github.com/nginx/nginx-prometheus-exporter v1.5.3
 	github.com/nxadm/tail v1.4.11
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.157.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.157.0
