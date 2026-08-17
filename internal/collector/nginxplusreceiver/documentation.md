@@ -18,14 +18,14 @@ The total number of bytes read from the cache or proxied server.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| bytes | Sum | Int | Cumulative | true | Development |
+| {bytes} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.cache.name | The name of the cache. | Any Str | Recommended |
-| nginx.cache.outcome | The outcome for an attempt to fetch content from NGINX's cache | Str: ``BYPASS``, ``EXPIRED``, ``HIT``, ``MISS``, ``REVALIDATED``, ``STALE``, ``UPDATING`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.cache.name | The name of the cache. | Any Str | Recommended | - |
+| nginx.cache.outcome | The outcome for an attempt to fetch content from NGINX's cache | Str: ``BYPASS``, ``EXPIRED``, ``HIT``, ``MISS``, ``REVALIDATED``, ``STALE``, ``UPDATING`` | Recommended | - |
 
 ### nginx.cache.memory.limit
 
@@ -33,13 +33,13 @@ The limit on the maximum size of the cache specified in the configuration.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| bytes | Gauge | Int | Development |
+| {bytes} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.cache.name | The name of the cache. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.cache.name | The name of the cache. | Any Str | Recommended | - |
 
 ### nginx.cache.memory.usage
 
@@ -47,13 +47,13 @@ The current size of the cache.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| bytes | Gauge | Int | Development |
+| {bytes} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.cache.name | The name of the cache. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.cache.name | The name of the cache. | Any Str | Recommended | - |
 
 ### nginx.cache.responses
 
@@ -61,14 +61,14 @@ The total number of responses read from the cache or proxied server.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| responses | Sum | Int | Cumulative | true | Development |
+| {responses} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.cache.name | The name of the cache. | Any Str | Recommended |
-| nginx.cache.outcome | The outcome for an attempt to fetch content from NGINX's cache | Str: ``BYPASS``, ``EXPIRED``, ``HIT``, ``MISS``, ``REVALIDATED``, ``STALE``, ``UPDATING`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.cache.name | The name of the cache. | Any Str | Recommended | - |
+| nginx.cache.outcome | The outcome for an attempt to fetch content from NGINX's cache | Str: ``BYPASS``, ``EXPIRED``, ``HIT``, ``MISS``, ``REVALIDATED``, ``STALE``, ``UPDATING`` | Recommended | - |
 
 ### nginx.config.reloads
 
@@ -76,7 +76,7 @@ The total number of NGINX config reloads.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| reloads | Sum | Int | Cumulative | true | Development |
+| {reloads} | Sum | Int | Cumulative | true | Development |
 
 ### nginx.http.connection.count
 
@@ -84,13 +84,13 @@ The current number of connections.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| connections | Gauge | Int | Development |
+| {connections} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING``, ``DROPPED``, ``IDLE`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING``, ``DROPPED``, ``IDLE`` | Recommended | - |
 
 ### nginx.http.connections
 
@@ -98,13 +98,13 @@ The total number of connections.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| connections | Sum | Int | Cumulative | true | Development |
+| {connections} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING``, ``DROPPED``, ``IDLE`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING``, ``DROPPED``, ``IDLE`` | Recommended | - |
 
 ### nginx.http.limit_conn.requests
 
@@ -112,14 +112,14 @@ The total number of connections to an endpoint with a limit_conn directive.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| connections | Sum | Int | Cumulative | true | Development |
+| {connections} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.limit_conn.outcome | The outcome for attempting to establish a connection to an endpoint that has a limit_conn directive configured. | Str: ``PASSED``, ``REJECTED``, ``REJECTED_DRY_RUN`` | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.limit_conn.outcome | The outcome for attempting to establish a connection to an endpoint that has a limit_conn directive configured. | Str: ``PASSED``, ``REJECTED``, ``REJECTED_DRY_RUN`` | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.limit_req.requests
 
@@ -127,14 +127,14 @@ The total number of requests to an endpoint with a limit_req directive.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.limit_req.outcome | The outcome for attempting to establish a connection to an endpoint that has a limit_req directive configured. | Str: ``PASSED``, ``REJECTED``, ``REJECTED_DRY_RUN``, ``DELAYED``, ``DELAYED_DRY_RUN`` | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.limit_req.outcome | The outcome for attempting to establish a connection to an endpoint that has a limit_req directive configured. | Str: ``PASSED``, ``REJECTED``, ``REJECTED_DRY_RUN``, ``DELAYED``, ``DELAYED_DRY_RUN`` | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.request.count
 
@@ -142,14 +142,14 @@ The total number of client requests received, since the last collection interval
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| requests | Gauge | Int | Development |
+| {requests} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.request.discarded
 
@@ -157,14 +157,14 @@ The total number of requests completed without sending a response.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.request.io
 
@@ -172,15 +172,15 @@ The total number of HTTP byte IO.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| bytes | Sum | Int | Cumulative | true | Development |
+| {bytes} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.request.processing.count
 
@@ -188,14 +188,14 @@ The number of client requests that are currently being processed.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| requests | Gauge | Int | Development |
+| {requests} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.requests
 
@@ -203,14 +203,14 @@ The total number of client requests received, since NGINX was last started or re
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.response.count
 
@@ -218,15 +218,15 @@ The total number of HTTP responses sent to clients since the last collection int
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| responses | Gauge | Int | Development |
+| {responses} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.response.status
 
@@ -234,15 +234,15 @@ The total number of responses since NGINX was last started or reloaded, grouped 
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| responses | Sum | Int | Cumulative | true | Development |
+| {responses} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.responses
 
@@ -250,14 +250,14 @@ The total number of HTTP responses sent to clients.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| responses | Sum | Int | Cumulative | true | Development |
+| {responses} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` | Recommended | - |
 
 ### nginx.http.upstream.keepalive.count
 
@@ -265,14 +265,14 @@ The current number of idle keepalive connections per HTTP upstream.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| connections | Gauge | Int | Development |
+| {connections} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.connection.count
 
@@ -280,16 +280,16 @@ The average number of active connections per HTTP upstream peer.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| connections | Gauge | Int | Development |
+| {connections} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.count
 
@@ -297,15 +297,15 @@ The current count of peers on the HTTP upstream grouped by state.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| peers | Gauge | Int | Development |
+| {peers} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.fails
 
@@ -313,16 +313,16 @@ The total number of unsuccessful attempts to communicate with the HTTP upstream 
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| attempts | Sum | Int | Cumulative | true | Development |
+| {attempts} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.header.time
 
@@ -334,12 +334,12 @@ The average time to get the response header from the HTTP upstream peer.
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.health_checks
 
@@ -347,17 +347,17 @@ The total number of health check requests made to a HTTP upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.health_check | The state received from a health check. | Str: ``UNHEALTHY``, ``FAIL`` | Recommended |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.health_check | The state received from a health check. | Str: ``UNHEALTHY``, ``FAIL`` | Recommended | - |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.io
 
@@ -365,17 +365,17 @@ The total number of byte IO per HTTP upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| bytes | Sum | Int | Cumulative | true | Development |
+| {bytes} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended | - |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.requests
 
@@ -383,16 +383,16 @@ The total number of client requests forwarded to the HTTP upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.response.time
 
@@ -404,12 +404,29 @@ The average time to get the full response from the HTTP upstream peer.
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
+
+### nginx.http.upstream.peer.response_time_hist
+
+Histogram of upstream response times collected per upstream server.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| ms | Gauge | Int | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.responses
 
@@ -417,17 +434,17 @@ The total number of responses obtained from the HTTP upstream peer grouped by st
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| responses | Sum | Int | Cumulative | true | Development |
+| {responses} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.state
 
@@ -435,17 +452,17 @@ Current state of an upstream peer in deployment.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| is_deployed | Gauge | Int | Development |
+| {is_deployed} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.peer.unavailables
 
@@ -453,16 +470,16 @@ The total number of times the server became unavailable for client requests ('un
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.queue.limit
 
@@ -470,14 +487,14 @@ The maximum number of requests that can be in the queue at the same time.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| requests | Gauge | Int | Development |
+| {requests} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.queue.overflows
 
@@ -485,14 +502,14 @@ The total number of requests rejected due to the queue overflow.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| responses | Sum | Int | Cumulative | true | Development |
+| {responses} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.queue.usage
 
@@ -500,14 +517,14 @@ The current number of requests in the queue.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| requests | Gauge | Int | Development |
+| {requests} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.http.upstream.zombie.count
 
@@ -515,14 +532,14 @@ The current number of upstream peers removed from the group but still processing
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| is_deployed | Gauge | Int | Development |
+| {is_deployed} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.slab.page.free
 
@@ -530,13 +547,13 @@ The current number of free memory pages.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| pages | Gauge | Int | Development |
+| {pages} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.slab.page.limit
 
@@ -544,13 +561,13 @@ The total number of memory pages (free and used).
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| pages | Gauge | Int | Development |
+| {pages} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.slab.page.usage
 
@@ -558,13 +575,13 @@ The current number of used memory pages.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| pages | Gauge | Int | Development |
+| {pages} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.slab.page.utilization
 
@@ -572,13 +589,13 @@ The current percentage of used memory pages.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| pages | Gauge | Int | Development |
+| {pages} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.slab.slot.allocations
 
@@ -586,15 +603,15 @@ The number of attempts to allocate memory of specified size.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| allocations | Sum | Int | Cumulative | true | Development |
+| {allocations} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.slab.slot.allocation.result | Result of an attempt to allocate memory to a slab slot. | Str: ``FAILURE``, ``SUCCESS`` | Recommended |
-| nginx.slab.slot.limit | The upper limit for a slab slot, used as the identifier for the slot. | Any Int | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.slab.slot.allocation.result | Result of an attempt to allocate memory to a slab slot. | Str: ``FAILURE``, ``SUCCESS`` | Recommended | - |
+| nginx.slab.slot.limit | The upper limit for a slab slot, used as the identifier for the slot. | Any Int | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.slab.slot.free
 
@@ -602,14 +619,14 @@ The current number of free memory slots.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| slots | Gauge | Int | Development |
+| {slots} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.slab.slot.limit | The upper limit for a slab slot, used as the identifier for the slot. | Any Int | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.slab.slot.limit | The upper limit for a slab slot, used as the identifier for the slot. | Any Int | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.slab.slot.usage
 
@@ -617,14 +634,14 @@ The current number of used memory slots.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| slots | Gauge | Int | Development |
+| {slots} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.slab.slot.limit | The upper limit for a slab slot, used as the identifier for the slot. | Any Int | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.slab.slot.limit | The upper limit for a slab slot, used as the identifier for the slot. | Any Int | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.ssl.certificate.verify_failures
 
@@ -632,13 +649,13 @@ The total number of SSL certificate verification failures.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| certificates | Sum | Int | Cumulative | true | Development |
+| {certificates} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.ssl.verify_failure.reason | The reason for a SSL certificate verification failure. | Str: ``NO_CERT``, ``EXPIRED_CERT``, ``REVOKED_CERT``, ``HOSTNAME_MISMATCH``, ``OTHER`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.ssl.verify_failure.reason | The reason for a SSL certificate verification failure. | Str: ``NO_CERT``, ``EXPIRED_CERT``, ``REVOKED_CERT``, ``HOSTNAME_MISMATCH``, ``OTHER`` | Recommended | - |
 
 ### nginx.ssl.handshakes
 
@@ -646,14 +663,14 @@ The total number of SSL handshakes.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| handshakes | Sum | Int | Cumulative | true | Development |
+| {handshakes} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.ssl.handshake.reason | The reason for a SSL handshake failure. | Str: ``NO_COMMON_PROTOCOL``, ``NO_COMMON_CIPHER``, ``TIMEOUT``, ``CERT_REJECTED`` | Recommended |
-| nginx.ssl.status | The status of a SSL handshake. | Str: ``FAILED``, ``REUSE`` | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.ssl.handshake.reason | The reason for a SSL handshake failure. | Str: ``NO_COMMON_PROTOCOL``, ``NO_COMMON_CIPHER``, ``TIMEOUT``, ``CERT_REJECTED`` | Recommended | - |
+| nginx.ssl.status | The status of a SSL handshake. | Str: ``FAILED``, ``REUSE`` | Recommended | - |
 
 ### nginx.stream.connection.accepted
 
@@ -661,13 +678,13 @@ The total number of connections accepted from clients.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| connections | Sum | Int | Cumulative | true | Development |
+| {connections} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.connection.discarded
 
@@ -675,13 +692,13 @@ Total number of connections completed without creating a session.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| connections | Sum | Int | Cumulative | true | Development |
+| {connections} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.connection.processing.count
 
@@ -689,13 +706,13 @@ The number of client connections that are currently being processed.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| connections | Gauge | Int | Development |
+| {connections} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.io
 
@@ -703,14 +720,14 @@ The total number of Stream byte IO.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| bytes | Sum | Int | Cumulative | true | Development |
+| {bytes} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.session.status
 
@@ -718,14 +735,14 @@ The total number of completed sessions.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| sessions | Sum | Int | Cumulative | true | Development |
+| {sessions} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.connection.count
 
@@ -733,16 +750,16 @@ The current number of Stream Upstream Peer connections.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| connections | Gauge | Int | Development |
+| {connections} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.connection.time
 
@@ -754,12 +771,12 @@ The average time to connect to the stream upstream peer.
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.connections
 
@@ -767,16 +784,16 @@ The total number of client connections forwarded to this stream upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| connections | Sum | Int | Cumulative | true | Development |
+| {connections} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.count
 
@@ -784,15 +801,15 @@ The current number of stream upstream peers grouped by state.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| peers | Gauge | Int | Development |
+| {peers} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.fails
 
@@ -800,15 +817,15 @@ The total number of unsuccessful attempts to communicate with the stream upstrea
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| attempts | Sum | Int | Cumulative | true | Development |
+| {attempts} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.health_checks
 
@@ -816,17 +833,17 @@ The total number of health check requests made to the stream upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.health_check | The state received from a health check. | Str: ``UNHEALTHY``, ``FAIL`` | Recommended |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.health_check | The state received from a health check. | Str: ``UNHEALTHY``, ``FAIL`` | Recommended | - |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.io
 
@@ -834,17 +851,17 @@ The total number of Stream Upstream Peer byte IO.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| bytes | Sum | Int | Cumulative | true | Development |
+| {bytes} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` | Recommended | - |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.response.time
 
@@ -856,12 +873,12 @@ The average time to receive the last byte of data for the stream upstream peer.
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.state
 
@@ -869,17 +886,17 @@ Current state of upstream peers in deployment.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| deployments | Sum | Int | Cumulative | true | Development |
+| {deployments} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.ttfb.time
 
@@ -891,12 +908,12 @@ The average time to receive the first byte of data for the stream upstream peer.
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.peer.unavailables
 
@@ -904,16 +921,16 @@ How many times the server became unavailable for client connections (state 'unav
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| {requests} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.peer.address | The address of the peer. | Any Str | Recommended |
-| nginx.peer.name | The name of the peer. | Any Str | Recommended |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.peer.address | The address of the peer. | Any Str | Recommended | - |
+| nginx.peer.name | The name of the peer. | Any Str | Recommended | - |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ### nginx.stream.upstream.zombie.count
 
@@ -921,18 +938,18 @@ The current number of peers removed from the group but still processing active c
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
-| deployments | Gauge | Int | Development |
+| {deployments} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended |
-| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| nginx.upstream.name | The name of the upstream block. | Any Str | Recommended | - |
+| nginx.zone.name | The name of the shared memory zone. | Any Str | Recommended | - |
 
 ## Resource Attributes
 
-| Name | Description | Values | Enabled |
-| ---- | ----------- | ------ | ------- |
-| instance.id | The nginx instance id. | Any Str | true |
-| instance.type | The nginx instance type (nginx, nginxplus). | Any Str | true |
+| Name | Description | Values | Enabled | Semantic Convention | Stability |
+| ---- | ----------- | ------ | ------- | ------------------- | --------- |
+| instance.id | The nginx instance id. | Any Str | true | - | - |
+| instance.type | The nginx instance type (nginx, nginxplus). | Any Str | true | - | - |

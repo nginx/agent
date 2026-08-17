@@ -3,42 +3,95 @@
 package metadata
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/filter"
 )
 
-// MetricConfig provides common config for a particular metric.
-type MetricConfig struct {
-	Enabled bool `mapstructure:"enabled"`
-
+// SystemCPULogicalCountMetricConfig provides config for the system.cpu.logical.count metric.
+type SystemCPULogicalCountMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
 	enabledSetByUser bool
 }
 
-func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
+func (ms *SystemCPULogicalCountMetricConfig) Unmarshal(parser *confmap.Conf) error {
 	if parser == nil {
 		return nil
 	}
+
 	err := parser.Unmarshal(ms)
 	if err != nil {
 		return err
 	}
+
 	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+// SystemCPUUtilizationMetricAttributeKey specifies the key of an attribute for the system.cpu.utilization metric.
+type SystemCPUUtilizationMetricAttributeKey string
+
+const (
+	SystemCPUUtilizationMetricAttributeKeyState SystemCPUUtilizationMetricAttributeKey = "state"
+)
+
+// SystemCPUUtilizationMetricConfig provides config for the system.cpu.utilization metric.
+type SystemCPUUtilizationMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                   `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []SystemCPUUtilizationMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *SystemCPUUtilizationMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *SystemCPUUtilizationMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case SystemCPUUtilizationMetricAttributeKeyState:
+		default:
+			return fmt.Errorf("metric system.cpu.utilization doesn't have an attribute %v, valid attributes: [state]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
 	return nil
 }
 
 // MetricsConfig provides config for cpu metrics.
 type MetricsConfig struct {
-	SystemCPULogicalCount MetricConfig `mapstructure:"system.cpu.logical.count"`
-	SystemCPUUtilization  MetricConfig `mapstructure:"system.cpu.utilization"`
+	SystemCPULogicalCount SystemCPULogicalCountMetricConfig `mapstructure:"system.cpu.logical.count"`
+	SystemCPUUtilization  SystemCPUUtilizationMetricConfig  `mapstructure:"system.cpu.utilization"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		SystemCPULogicalCount: MetricConfig{
+		SystemCPULogicalCount: SystemCPULogicalCountMetricConfig{
 			Enabled: true,
 		},
-		SystemCPUUtilization: MetricConfig{
-			Enabled: true,
+		SystemCPUUtilization: SystemCPUUtilizationMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []SystemCPUUtilizationMetricAttributeKey{SystemCPUUtilizationMetricAttributeKeyState},
 		},
 	}
 }
@@ -88,9 +141,14 @@ type MetricsBuilderConfig struct {
 	ResourceAttributes ResourceAttributesConfig `mapstructure:"resource_attributes"`
 }
 
-func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+func NewDefaultMetricsBuilderConfig() MetricsBuilderConfig {
 	return MetricsBuilderConfig{
 		Metrics:            DefaultMetricsConfig(),
 		ResourceAttributes: DefaultResourceAttributesConfig(),
 	}
+}
+
+// Deprecated: Use NewDefaultMetricsBuilderConfig.
+func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+	return NewDefaultMetricsBuilderConfig()
 }

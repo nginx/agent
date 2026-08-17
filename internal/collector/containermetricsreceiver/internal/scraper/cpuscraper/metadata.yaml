@@ -6,7 +6,7 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [ aphralG, dhurley, craigell, sean-breen, CVanF5 ]
+    active: [aphralG, dhurley, craigell, sean-breen, CVanF5]
 
 resource_attributes:
   resource.id:
@@ -24,8 +24,7 @@ metrics:
   system.cpu.logical.count:
     enabled: true
     description: Number of available logical CPUs.
-    stability:
-      level: development
+    stability: development
     unit: "{cpu}"
     sum:
       value_type: int
@@ -34,10 +33,8 @@ metrics:
   system.cpu.utilization:
     enabled: true
     description: Difference in system.cpu.time since the last measurement per logical CPU, divided by the elapsed time (value in interval [0,1]).
-    stability:
-      level: development
+    stability: development
     unit: "1"
     gauge:
       value_type: double
-    attributes: [ state ]
-
+    attributes: [state]

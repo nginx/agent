@@ -36,7 +36,6 @@ groups:
       Source: HTTP GET `/api/9/connections`
     attributes:
       - ref: nginx.connections.outcome
-  
   - id: metric.nginxplus.http.request.count
     type: metric
     unit: "requests"
@@ -46,7 +45,7 @@ groups:
     instrument: gauge
     note: |
       Source: HTTP GET `/api/9/http/requests`
-    attributes: 
+    attributes:
       - ref: nginx.zone.name
       - ref: nginx.zone.type
 
@@ -346,6 +345,21 @@ groups:
     stability: experimental
     brief: "The average time to get the full response from the HTTP upstream peer."
     instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.response_time_hist
+    type: metric
+    unit: "ms"
+    metric_name: nginx.http.upstream.peer.response_time_hist
+    stability: experimental
+    brief: "Histogram of upstream response times collected per upstream server."
+    instrument: histogram
     note: |
       Source: HTTP GET `/api/9/http/upstreams`
     attributes:

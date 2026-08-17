@@ -6,7 +6,7 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [ aphralG, dhurley, craigell, sean-breen, CVanF5 ]
+    active: [aphralG, dhurley, craigell, sean-breen, CVanF5]
 
 resource_attributes:
   resource.id:
@@ -18,18 +18,25 @@ attributes:
   state:
     description: Breakdown of memory usage by type.
     type: string
-    enum: [ buffered, cached, inactive, free, slab_reclaimable, slab_unreclaimable, used ]
+    enum:
+      [
+        buffered,
+        cached,
+        inactive,
+        free,
+        slab_reclaimable,
+        slab_unreclaimable,
+        used,
+      ]
 
 metrics:
   system.memory.usage:
     enabled: true
     description: Bytes of memory in use.
-    stability:
-      level: development
+    stability: development
     unit: By
     sum:
       value_type: int
       aggregation_temporality: cumulative
       monotonic: false
     attributes: [state]
-

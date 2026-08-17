@@ -5,6 +5,13 @@ metrics:
   {{group.metric_name | safe}}:
     enabled: true
     description: {{group.brief | trim}}
+{%- if group.stability == "stable" %}
+    stability: stable
+{%- elif group.stability == "experimental" %}
+    stability: beta
+{%- else %}
+    stability: development
+{%- endif %}
 {%- if group.instrument == "counter" %}
     sum:
       value_type: int
@@ -19,7 +26,11 @@ metrics:
     gauge:
       value_type: int
 {%- endif %}
+{%- if group.unit in ["ms", "s", "By", "1", "%"] %}
     unit: {{ group.unit }}
+{%- else %}
+    unit: "{{ '{' }}{{ group.unit }}{{ '}' }}"
+{%- endif %}
 {%- endif %}
 {%- if group.attributes %}
     attributes:

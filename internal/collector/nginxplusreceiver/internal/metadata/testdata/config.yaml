@@ -3,122 +3,369 @@ all_set:
   metrics:
     nginx.cache.bytes_read:
       enabled: true
+      attributes: ["nginx.cache.name","nginx.cache.outcome"]
     nginx.cache.memory.limit:
       enabled: true
+      attributes: ["nginx.cache.name"]
     nginx.cache.memory.usage:
       enabled: true
+      attributes: ["nginx.cache.name"]
     nginx.cache.responses:
       enabled: true
+      attributes: ["nginx.cache.name","nginx.cache.outcome"]
     nginx.config.reloads:
       enabled: true
     nginx.http.connection.count:
       enabled: true
+      attributes: ["nginx.connections.outcome"]
     nginx.http.connections:
       enabled: true
+      attributes: ["nginx.connections.outcome"]
     nginx.http.limit_conn.requests:
       enabled: true
+      attributes: ["nginx.limit_conn.outcome","nginx.zone.name"]
     nginx.http.limit_req.requests:
       enabled: true
+      attributes: ["nginx.limit_req.outcome","nginx.zone.name"]
     nginx.http.request.count:
       enabled: true
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.request.discarded:
       enabled: true
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.request.io:
       enabled: true
+      attributes: ["nginx.io.direction","nginx.zone.name","nginx.zone.type"]
     nginx.http.request.processing.count:
       enabled: true
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.requests:
       enabled: true
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.response.count:
       enabled: true
+      attributes: ["nginx.status_range","nginx.zone.name","nginx.zone.type"]
     nginx.http.response.status:
       enabled: true
+      attributes: ["nginx.status_range","nginx.zone.name","nginx.zone.type"]
     nginx.http.responses:
       enabled: true
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.upstream.keepalive.count:
       enabled: true
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.connection.count:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.count:
       enabled: true
+      attributes: ["nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.fails:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.header.time:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.health_checks:
       enabled: true
+      attributes: ["nginx.health_check","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.io:
       enabled: true
+      attributes: ["nginx.io.direction","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.requests:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.response.time:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
+    nginx.http.upstream.peer.response_time_hist:
+      enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.responses:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.status_range","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.state:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.unavailables:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.queue.limit:
       enabled: true
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.queue.overflows:
       enabled: true
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.queue.usage:
       enabled: true
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.zombie.count:
       enabled: true
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.slab.page.free:
       enabled: true
+      attributes: ["nginx.zone.name"]
     nginx.slab.page.limit:
       enabled: true
+      attributes: ["nginx.zone.name"]
     nginx.slab.page.usage:
       enabled: true
+      attributes: ["nginx.zone.name"]
     nginx.slab.page.utilization:
       enabled: true
+      attributes: ["nginx.zone.name"]
     nginx.slab.slot.allocations:
       enabled: true
+      attributes: ["nginx.slab.slot.allocation.result","nginx.slab.slot.limit","nginx.zone.name"]
     nginx.slab.slot.free:
       enabled: true
+      attributes: ["nginx.slab.slot.limit","nginx.zone.name"]
     nginx.slab.slot.usage:
       enabled: true
+      attributes: ["nginx.slab.slot.limit","nginx.zone.name"]
     nginx.ssl.certificate.verify_failures:
       enabled: true
+      attributes: ["nginx.ssl.verify_failure.reason"]
     nginx.ssl.handshakes:
       enabled: true
+      attributes: ["nginx.ssl.handshake.reason","nginx.ssl.status"]
     nginx.stream.connection.accepted:
       enabled: true
+      attributes: ["nginx.zone.name"]
     nginx.stream.connection.discarded:
       enabled: true
+      attributes: ["nginx.zone.name"]
     nginx.stream.connection.processing.count:
       enabled: true
+      attributes: ["nginx.zone.name"]
     nginx.stream.io:
       enabled: true
+      attributes: ["nginx.io.direction","nginx.zone.name"]
     nginx.stream.session.status:
       enabled: true
+      attributes: ["nginx.status_range","nginx.zone.name"]
     nginx.stream.upstream.peer.connection.count:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.connection.time:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.connections:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.count:
       enabled: true
+      attributes: ["nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.fails:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.health_checks:
       enabled: true
+      attributes: ["nginx.health_check","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.io:
       enabled: true
+      attributes: ["nginx.io.direction","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.response.time:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.state:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.ttfb.time:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.unavailables:
       enabled: true
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.zombie.count:
       enabled: true
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
+  resource_attributes:
+    instance.id:
+      enabled: true
+    instance.type:
+      enabled: true
+reaggregate_set:
+  metrics:
+    nginx.cache.bytes_read:
+      enabled: true
+      attributes: []
+    nginx.cache.memory.limit:
+      enabled: true
+      attributes: []
+    nginx.cache.memory.usage:
+      enabled: true
+      attributes: []
+    nginx.cache.responses:
+      enabled: true
+      attributes: []
+    nginx.config.reloads:
+      enabled: true
+    nginx.http.connection.count:
+      enabled: true
+      attributes: []
+    nginx.http.connections:
+      enabled: true
+      attributes: []
+    nginx.http.limit_conn.requests:
+      enabled: true
+      attributes: []
+    nginx.http.limit_req.requests:
+      enabled: true
+      attributes: []
+    nginx.http.request.count:
+      enabled: true
+      attributes: []
+    nginx.http.request.discarded:
+      enabled: true
+      attributes: []
+    nginx.http.request.io:
+      enabled: true
+      attributes: []
+    nginx.http.request.processing.count:
+      enabled: true
+      attributes: []
+    nginx.http.requests:
+      enabled: true
+      attributes: []
+    nginx.http.response.count:
+      enabled: true
+      attributes: []
+    nginx.http.response.status:
+      enabled: true
+      attributes: []
+    nginx.http.responses:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.keepalive.count:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.connection.count:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.count:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.fails:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.header.time:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.health_checks:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.io:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.requests:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.response.time:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.response_time_hist:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.responses:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.state:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.peer.unavailables:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.queue.limit:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.queue.overflows:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.queue.usage:
+      enabled: true
+      attributes: []
+    nginx.http.upstream.zombie.count:
+      enabled: true
+      attributes: []
+    nginx.slab.page.free:
+      enabled: true
+      attributes: []
+    nginx.slab.page.limit:
+      enabled: true
+      attributes: []
+    nginx.slab.page.usage:
+      enabled: true
+      attributes: []
+    nginx.slab.page.utilization:
+      enabled: true
+      attributes: []
+    nginx.slab.slot.allocations:
+      enabled: true
+      attributes: []
+    nginx.slab.slot.free:
+      enabled: true
+      attributes: []
+    nginx.slab.slot.usage:
+      enabled: true
+      attributes: []
+    nginx.ssl.certificate.verify_failures:
+      enabled: true
+      attributes: []
+    nginx.ssl.handshakes:
+      enabled: true
+      attributes: []
+    nginx.stream.connection.accepted:
+      enabled: true
+      attributes: []
+    nginx.stream.connection.discarded:
+      enabled: true
+      attributes: []
+    nginx.stream.connection.processing.count:
+      enabled: true
+      attributes: []
+    nginx.stream.io:
+      enabled: true
+      attributes: []
+    nginx.stream.session.status:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.connection.count:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.connection.time:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.connections:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.count:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.fails:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.health_checks:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.io:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.response.time:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.state:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.ttfb.time:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.peer.unavailables:
+      enabled: true
+      attributes: []
+    nginx.stream.upstream.zombie.count:
+      enabled: true
+      attributes: []
   resource_attributes:
     instance.id:
       enabled: true
@@ -128,122 +375,183 @@ none_set:
   metrics:
     nginx.cache.bytes_read:
       enabled: false
+      attributes: ["nginx.cache.name","nginx.cache.outcome"]
     nginx.cache.memory.limit:
       enabled: false
+      attributes: ["nginx.cache.name"]
     nginx.cache.memory.usage:
       enabled: false
+      attributes: ["nginx.cache.name"]
     nginx.cache.responses:
       enabled: false
+      attributes: ["nginx.cache.name","nginx.cache.outcome"]
     nginx.config.reloads:
       enabled: false
     nginx.http.connection.count:
       enabled: false
+      attributes: ["nginx.connections.outcome"]
     nginx.http.connections:
       enabled: false
+      attributes: ["nginx.connections.outcome"]
     nginx.http.limit_conn.requests:
       enabled: false
+      attributes: ["nginx.limit_conn.outcome","nginx.zone.name"]
     nginx.http.limit_req.requests:
       enabled: false
+      attributes: ["nginx.limit_req.outcome","nginx.zone.name"]
     nginx.http.request.count:
       enabled: false
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.request.discarded:
       enabled: false
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.request.io:
       enabled: false
+      attributes: ["nginx.io.direction","nginx.zone.name","nginx.zone.type"]
     nginx.http.request.processing.count:
       enabled: false
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.requests:
       enabled: false
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.response.count:
       enabled: false
+      attributes: ["nginx.status_range","nginx.zone.name","nginx.zone.type"]
     nginx.http.response.status:
       enabled: false
+      attributes: ["nginx.status_range","nginx.zone.name","nginx.zone.type"]
     nginx.http.responses:
       enabled: false
+      attributes: ["nginx.zone.name","nginx.zone.type"]
     nginx.http.upstream.keepalive.count:
       enabled: false
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.connection.count:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.count:
       enabled: false
+      attributes: ["nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.fails:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.header.time:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.health_checks:
       enabled: false
+      attributes: ["nginx.health_check","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.io:
       enabled: false
+      attributes: ["nginx.io.direction","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.requests:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.response.time:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
+    nginx.http.upstream.peer.response_time_hist:
+      enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.responses:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.status_range","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.state:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.peer.unavailables:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.queue.limit:
       enabled: false
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.queue.overflows:
       enabled: false
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.queue.usage:
       enabled: false
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.http.upstream.zombie.count:
       enabled: false
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
     nginx.slab.page.free:
       enabled: false
+      attributes: ["nginx.zone.name"]
     nginx.slab.page.limit:
       enabled: false
+      attributes: ["nginx.zone.name"]
     nginx.slab.page.usage:
       enabled: false
+      attributes: ["nginx.zone.name"]
     nginx.slab.page.utilization:
       enabled: false
+      attributes: ["nginx.zone.name"]
     nginx.slab.slot.allocations:
       enabled: false
+      attributes: ["nginx.slab.slot.allocation.result","nginx.slab.slot.limit","nginx.zone.name"]
     nginx.slab.slot.free:
       enabled: false
+      attributes: ["nginx.slab.slot.limit","nginx.zone.name"]
     nginx.slab.slot.usage:
       enabled: false
+      attributes: ["nginx.slab.slot.limit","nginx.zone.name"]
     nginx.ssl.certificate.verify_failures:
       enabled: false
+      attributes: ["nginx.ssl.verify_failure.reason"]
     nginx.ssl.handshakes:
       enabled: false
+      attributes: ["nginx.ssl.handshake.reason","nginx.ssl.status"]
     nginx.stream.connection.accepted:
       enabled: false
+      attributes: ["nginx.zone.name"]
     nginx.stream.connection.discarded:
       enabled: false
+      attributes: ["nginx.zone.name"]
     nginx.stream.connection.processing.count:
       enabled: false
+      attributes: ["nginx.zone.name"]
     nginx.stream.io:
       enabled: false
+      attributes: ["nginx.io.direction","nginx.zone.name"]
     nginx.stream.session.status:
       enabled: false
+      attributes: ["nginx.status_range","nginx.zone.name"]
     nginx.stream.upstream.peer.connection.count:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.connection.time:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.connections:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.count:
       enabled: false
+      attributes: ["nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.fails:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.health_checks:
       enabled: false
+      attributes: ["nginx.health_check","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.io:
       enabled: false
+      attributes: ["nginx.io.direction","nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.response.time:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.state:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.peer.state","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.ttfb.time:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.peer.unavailables:
       enabled: false
+      attributes: ["nginx.peer.address","nginx.peer.name","nginx.upstream.name","nginx.zone.name"]
     nginx.stream.upstream.zombie.count:
       enabled: false
+      attributes: ["nginx.upstream.name","nginx.zone.name"]
   resource_attributes:
     instance.id:
       enabled: false

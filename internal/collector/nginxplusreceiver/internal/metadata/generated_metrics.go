@@ -3,13 +3,20 @@
 package metadata
 
 import (
-	"time"
-
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/filter"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
+	"slices"
+	"time"
+)
+
+const (
+	AggregationStrategySum = "sum"
+	AggregationStrategyAvg = "avg"
+	AggregationStrategyMin = "min"
+	AggregationStrategyMax = "max"
 )
 
 // AttributeNginxCacheOutcome specifies the value nginx.cache.outcome attribute.
@@ -460,181 +467,243 @@ var MapAttributeNginxZoneType = map[string]AttributeNginxZoneType{
 
 var MetricsInfo = metricsInfo{
 	NginxCacheBytesRead: metricInfo{
-		Name: "nginx.cache.bytes_read",
+		Name:       "nginx.cache.bytes_read",
+		Attributes: []string{"nginx.cache.name", "nginx.cache.outcome"},
 	},
 	NginxCacheMemoryLimit: metricInfo{
-		Name: "nginx.cache.memory.limit",
+		Name:       "nginx.cache.memory.limit",
+		Attributes: []string{"nginx.cache.name"},
 	},
 	NginxCacheMemoryUsage: metricInfo{
-		Name: "nginx.cache.memory.usage",
+		Name:       "nginx.cache.memory.usage",
+		Attributes: []string{"nginx.cache.name"},
 	},
 	NginxCacheResponses: metricInfo{
-		Name: "nginx.cache.responses",
+		Name:       "nginx.cache.responses",
+		Attributes: []string{"nginx.cache.name", "nginx.cache.outcome"},
 	},
 	NginxConfigReloads: metricInfo{
 		Name: "nginx.config.reloads",
 	},
 	NginxHTTPConnectionCount: metricInfo{
-		Name: "nginx.http.connection.count",
+		Name:       "nginx.http.connection.count",
+		Attributes: []string{"nginx.connections.outcome"},
 	},
 	NginxHTTPConnections: metricInfo{
-		Name: "nginx.http.connections",
+		Name:       "nginx.http.connections",
+		Attributes: []string{"nginx.connections.outcome"},
 	},
 	NginxHTTPLimitConnRequests: metricInfo{
-		Name: "nginx.http.limit_conn.requests",
+		Name:       "nginx.http.limit_conn.requests",
+		Attributes: []string{"nginx.limit_conn.outcome", "nginx.zone.name"},
 	},
 	NginxHTTPLimitReqRequests: metricInfo{
-		Name: "nginx.http.limit_req.requests",
+		Name:       "nginx.http.limit_req.requests",
+		Attributes: []string{"nginx.limit_req.outcome", "nginx.zone.name"},
 	},
 	NginxHTTPRequestCount: metricInfo{
-		Name: "nginx.http.request.count",
+		Name:       "nginx.http.request.count",
+		Attributes: []string{"nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPRequestDiscarded: metricInfo{
-		Name: "nginx.http.request.discarded",
+		Name:       "nginx.http.request.discarded",
+		Attributes: []string{"nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPRequestIo: metricInfo{
-		Name: "nginx.http.request.io",
+		Name:       "nginx.http.request.io",
+		Attributes: []string{"nginx.io.direction", "nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPRequestProcessingCount: metricInfo{
-		Name: "nginx.http.request.processing.count",
+		Name:       "nginx.http.request.processing.count",
+		Attributes: []string{"nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPRequests: metricInfo{
-		Name: "nginx.http.requests",
+		Name:       "nginx.http.requests",
+		Attributes: []string{"nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPResponseCount: metricInfo{
-		Name: "nginx.http.response.count",
+		Name:       "nginx.http.response.count",
+		Attributes: []string{"nginx.status_range", "nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPResponseStatus: metricInfo{
-		Name: "nginx.http.response.status",
+		Name:       "nginx.http.response.status",
+		Attributes: []string{"nginx.status_range", "nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPResponses: metricInfo{
-		Name: "nginx.http.responses",
+		Name:       "nginx.http.responses",
+		Attributes: []string{"nginx.zone.name", "nginx.zone.type"},
 	},
 	NginxHTTPUpstreamKeepaliveCount: metricInfo{
-		Name: "nginx.http.upstream.keepalive.count",
+		Name:       "nginx.http.upstream.keepalive.count",
+		Attributes: []string{"nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerConnectionCount: metricInfo{
-		Name: "nginx.http.upstream.peer.connection.count",
+		Name:       "nginx.http.upstream.peer.connection.count",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerCount: metricInfo{
-		Name: "nginx.http.upstream.peer.count",
+		Name:       "nginx.http.upstream.peer.count",
+		Attributes: []string{"nginx.peer.state", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerFails: metricInfo{
-		Name: "nginx.http.upstream.peer.fails",
+		Name:       "nginx.http.upstream.peer.fails",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerHeaderTime: metricInfo{
-		Name: "nginx.http.upstream.peer.header.time",
+		Name:       "nginx.http.upstream.peer.header.time",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerHealthChecks: metricInfo{
-		Name: "nginx.http.upstream.peer.health_checks",
+		Name:       "nginx.http.upstream.peer.health_checks",
+		Attributes: []string{"nginx.health_check", "nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerIo: metricInfo{
-		Name: "nginx.http.upstream.peer.io",
+		Name:       "nginx.http.upstream.peer.io",
+		Attributes: []string{"nginx.io.direction", "nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerRequests: metricInfo{
-		Name: "nginx.http.upstream.peer.requests",
+		Name:       "nginx.http.upstream.peer.requests",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerResponseTime: metricInfo{
-		Name: "nginx.http.upstream.peer.response.time",
+		Name:       "nginx.http.upstream.peer.response.time",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
+	},
+	NginxHTTPUpstreamPeerResponseTimeHist: metricInfo{
+		Name:       "nginx.http.upstream.peer.response_time_hist",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerResponses: metricInfo{
-		Name: "nginx.http.upstream.peer.responses",
+		Name:       "nginx.http.upstream.peer.responses",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.status_range", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerState: metricInfo{
-		Name: "nginx.http.upstream.peer.state",
+		Name:       "nginx.http.upstream.peer.state",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.peer.state", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamPeerUnavailables: metricInfo{
-		Name: "nginx.http.upstream.peer.unavailables",
+		Name:       "nginx.http.upstream.peer.unavailables",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamQueueLimit: metricInfo{
-		Name: "nginx.http.upstream.queue.limit",
+		Name:       "nginx.http.upstream.queue.limit",
+		Attributes: []string{"nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamQueueOverflows: metricInfo{
-		Name: "nginx.http.upstream.queue.overflows",
+		Name:       "nginx.http.upstream.queue.overflows",
+		Attributes: []string{"nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamQueueUsage: metricInfo{
-		Name: "nginx.http.upstream.queue.usage",
+		Name:       "nginx.http.upstream.queue.usage",
+		Attributes: []string{"nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxHTTPUpstreamZombieCount: metricInfo{
-		Name: "nginx.http.upstream.zombie.count",
+		Name:       "nginx.http.upstream.zombie.count",
+		Attributes: []string{"nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxSlabPageFree: metricInfo{
-		Name: "nginx.slab.page.free",
+		Name:       "nginx.slab.page.free",
+		Attributes: []string{"nginx.zone.name"},
 	},
 	NginxSlabPageLimit: metricInfo{
-		Name: "nginx.slab.page.limit",
+		Name:       "nginx.slab.page.limit",
+		Attributes: []string{"nginx.zone.name"},
 	},
 	NginxSlabPageUsage: metricInfo{
-		Name: "nginx.slab.page.usage",
+		Name:       "nginx.slab.page.usage",
+		Attributes: []string{"nginx.zone.name"},
 	},
 	NginxSlabPageUtilization: metricInfo{
-		Name: "nginx.slab.page.utilization",
+		Name:       "nginx.slab.page.utilization",
+		Attributes: []string{"nginx.zone.name"},
 	},
 	NginxSlabSlotAllocations: metricInfo{
-		Name: "nginx.slab.slot.allocations",
+		Name:       "nginx.slab.slot.allocations",
+		Attributes: []string{"nginx.slab.slot.allocation.result", "nginx.slab.slot.limit", "nginx.zone.name"},
 	},
 	NginxSlabSlotFree: metricInfo{
-		Name: "nginx.slab.slot.free",
+		Name:       "nginx.slab.slot.free",
+		Attributes: []string{"nginx.slab.slot.limit", "nginx.zone.name"},
 	},
 	NginxSlabSlotUsage: metricInfo{
-		Name: "nginx.slab.slot.usage",
+		Name:       "nginx.slab.slot.usage",
+		Attributes: []string{"nginx.slab.slot.limit", "nginx.zone.name"},
 	},
 	NginxSslCertificateVerifyFailures: metricInfo{
-		Name: "nginx.ssl.certificate.verify_failures",
+		Name:       "nginx.ssl.certificate.verify_failures",
+		Attributes: []string{"nginx.ssl.verify_failure.reason"},
 	},
 	NginxSslHandshakes: metricInfo{
-		Name: "nginx.ssl.handshakes",
+		Name:       "nginx.ssl.handshakes",
+		Attributes: []string{"nginx.ssl.handshake.reason", "nginx.ssl.status"},
 	},
 	NginxStreamConnectionAccepted: metricInfo{
-		Name: "nginx.stream.connection.accepted",
+		Name:       "nginx.stream.connection.accepted",
+		Attributes: []string{"nginx.zone.name"},
 	},
 	NginxStreamConnectionDiscarded: metricInfo{
-		Name: "nginx.stream.connection.discarded",
+		Name:       "nginx.stream.connection.discarded",
+		Attributes: []string{"nginx.zone.name"},
 	},
 	NginxStreamConnectionProcessingCount: metricInfo{
-		Name: "nginx.stream.connection.processing.count",
+		Name:       "nginx.stream.connection.processing.count",
+		Attributes: []string{"nginx.zone.name"},
 	},
 	NginxStreamIo: metricInfo{
-		Name: "nginx.stream.io",
+		Name:       "nginx.stream.io",
+		Attributes: []string{"nginx.io.direction", "nginx.zone.name"},
 	},
 	NginxStreamSessionStatus: metricInfo{
-		Name: "nginx.stream.session.status",
+		Name:       "nginx.stream.session.status",
+		Attributes: []string{"nginx.status_range", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerConnectionCount: metricInfo{
-		Name: "nginx.stream.upstream.peer.connection.count",
+		Name:       "nginx.stream.upstream.peer.connection.count",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerConnectionTime: metricInfo{
-		Name: "nginx.stream.upstream.peer.connection.time",
+		Name:       "nginx.stream.upstream.peer.connection.time",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerConnections: metricInfo{
-		Name: "nginx.stream.upstream.peer.connections",
+		Name:       "nginx.stream.upstream.peer.connections",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerCount: metricInfo{
-		Name: "nginx.stream.upstream.peer.count",
+		Name:       "nginx.stream.upstream.peer.count",
+		Attributes: []string{"nginx.peer.state", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerFails: metricInfo{
-		Name: "nginx.stream.upstream.peer.fails",
+		Name:       "nginx.stream.upstream.peer.fails",
+		Attributes: []string{"nginx.peer.address", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerHealthChecks: metricInfo{
-		Name: "nginx.stream.upstream.peer.health_checks",
+		Name:       "nginx.stream.upstream.peer.health_checks",
+		Attributes: []string{"nginx.health_check", "nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerIo: metricInfo{
-		Name: "nginx.stream.upstream.peer.io",
+		Name:       "nginx.stream.upstream.peer.io",
+		Attributes: []string{"nginx.io.direction", "nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerResponseTime: metricInfo{
-		Name: "nginx.stream.upstream.peer.response.time",
+		Name:       "nginx.stream.upstream.peer.response.time",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerState: metricInfo{
-		Name: "nginx.stream.upstream.peer.state",
+		Name:       "nginx.stream.upstream.peer.state",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.peer.state", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerTtfbTime: metricInfo{
-		Name: "nginx.stream.upstream.peer.ttfb.time",
+		Name:       "nginx.stream.upstream.peer.ttfb.time",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamPeerUnavailables: metricInfo{
-		Name: "nginx.stream.upstream.peer.unavailables",
+		Name:       "nginx.stream.upstream.peer.unavailables",
+		Attributes: []string{"nginx.peer.address", "nginx.peer.name", "nginx.upstream.name", "nginx.zone.name"},
 	},
 	NginxStreamUpstreamZombieCount: metricInfo{
-		Name: "nginx.stream.upstream.zombie.count",
+		Name:       "nginx.stream.upstream.zombie.count",
+		Attributes: []string{"nginx.upstream.name", "nginx.zone.name"},
 	},
 }
 
@@ -665,6 +734,7 @@ type metricsInfo struct {
 	NginxHTTPUpstreamPeerIo                metricInfo
 	NginxHTTPUpstreamPeerRequests          metricInfo
 	NginxHTTPUpstreamPeerResponseTime      metricInfo
+	NginxHTTPUpstreamPeerResponseTimeHist  metricInfo
 	NginxHTTPUpstreamPeerResponses         metricInfo
 	NginxHTTPUpstreamPeerState             metricInfo
 	NginxHTTPUpstreamPeerUnavailables      metricInfo
@@ -701,36 +771,71 @@ type metricsInfo struct {
 }
 
 type metricInfo struct {
-	Name string
+	Name       string
+	Attributes []string
 }
 
 type metricNginxCacheBytesRead struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                  // data buffer for generated metric.
+	config        NginxCacheBytesReadMetricConfig // metric config provided by user.
+	capacity      int                             // max observed number of data points added to the metric.
+	aggDataPoints []int64                         // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.cache.bytes_read metric with initial data.
 func (m *metricNginxCacheBytesRead) init() {
 	m.data.SetName("nginx.cache.bytes_read")
 	m.data.SetDescription("The total number of bytes read from the cache or proxied server.")
-	m.data.SetUnit("bytes")
+	m.data.SetUnit("{bytes}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxCacheBytesRead) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxCacheNameAttributeValue string, nginxCacheOutcomeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxCacheBytesReadMetricAttributeKeyNginxCacheName) {
+		dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxCacheBytesReadMetricAttributeKeyNginxCacheOutcome) {
+		dp.Attributes().PutStr("nginx.cache.outcome", nginxCacheOutcomeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
-	dp.Attributes().PutStr("nginx.cache.outcome", nginxCacheOutcomeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -743,14 +848,20 @@ func (m *metricNginxCacheBytesRead) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxCacheBytesRead) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxCacheBytesRead(cfg MetricConfig) metricNginxCacheBytesRead {
+func newMetricNginxCacheBytesRead(cfg NginxCacheBytesReadMetricConfig) metricNginxCacheBytesRead {
 	m := metricNginxCacheBytesRead{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -759,29 +870,61 @@ func newMetricNginxCacheBytesRead(cfg MetricConfig) metricNginxCacheBytesRead {
 }
 
 type metricNginxCacheMemoryLimit struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                    // data buffer for generated metric.
+	config        NginxCacheMemoryLimitMetricConfig // metric config provided by user.
+	capacity      int                               // max observed number of data points added to the metric.
+	aggDataPoints []int64                           // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.cache.memory.limit metric with initial data.
 func (m *metricNginxCacheMemoryLimit) init() {
 	m.data.SetName("nginx.cache.memory.limit")
 	m.data.SetDescription("The limit on the maximum size of the cache specified in the configuration.")
-	m.data.SetUnit("bytes")
+	m.data.SetUnit("{bytes}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxCacheMemoryLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxCacheNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxCacheMemoryLimitMetricAttributeKeyNginxCacheName) {
+		dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -794,14 +937,20 @@ func (m *metricNginxCacheMemoryLimit) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxCacheMemoryLimit) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxCacheMemoryLimit(cfg MetricConfig) metricNginxCacheMemoryLimit {
+func newMetricNginxCacheMemoryLimit(cfg NginxCacheMemoryLimitMetricConfig) metricNginxCacheMemoryLimit {
 	m := metricNginxCacheMemoryLimit{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -810,29 +959,61 @@ func newMetricNginxCacheMemoryLimit(cfg MetricConfig) metricNginxCacheMemoryLimi
 }
 
 type metricNginxCacheMemoryUsage struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                    // data buffer for generated metric.
+	config        NginxCacheMemoryUsageMetricConfig // metric config provided by user.
+	capacity      int                               // max observed number of data points added to the metric.
+	aggDataPoints []int64                           // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.cache.memory.usage metric with initial data.
 func (m *metricNginxCacheMemoryUsage) init() {
 	m.data.SetName("nginx.cache.memory.usage")
 	m.data.SetDescription("The current size of the cache.")
-	m.data.SetUnit("bytes")
+	m.data.SetUnit("{bytes}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxCacheMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxCacheNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxCacheMemoryUsageMetricAttributeKeyNginxCacheName) {
+		dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -845,14 +1026,20 @@ func (m *metricNginxCacheMemoryUsage) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxCacheMemoryUsage) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxCacheMemoryUsage(cfg MetricConfig) metricNginxCacheMemoryUsage {
+func newMetricNginxCacheMemoryUsage(cfg NginxCacheMemoryUsageMetricConfig) metricNginxCacheMemoryUsage {
 	m := metricNginxCacheMemoryUsage{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -861,32 +1048,66 @@ func newMetricNginxCacheMemoryUsage(cfg MetricConfig) metricNginxCacheMemoryUsag
 }
 
 type metricNginxCacheResponses struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                  // data buffer for generated metric.
+	config        NginxCacheResponsesMetricConfig // metric config provided by user.
+	capacity      int                             // max observed number of data points added to the metric.
+	aggDataPoints []int64                         // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.cache.responses metric with initial data.
 func (m *metricNginxCacheResponses) init() {
 	m.data.SetName("nginx.cache.responses")
 	m.data.SetDescription("The total number of responses read from the cache or proxied server.")
-	m.data.SetUnit("responses")
+	m.data.SetUnit("{responses}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxCacheResponses) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxCacheNameAttributeValue string, nginxCacheOutcomeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxCacheResponsesMetricAttributeKeyNginxCacheName) {
+		dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxCacheResponsesMetricAttributeKeyNginxCacheOutcome) {
+		dp.Attributes().PutStr("nginx.cache.outcome", nginxCacheOutcomeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.cache.name", nginxCacheNameAttributeValue)
-	dp.Attributes().PutStr("nginx.cache.outcome", nginxCacheOutcomeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -899,14 +1120,20 @@ func (m *metricNginxCacheResponses) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxCacheResponses) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxCacheResponses(cfg MetricConfig) metricNginxCacheResponses {
+func newMetricNginxCacheResponses(cfg NginxCacheResponsesMetricConfig) metricNginxCacheResponses {
 	m := metricNginxCacheResponses{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -915,16 +1142,16 @@ func newMetricNginxCacheResponses(cfg MetricConfig) metricNginxCacheResponses {
 }
 
 type metricNginxConfigReloads struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data     pmetric.Metric                 // data buffer for generated metric.
+	config   NginxConfigReloadsMetricConfig // metric config provided by user.
+	capacity int                            // max observed number of data points added to the metric.
 }
 
 // init fills nginx.config.reloads metric with initial data.
 func (m *metricNginxConfigReloads) init() {
 	m.data.SetName("nginx.config.reloads")
 	m.data.SetDescription("The total number of NGINX config reloads.")
-	m.data.SetUnit("reloads")
+	m.data.SetUnit("{reloads}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -956,8 +1183,9 @@ func (m *metricNginxConfigReloads) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricNginxConfigReloads(cfg MetricConfig) metricNginxConfigReloads {
+func newMetricNginxConfigReloads(cfg NginxConfigReloadsMetricConfig) metricNginxConfigReloads {
 	m := metricNginxConfigReloads{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -966,29 +1194,61 @@ func newMetricNginxConfigReloads(cfg MetricConfig) metricNginxConfigReloads {
 }
 
 type metricNginxHTTPConnectionCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                       // data buffer for generated metric.
+	config        NginxHTTPConnectionCountMetricConfig // metric config provided by user.
+	capacity      int                                  // max observed number of data points added to the metric.
+	aggDataPoints []int64                              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.connection.count metric with initial data.
 func (m *metricNginxHTTPConnectionCount) init() {
 	m.data.SetName("nginx.http.connection.count")
 	m.data.SetDescription("The current number of connections.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPConnectionCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPConnectionCountMetricAttributeKeyNginxConnectionsOutcome) {
+		dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1001,14 +1261,20 @@ func (m *metricNginxHTTPConnectionCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPConnectionCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPConnectionCount(cfg MetricConfig) metricNginxHTTPConnectionCount {
+func newMetricNginxHTTPConnectionCount(cfg NginxHTTPConnectionCountMetricConfig) metricNginxHTTPConnectionCount {
 	m := metricNginxHTTPConnectionCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1017,31 +1283,63 @@ func newMetricNginxHTTPConnectionCount(cfg MetricConfig) metricNginxHTTPConnecti
 }
 
 type metricNginxHTTPConnections struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                   // data buffer for generated metric.
+	config        NginxHTTPConnectionsMetricConfig // metric config provided by user.
+	capacity      int                              // max observed number of data points added to the metric.
+	aggDataPoints []int64                          // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.connections metric with initial data.
 func (m *metricNginxHTTPConnections) init() {
 	m.data.SetName("nginx.http.connections")
 	m.data.SetDescription("The total number of connections.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPConnections) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPConnectionsMetricAttributeKeyNginxConnectionsOutcome) {
+		dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1054,14 +1352,20 @@ func (m *metricNginxHTTPConnections) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPConnections) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPConnections(cfg MetricConfig) metricNginxHTTPConnections {
+func newMetricNginxHTTPConnections(cfg NginxHTTPConnectionsMetricConfig) metricNginxHTTPConnections {
 	m := metricNginxHTTPConnections{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1070,32 +1374,66 @@ func newMetricNginxHTTPConnections(cfg MetricConfig) metricNginxHTTPConnections 
 }
 
 type metricNginxHTTPLimitConnRequests struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                         // data buffer for generated metric.
+	config        NginxHTTPLimitConnRequestsMetricConfig // metric config provided by user.
+	capacity      int                                    // max observed number of data points added to the metric.
+	aggDataPoints []int64                                // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.limit_conn.requests metric with initial data.
 func (m *metricNginxHTTPLimitConnRequests) init() {
 	m.data.SetName("nginx.http.limit_conn.requests")
 	m.data.SetDescription("The total number of connections to an endpoint with a limit_conn directive.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPLimitConnRequests) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxLimitConnOutcomeAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPLimitConnRequestsMetricAttributeKeyNginxLimitConnOutcome) {
+		dp.Attributes().PutStr("nginx.limit_conn.outcome", nginxLimitConnOutcomeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPLimitConnRequestsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.limit_conn.outcome", nginxLimitConnOutcomeAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1108,14 +1446,20 @@ func (m *metricNginxHTTPLimitConnRequests) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPLimitConnRequests) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPLimitConnRequests(cfg MetricConfig) metricNginxHTTPLimitConnRequests {
+func newMetricNginxHTTPLimitConnRequests(cfg NginxHTTPLimitConnRequestsMetricConfig) metricNginxHTTPLimitConnRequests {
 	m := metricNginxHTTPLimitConnRequests{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1124,32 +1468,66 @@ func newMetricNginxHTTPLimitConnRequests(cfg MetricConfig) metricNginxHTTPLimitC
 }
 
 type metricNginxHTTPLimitReqRequests struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                        // data buffer for generated metric.
+	config        NginxHTTPLimitReqRequestsMetricConfig // metric config provided by user.
+	capacity      int                                   // max observed number of data points added to the metric.
+	aggDataPoints []int64                               // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.limit_req.requests metric with initial data.
 func (m *metricNginxHTTPLimitReqRequests) init() {
 	m.data.SetName("nginx.http.limit_req.requests")
 	m.data.SetDescription("The total number of requests to an endpoint with a limit_req directive.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPLimitReqRequests) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxLimitReqOutcomeAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPLimitReqRequestsMetricAttributeKeyNginxLimitReqOutcome) {
+		dp.Attributes().PutStr("nginx.limit_req.outcome", nginxLimitReqOutcomeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPLimitReqRequestsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.limit_req.outcome", nginxLimitReqOutcomeAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1162,14 +1540,20 @@ func (m *metricNginxHTTPLimitReqRequests) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPLimitReqRequests) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPLimitReqRequests(cfg MetricConfig) metricNginxHTTPLimitReqRequests {
+func newMetricNginxHTTPLimitReqRequests(cfg NginxHTTPLimitReqRequestsMetricConfig) metricNginxHTTPLimitReqRequests {
 	m := metricNginxHTTPLimitReqRequests{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1178,30 +1562,64 @@ func newMetricNginxHTTPLimitReqRequests(cfg MetricConfig) metricNginxHTTPLimitRe
 }
 
 type metricNginxHTTPRequestCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                    // data buffer for generated metric.
+	config        NginxHTTPRequestCountMetricConfig // metric config provided by user.
+	capacity      int                               // max observed number of data points added to the metric.
+	aggDataPoints []int64                           // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.request.count metric with initial data.
 func (m *metricNginxHTTPRequestCount) init() {
 	m.data.SetName("nginx.http.request.count")
 	m.data.SetDescription("The total number of client requests received, since the last collection interval.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPRequestCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestCountMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1214,14 +1632,20 @@ func (m *metricNginxHTTPRequestCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPRequestCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPRequestCount(cfg MetricConfig) metricNginxHTTPRequestCount {
+func newMetricNginxHTTPRequestCount(cfg NginxHTTPRequestCountMetricConfig) metricNginxHTTPRequestCount {
 	m := metricNginxHTTPRequestCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1230,32 +1654,66 @@ func newMetricNginxHTTPRequestCount(cfg MetricConfig) metricNginxHTTPRequestCoun
 }
 
 type metricNginxHTTPRequestDiscarded struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                        // data buffer for generated metric.
+	config        NginxHTTPRequestDiscardedMetricConfig // metric config provided by user.
+	capacity      int                                   // max observed number of data points added to the metric.
+	aggDataPoints []int64                               // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.request.discarded metric with initial data.
 func (m *metricNginxHTTPRequestDiscarded) init() {
 	m.data.SetName("nginx.http.request.discarded")
 	m.data.SetDescription("The total number of requests completed without sending a response.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPRequestDiscarded) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestDiscardedMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestDiscardedMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1268,14 +1726,20 @@ func (m *metricNginxHTTPRequestDiscarded) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPRequestDiscarded) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPRequestDiscarded(cfg MetricConfig) metricNginxHTTPRequestDiscarded {
+func newMetricNginxHTTPRequestDiscarded(cfg NginxHTTPRequestDiscardedMetricConfig) metricNginxHTTPRequestDiscarded {
 	m := metricNginxHTTPRequestDiscarded{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1284,33 +1748,69 @@ func newMetricNginxHTTPRequestDiscarded(cfg MetricConfig) metricNginxHTTPRequest
 }
 
 type metricNginxHTTPRequestIo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        NginxHTTPRequestIoMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.request.io metric with initial data.
 func (m *metricNginxHTTPRequestIo) init() {
 	m.data.SetName("nginx.http.request.io")
 	m.data.SetDescription("The total number of HTTP byte IO.")
-	m.data.SetUnit("bytes")
+	m.data.SetUnit("{bytes}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPRequestIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxIoDirectionAttributeValue string, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestIoMetricAttributeKeyNginxIoDirection) {
+		dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestIoMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestIoMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1323,14 +1823,20 @@ func (m *metricNginxHTTPRequestIo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPRequestIo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPRequestIo(cfg MetricConfig) metricNginxHTTPRequestIo {
+func newMetricNginxHTTPRequestIo(cfg NginxHTTPRequestIoMetricConfig) metricNginxHTTPRequestIo {
 	m := metricNginxHTTPRequestIo{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1339,30 +1845,64 @@ func newMetricNginxHTTPRequestIo(cfg MetricConfig) metricNginxHTTPRequestIo {
 }
 
 type metricNginxHTTPRequestProcessingCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                              // data buffer for generated metric.
+	config        NginxHTTPRequestProcessingCountMetricConfig // metric config provided by user.
+	capacity      int                                         // max observed number of data points added to the metric.
+	aggDataPoints []int64                                     // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.request.processing.count metric with initial data.
 func (m *metricNginxHTTPRequestProcessingCount) init() {
 	m.data.SetName("nginx.http.request.processing.count")
 	m.data.SetDescription("The number of client requests that are currently being processed.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPRequestProcessingCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestProcessingCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestProcessingCountMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1375,14 +1915,20 @@ func (m *metricNginxHTTPRequestProcessingCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPRequestProcessingCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPRequestProcessingCount(cfg MetricConfig) metricNginxHTTPRequestProcessingCount {
+func newMetricNginxHTTPRequestProcessingCount(cfg NginxHTTPRequestProcessingCountMetricConfig) metricNginxHTTPRequestProcessingCount {
 	m := metricNginxHTTPRequestProcessingCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1391,32 +1937,66 @@ func newMetricNginxHTTPRequestProcessingCount(cfg MetricConfig) metricNginxHTTPR
 }
 
 type metricNginxHTTPRequests struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                // data buffer for generated metric.
+	config        NginxHTTPRequestsMetricConfig // metric config provided by user.
+	capacity      int                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.requests metric with initial data.
 func (m *metricNginxHTTPRequests) init() {
 	m.data.SetName("nginx.http.requests")
 	m.data.SetDescription("The total number of client requests received, since NGINX was last started or reloaded.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPRequests) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPRequestsMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1429,14 +2009,20 @@ func (m *metricNginxHTTPRequests) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPRequests) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPRequests(cfg MetricConfig) metricNginxHTTPRequests {
+func newMetricNginxHTTPRequests(cfg NginxHTTPRequestsMetricConfig) metricNginxHTTPRequests {
 	m := metricNginxHTTPRequests{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1445,31 +2031,67 @@ func newMetricNginxHTTPRequests(cfg MetricConfig) metricNginxHTTPRequests {
 }
 
 type metricNginxHTTPResponseCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                     // data buffer for generated metric.
+	config        NginxHTTPResponseCountMetricConfig // metric config provided by user.
+	capacity      int                                // max observed number of data points added to the metric.
+	aggDataPoints []int64                            // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.response.count metric with initial data.
 func (m *metricNginxHTTPResponseCount) init() {
 	m.data.SetName("nginx.http.response.count")
 	m.data.SetDescription("The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.")
-	m.data.SetUnit("responses")
+	m.data.SetUnit("{responses}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPResponseCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxStatusRangeAttributeValue string, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponseCountMetricAttributeKeyNginxStatusRange) {
+		dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponseCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponseCountMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1482,14 +2104,20 @@ func (m *metricNginxHTTPResponseCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPResponseCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPResponseCount(cfg MetricConfig) metricNginxHTTPResponseCount {
+func newMetricNginxHTTPResponseCount(cfg NginxHTTPResponseCountMetricConfig) metricNginxHTTPResponseCount {
 	m := metricNginxHTTPResponseCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1498,33 +2126,69 @@ func newMetricNginxHTTPResponseCount(cfg MetricConfig) metricNginxHTTPResponseCo
 }
 
 type metricNginxHTTPResponseStatus struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                      // data buffer for generated metric.
+	config        NginxHTTPResponseStatusMetricConfig // metric config provided by user.
+	capacity      int                                 // max observed number of data points added to the metric.
+	aggDataPoints []int64                             // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.response.status metric with initial data.
 func (m *metricNginxHTTPResponseStatus) init() {
 	m.data.SetName("nginx.http.response.status")
 	m.data.SetDescription("The total number of responses since NGINX was last started or reloaded, grouped by status code range.")
-	m.data.SetUnit("responses")
+	m.data.SetUnit("{responses}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPResponseStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxStatusRangeAttributeValue string, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponseStatusMetricAttributeKeyNginxStatusRange) {
+		dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponseStatusMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponseStatusMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1537,14 +2201,20 @@ func (m *metricNginxHTTPResponseStatus) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPResponseStatus) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPResponseStatus(cfg MetricConfig) metricNginxHTTPResponseStatus {
+func newMetricNginxHTTPResponseStatus(cfg NginxHTTPResponseStatusMetricConfig) metricNginxHTTPResponseStatus {
 	m := metricNginxHTTPResponseStatus{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1553,32 +2223,66 @@ func newMetricNginxHTTPResponseStatus(cfg MetricConfig) metricNginxHTTPResponseS
 }
 
 type metricNginxHTTPResponses struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        NginxHTTPResponsesMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.responses metric with initial data.
 func (m *metricNginxHTTPResponses) init() {
 	m.data.SetName("nginx.http.responses")
 	m.data.SetDescription("The total number of HTTP responses sent to clients.")
-	m.data.SetUnit("responses")
+	m.data.SetUnit("{responses}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPResponses) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponsesMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPResponsesMetricAttributeKeyNginxZoneType) {
+		dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1591,14 +2295,20 @@ func (m *metricNginxHTTPResponses) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPResponses) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPResponses(cfg MetricConfig) metricNginxHTTPResponses {
+func newMetricNginxHTTPResponses(cfg NginxHTTPResponsesMetricConfig) metricNginxHTTPResponses {
 	m := metricNginxHTTPResponses{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1607,30 +2317,64 @@ func newMetricNginxHTTPResponses(cfg MetricConfig) metricNginxHTTPResponses {
 }
 
 type metricNginxHTTPUpstreamKeepaliveCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                              // data buffer for generated metric.
+	config        NginxHTTPUpstreamKeepaliveCountMetricConfig // metric config provided by user.
+	capacity      int                                         // max observed number of data points added to the metric.
+	aggDataPoints []int64                                     // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.keepalive.count metric with initial data.
 func (m *metricNginxHTTPUpstreamKeepaliveCount) init() {
 	m.data.SetName("nginx.http.upstream.keepalive.count")
 	m.data.SetDescription("The current number of idle keepalive connections per HTTP upstream.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamKeepaliveCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamKeepaliveCountMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamKeepaliveCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1643,14 +2387,20 @@ func (m *metricNginxHTTPUpstreamKeepaliveCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamKeepaliveCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamKeepaliveCount(cfg MetricConfig) metricNginxHTTPUpstreamKeepaliveCount {
+func newMetricNginxHTTPUpstreamKeepaliveCount(cfg NginxHTTPUpstreamKeepaliveCountMetricConfig) metricNginxHTTPUpstreamKeepaliveCount {
 	m := metricNginxHTTPUpstreamKeepaliveCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1659,32 +2409,70 @@ func newMetricNginxHTTPUpstreamKeepaliveCount(cfg MetricConfig) metricNginxHTTPU
 }
 
 type metricNginxHTTPUpstreamPeerConnectionCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                   // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerConnectionCountMetricConfig // metric config provided by user.
+	capacity      int                                              // max observed number of data points added to the metric.
+	aggDataPoints []int64                                          // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.connection.count metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerConnectionCount) init() {
 	m.data.SetName("nginx.http.upstream.peer.connection.count")
 	m.data.SetDescription("The average number of active connections per HTTP upstream peer.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerConnectionCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1697,14 +2485,20 @@ func (m *metricNginxHTTPUpstreamPeerConnectionCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerConnectionCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerConnectionCount(cfg MetricConfig) metricNginxHTTPUpstreamPeerConnectionCount {
+func newMetricNginxHTTPUpstreamPeerConnectionCount(cfg NginxHTTPUpstreamPeerConnectionCountMetricConfig) metricNginxHTTPUpstreamPeerConnectionCount {
 	m := metricNginxHTTPUpstreamPeerConnectionCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1713,31 +2507,67 @@ func newMetricNginxHTTPUpstreamPeerConnectionCount(cfg MetricConfig) metricNginx
 }
 
 type metricNginxHTTPUpstreamPeerCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                         // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerCountMetricConfig // metric config provided by user.
+	capacity      int                                    // max observed number of data points added to the metric.
+	aggDataPoints []int64                                // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.count metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerCount) init() {
 	m.data.SetName("nginx.http.upstream.peer.count")
 	m.data.SetDescription("The current count of peers on the HTTP upstream grouped by state.")
-	m.data.SetUnit("peers")
+	m.data.SetUnit("{peers}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerStateAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxPeerState) {
+		dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1750,14 +2580,20 @@ func (m *metricNginxHTTPUpstreamPeerCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerCount(cfg MetricConfig) metricNginxHTTPUpstreamPeerCount {
+func newMetricNginxHTTPUpstreamPeerCount(cfg NginxHTTPUpstreamPeerCountMetricConfig) metricNginxHTTPUpstreamPeerCount {
 	m := metricNginxHTTPUpstreamPeerCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1766,34 +2602,72 @@ func newMetricNginxHTTPUpstreamPeerCount(cfg MetricConfig) metricNginxHTTPUpstre
 }
 
 type metricNginxHTTPUpstreamPeerFails struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                         // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerFailsMetricConfig // metric config provided by user.
+	capacity      int                                    // max observed number of data points added to the metric.
+	aggDataPoints []int64                                // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.fails metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerFails) init() {
 	m.data.SetName("nginx.http.upstream.peer.fails")
 	m.data.SetDescription("The total number of unsuccessful attempts to communicate with the HTTP upstream peer.")
-	m.data.SetUnit("attempts")
+	m.data.SetUnit("{attempts}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerFails) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1806,14 +2680,20 @@ func (m *metricNginxHTTPUpstreamPeerFails) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerFails) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerFails(cfg MetricConfig) metricNginxHTTPUpstreamPeerFails {
+func newMetricNginxHTTPUpstreamPeerFails(cfg NginxHTTPUpstreamPeerFailsMetricConfig) metricNginxHTTPUpstreamPeerFails {
 	m := metricNginxHTTPUpstreamPeerFails{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1822,9 +2702,10 @@ func newMetricNginxHTTPUpstreamPeerFails(cfg MetricConfig) metricNginxHTTPUpstre
 }
 
 type metricNginxHTTPUpstreamPeerHeaderTime struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                              // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerHeaderTimeMetricConfig // metric config provided by user.
+	capacity      int                                         // max observed number of data points added to the metric.
+	aggDataPoints []int64                                     // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.header.time metric with initial data.
@@ -1834,20 +2715,57 @@ func (m *metricNginxHTTPUpstreamPeerHeaderTime) init() {
 	m.data.SetUnit("ms")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerHeaderTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1860,14 +2778,20 @@ func (m *metricNginxHTTPUpstreamPeerHeaderTime) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerHeaderTime) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerHeaderTime(cfg MetricConfig) metricNginxHTTPUpstreamPeerHeaderTime {
+func newMetricNginxHTTPUpstreamPeerHeaderTime(cfg NginxHTTPUpstreamPeerHeaderTimeMetricConfig) metricNginxHTTPUpstreamPeerHeaderTime {
 	m := metricNginxHTTPUpstreamPeerHeaderTime{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1876,35 +2800,75 @@ func newMetricNginxHTTPUpstreamPeerHeaderTime(cfg MetricConfig) metricNginxHTTPU
 }
 
 type metricNginxHTTPUpstreamPeerHealthChecks struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerHealthChecksMetricConfig // metric config provided by user.
+	capacity      int                                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.health_checks metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerHealthChecks) init() {
 	m.data.SetName("nginx.http.upstream.peer.health_checks")
 	m.data.SetDescription("The total number of health check requests made to a HTTP upstream peer.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerHealthChecks) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxHealthCheckAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxHealthCheck) {
+		dp.Attributes().PutStr("nginx.health_check", nginxHealthCheckAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.health_check", nginxHealthCheckAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1917,14 +2881,20 @@ func (m *metricNginxHTTPUpstreamPeerHealthChecks) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerHealthChecks) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerHealthChecks(cfg MetricConfig) metricNginxHTTPUpstreamPeerHealthChecks {
+func newMetricNginxHTTPUpstreamPeerHealthChecks(cfg NginxHTTPUpstreamPeerHealthChecksMetricConfig) metricNginxHTTPUpstreamPeerHealthChecks {
 	m := metricNginxHTTPUpstreamPeerHealthChecks{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1933,35 +2903,75 @@ func newMetricNginxHTTPUpstreamPeerHealthChecks(cfg MetricConfig) metricNginxHTT
 }
 
 type metricNginxHTTPUpstreamPeerIo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                      // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerIoMetricConfig // metric config provided by user.
+	capacity      int                                 // max observed number of data points added to the metric.
+	aggDataPoints []int64                             // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.io metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerIo) init() {
 	m.data.SetName("nginx.http.upstream.peer.io")
 	m.data.SetDescription("The total number of byte IO per HTTP upstream peer.")
-	m.data.SetUnit("bytes")
+	m.data.SetUnit("{bytes}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxIoDirectionAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxIoDirection) {
+		dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1974,14 +2984,20 @@ func (m *metricNginxHTTPUpstreamPeerIo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerIo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerIo(cfg MetricConfig) metricNginxHTTPUpstreamPeerIo {
+func newMetricNginxHTTPUpstreamPeerIo(cfg NginxHTTPUpstreamPeerIoMetricConfig) metricNginxHTTPUpstreamPeerIo {
 	m := metricNginxHTTPUpstreamPeerIo{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1990,34 +3006,72 @@ func newMetricNginxHTTPUpstreamPeerIo(cfg MetricConfig) metricNginxHTTPUpstreamP
 }
 
 type metricNginxHTTPUpstreamPeerRequests struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                            // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerRequestsMetricConfig // metric config provided by user.
+	capacity      int                                       // max observed number of data points added to the metric.
+	aggDataPoints []int64                                   // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.requests metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerRequests) init() {
 	m.data.SetName("nginx.http.upstream.peer.requests")
 	m.data.SetDescription("The total number of client requests forwarded to the HTTP upstream peer.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerRequests) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2030,14 +3084,20 @@ func (m *metricNginxHTTPUpstreamPeerRequests) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerRequests) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerRequests(cfg MetricConfig) metricNginxHTTPUpstreamPeerRequests {
+func newMetricNginxHTTPUpstreamPeerRequests(cfg NginxHTTPUpstreamPeerRequestsMetricConfig) metricNginxHTTPUpstreamPeerRequests {
 	m := metricNginxHTTPUpstreamPeerRequests{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2046,9 +3106,10 @@ func newMetricNginxHTTPUpstreamPeerRequests(cfg MetricConfig) metricNginxHTTPUps
 }
 
 type metricNginxHTTPUpstreamPeerResponseTime struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerResponseTimeMetricConfig // metric config provided by user.
+	capacity      int                                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.response.time metric with initial data.
@@ -2058,20 +3119,57 @@ func (m *metricNginxHTTPUpstreamPeerResponseTime) init() {
 	m.data.SetUnit("ms")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerResponseTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2084,14 +3182,118 @@ func (m *metricNginxHTTPUpstreamPeerResponseTime) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerResponseTime) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerResponseTime(cfg MetricConfig) metricNginxHTTPUpstreamPeerResponseTime {
+func newMetricNginxHTTPUpstreamPeerResponseTime(cfg NginxHTTPUpstreamPeerResponseTimeMetricConfig) metricNginxHTTPUpstreamPeerResponseTime {
 	m := metricNginxHTTPUpstreamPeerResponseTime{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricNginxHTTPUpstreamPeerResponseTimeHist struct {
+	data          pmetric.Metric                                    // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerResponseTimeHistMetricConfig // metric config provided by user.
+	capacity      int                                               // max observed number of data points added to the metric.
+	aggDataPoints []int64                                           // slice containing number of aggregated datapoints at each index
+}
+
+// init fills nginx.http.upstream.peer.response_time_hist metric with initial data.
+func (m *metricNginxHTTPUpstreamPeerResponseTimeHist) init() {
+	m.data.SetName("nginx.http.upstream.peer.response_time_hist")
+	m.data.SetDescription("Histogram of upstream response times collected per upstream server.")
+	m.data.SetUnit("ms")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
+}
+
+func (m *metricNginxHTTPUpstreamPeerResponseTimeHist) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+
+	dp := pmetric.NewNumberDataPoint()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
+	dp.SetIntValue(val)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxHTTPUpstreamPeerResponseTimeHist) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxHTTPUpstreamPeerResponseTimeHist) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxHTTPUpstreamPeerResponseTimeHist(cfg NginxHTTPUpstreamPeerResponseTimeHistMetricConfig) metricNginxHTTPUpstreamPeerResponseTimeHist {
+	m := metricNginxHTTPUpstreamPeerResponseTimeHist{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2100,35 +3302,75 @@ func newMetricNginxHTTPUpstreamPeerResponseTime(cfg MetricConfig) metricNginxHTT
 }
 
 type metricNginxHTTPUpstreamPeerResponses struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                             // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerResponsesMetricConfig // metric config provided by user.
+	capacity      int                                        // max observed number of data points added to the metric.
+	aggDataPoints []int64                                    // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.responses metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerResponses) init() {
 	m.data.SetName("nginx.http.upstream.peer.responses")
 	m.data.SetDescription("The total number of responses obtained from the HTTP upstream peer grouped by status range.")
-	m.data.SetUnit("responses")
+	m.data.SetUnit("{responses}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerResponses) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxStatusRangeAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxStatusRange) {
+		dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2141,14 +3383,20 @@ func (m *metricNginxHTTPUpstreamPeerResponses) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerResponses) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerResponses(cfg MetricConfig) metricNginxHTTPUpstreamPeerResponses {
+func newMetricNginxHTTPUpstreamPeerResponses(cfg NginxHTTPUpstreamPeerResponsesMetricConfig) metricNginxHTTPUpstreamPeerResponses {
 	m := metricNginxHTTPUpstreamPeerResponses{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2157,33 +3405,73 @@ func newMetricNginxHTTPUpstreamPeerResponses(cfg MetricConfig) metricNginxHTTPUp
 }
 
 type metricNginxHTTPUpstreamPeerState struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                         // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerStateMetricConfig // metric config provided by user.
+	capacity      int                                    // max observed number of data points added to the metric.
+	aggDataPoints []int64                                // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.state metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerState) init() {
 	m.data.SetName("nginx.http.upstream.peer.state")
 	m.data.SetDescription("Current state of an upstream peer in deployment.")
-	m.data.SetUnit("is_deployed")
+	m.data.SetUnit("{is_deployed}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerState) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxPeerStateAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerState) {
+		dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2196,14 +3484,20 @@ func (m *metricNginxHTTPUpstreamPeerState) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerState) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerState(cfg MetricConfig) metricNginxHTTPUpstreamPeerState {
+func newMetricNginxHTTPUpstreamPeerState(cfg NginxHTTPUpstreamPeerStateMetricConfig) metricNginxHTTPUpstreamPeerState {
 	m := metricNginxHTTPUpstreamPeerState{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2212,34 +3506,72 @@ func newMetricNginxHTTPUpstreamPeerState(cfg MetricConfig) metricNginxHTTPUpstre
 }
 
 type metricNginxHTTPUpstreamPeerUnavailables struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                // data buffer for generated metric.
+	config        NginxHTTPUpstreamPeerUnavailablesMetricConfig // metric config provided by user.
+	capacity      int                                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.peer.unavailables metric with initial data.
 func (m *metricNginxHTTPUpstreamPeerUnavailables) init() {
 	m.data.SetName("nginx.http.upstream.peer.unavailables")
 	m.data.SetDescription("The total number of times the server became unavailable for client requests ('unavail').")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamPeerUnavailables) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2252,14 +3584,20 @@ func (m *metricNginxHTTPUpstreamPeerUnavailables) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerUnavailables) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerUnavailables(cfg MetricConfig) metricNginxHTTPUpstreamPeerUnavailables {
+func newMetricNginxHTTPUpstreamPeerUnavailables(cfg NginxHTTPUpstreamPeerUnavailablesMetricConfig) metricNginxHTTPUpstreamPeerUnavailables {
 	m := metricNginxHTTPUpstreamPeerUnavailables{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2268,30 +3606,64 @@ func newMetricNginxHTTPUpstreamPeerUnavailables(cfg MetricConfig) metricNginxHTT
 }
 
 type metricNginxHTTPUpstreamQueueLimit struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                          // data buffer for generated metric.
+	config        NginxHTTPUpstreamQueueLimitMetricConfig // metric config provided by user.
+	capacity      int                                     // max observed number of data points added to the metric.
+	aggDataPoints []int64                                 // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.queue.limit metric with initial data.
 func (m *metricNginxHTTPUpstreamQueueLimit) init() {
 	m.data.SetName("nginx.http.upstream.queue.limit")
 	m.data.SetDescription("The maximum number of requests that can be in the queue at the same time.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamQueueLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamQueueLimitMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamQueueLimitMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2304,14 +3676,20 @@ func (m *metricNginxHTTPUpstreamQueueLimit) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamQueueLimit) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamQueueLimit(cfg MetricConfig) metricNginxHTTPUpstreamQueueLimit {
+func newMetricNginxHTTPUpstreamQueueLimit(cfg NginxHTTPUpstreamQueueLimitMetricConfig) metricNginxHTTPUpstreamQueueLimit {
 	m := metricNginxHTTPUpstreamQueueLimit{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2320,32 +3698,66 @@ func newMetricNginxHTTPUpstreamQueueLimit(cfg MetricConfig) metricNginxHTTPUpstr
 }
 
 type metricNginxHTTPUpstreamQueueOverflows struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                              // data buffer for generated metric.
+	config        NginxHTTPUpstreamQueueOverflowsMetricConfig // metric config provided by user.
+	capacity      int                                         // max observed number of data points added to the metric.
+	aggDataPoints []int64                                     // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.queue.overflows metric with initial data.
 func (m *metricNginxHTTPUpstreamQueueOverflows) init() {
 	m.data.SetName("nginx.http.upstream.queue.overflows")
 	m.data.SetDescription("The total number of requests rejected due to the queue overflow.")
-	m.data.SetUnit("responses")
+	m.data.SetUnit("{responses}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamQueueOverflows) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamQueueOverflowsMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamQueueOverflowsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2358,14 +3770,20 @@ func (m *metricNginxHTTPUpstreamQueueOverflows) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamQueueOverflows) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamQueueOverflows(cfg MetricConfig) metricNginxHTTPUpstreamQueueOverflows {
+func newMetricNginxHTTPUpstreamQueueOverflows(cfg NginxHTTPUpstreamQueueOverflowsMetricConfig) metricNginxHTTPUpstreamQueueOverflows {
 	m := metricNginxHTTPUpstreamQueueOverflows{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2374,30 +3792,64 @@ func newMetricNginxHTTPUpstreamQueueOverflows(cfg MetricConfig) metricNginxHTTPU
 }
 
 type metricNginxHTTPUpstreamQueueUsage struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                          // data buffer for generated metric.
+	config        NginxHTTPUpstreamQueueUsageMetricConfig // metric config provided by user.
+	capacity      int                                     // max observed number of data points added to the metric.
+	aggDataPoints []int64                                 // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.queue.usage metric with initial data.
 func (m *metricNginxHTTPUpstreamQueueUsage) init() {
 	m.data.SetName("nginx.http.upstream.queue.usage")
 	m.data.SetDescription("The current number of requests in the queue.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamQueueUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamQueueUsageMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamQueueUsageMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2410,14 +3862,20 @@ func (m *metricNginxHTTPUpstreamQueueUsage) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamQueueUsage) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamQueueUsage(cfg MetricConfig) metricNginxHTTPUpstreamQueueUsage {
+func newMetricNginxHTTPUpstreamQueueUsage(cfg NginxHTTPUpstreamQueueUsageMetricConfig) metricNginxHTTPUpstreamQueueUsage {
 	m := metricNginxHTTPUpstreamQueueUsage{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2426,30 +3884,64 @@ func newMetricNginxHTTPUpstreamQueueUsage(cfg MetricConfig) metricNginxHTTPUpstr
 }
 
 type metricNginxHTTPUpstreamZombieCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                           // data buffer for generated metric.
+	config        NginxHTTPUpstreamZombieCountMetricConfig // metric config provided by user.
+	capacity      int                                      // max observed number of data points added to the metric.
+	aggDataPoints []int64                                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.http.upstream.zombie.count metric with initial data.
 func (m *metricNginxHTTPUpstreamZombieCount) init() {
 	m.data.SetName("nginx.http.upstream.zombie.count")
 	m.data.SetDescription("The current number of upstream peers removed from the group but still processing active client requests.")
-	m.data.SetUnit("is_deployed")
+	m.data.SetUnit("{is_deployed}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxHTTPUpstreamZombieCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamZombieCountMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxHTTPUpstreamZombieCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2462,14 +3954,20 @@ func (m *metricNginxHTTPUpstreamZombieCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamZombieCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxHTTPUpstreamZombieCount(cfg MetricConfig) metricNginxHTTPUpstreamZombieCount {
+func newMetricNginxHTTPUpstreamZombieCount(cfg NginxHTTPUpstreamZombieCountMetricConfig) metricNginxHTTPUpstreamZombieCount {
 	m := metricNginxHTTPUpstreamZombieCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2478,29 +3976,61 @@ func newMetricNginxHTTPUpstreamZombieCount(cfg MetricConfig) metricNginxHTTPUpst
 }
 
 type metricNginxSlabPageFree struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                // data buffer for generated metric.
+	config        NginxSlabPageFreeMetricConfig // metric config provided by user.
+	capacity      int                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.slab.page.free metric with initial data.
 func (m *metricNginxSlabPageFree) init() {
 	m.data.SetName("nginx.slab.page.free")
 	m.data.SetDescription("The current number of free memory pages.")
-	m.data.SetUnit("pages")
+	m.data.SetUnit("{pages}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSlabPageFree) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabPageFreeMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2513,14 +4043,20 @@ func (m *metricNginxSlabPageFree) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSlabPageFree) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSlabPageFree(cfg MetricConfig) metricNginxSlabPageFree {
+func newMetricNginxSlabPageFree(cfg NginxSlabPageFreeMetricConfig) metricNginxSlabPageFree {
 	m := metricNginxSlabPageFree{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2529,29 +4065,61 @@ func newMetricNginxSlabPageFree(cfg MetricConfig) metricNginxSlabPageFree {
 }
 
 type metricNginxSlabPageLimit struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        NginxSlabPageLimitMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.slab.page.limit metric with initial data.
 func (m *metricNginxSlabPageLimit) init() {
 	m.data.SetName("nginx.slab.page.limit")
 	m.data.SetDescription("The total number of memory pages (free and used).")
-	m.data.SetUnit("pages")
+	m.data.SetUnit("{pages}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSlabPageLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabPageLimitMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2564,14 +4132,20 @@ func (m *metricNginxSlabPageLimit) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSlabPageLimit) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSlabPageLimit(cfg MetricConfig) metricNginxSlabPageLimit {
+func newMetricNginxSlabPageLimit(cfg NginxSlabPageLimitMetricConfig) metricNginxSlabPageLimit {
 	m := metricNginxSlabPageLimit{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2580,29 +4154,61 @@ func newMetricNginxSlabPageLimit(cfg MetricConfig) metricNginxSlabPageLimit {
 }
 
 type metricNginxSlabPageUsage struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        NginxSlabPageUsageMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.slab.page.usage metric with initial data.
 func (m *metricNginxSlabPageUsage) init() {
 	m.data.SetName("nginx.slab.page.usage")
 	m.data.SetDescription("The current number of used memory pages.")
-	m.data.SetUnit("pages")
+	m.data.SetUnit("{pages}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSlabPageUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabPageUsageMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2615,14 +4221,20 @@ func (m *metricNginxSlabPageUsage) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSlabPageUsage) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSlabPageUsage(cfg MetricConfig) metricNginxSlabPageUsage {
+func newMetricNginxSlabPageUsage(cfg NginxSlabPageUsageMetricConfig) metricNginxSlabPageUsage {
 	m := metricNginxSlabPageUsage{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2631,29 +4243,61 @@ func newMetricNginxSlabPageUsage(cfg MetricConfig) metricNginxSlabPageUsage {
 }
 
 type metricNginxSlabPageUtilization struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                       // data buffer for generated metric.
+	config        NginxSlabPageUtilizationMetricConfig // metric config provided by user.
+	capacity      int                                  // max observed number of data points added to the metric.
+	aggDataPoints []int64                              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.slab.page.utilization metric with initial data.
 func (m *metricNginxSlabPageUtilization) init() {
 	m.data.SetName("nginx.slab.page.utilization")
 	m.data.SetDescription("The current percentage of used memory pages.")
-	m.data.SetUnit("pages")
+	m.data.SetUnit("{pages}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSlabPageUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabPageUtilizationMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2666,14 +4310,20 @@ func (m *metricNginxSlabPageUtilization) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSlabPageUtilization) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSlabPageUtilization(cfg MetricConfig) metricNginxSlabPageUtilization {
+func newMetricNginxSlabPageUtilization(cfg NginxSlabPageUtilizationMetricConfig) metricNginxSlabPageUtilization {
 	m := metricNginxSlabPageUtilization{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2682,33 +4332,69 @@ func newMetricNginxSlabPageUtilization(cfg MetricConfig) metricNginxSlabPageUtil
 }
 
 type metricNginxSlabSlotAllocations struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                       // data buffer for generated metric.
+	config        NginxSlabSlotAllocationsMetricConfig // metric config provided by user.
+	capacity      int                                  // max observed number of data points added to the metric.
+	aggDataPoints []int64                              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.slab.slot.allocations metric with initial data.
 func (m *metricNginxSlabSlotAllocations) init() {
 	m.data.SetName("nginx.slab.slot.allocations")
 	m.data.SetDescription("The number of attempts to allocate memory of specified size.")
-	m.data.SetUnit("allocations")
+	m.data.SetUnit("{allocations}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSlabSlotAllocations) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxSlabSlotAllocationResultAttributeValue string, nginxSlabSlotLimitAttributeValue int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabSlotAllocationsMetricAttributeKeyNginxSlabSlotAllocationResult) {
+		dp.Attributes().PutStr("nginx.slab.slot.allocation.result", nginxSlabSlotAllocationResultAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabSlotAllocationsMetricAttributeKeyNginxSlabSlotLimit) {
+		dp.Attributes().PutInt("nginx.slab.slot.limit", nginxSlabSlotLimitAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabSlotAllocationsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.slab.slot.allocation.result", nginxSlabSlotAllocationResultAttributeValue)
-	dp.Attributes().PutInt("nginx.slab.slot.limit", nginxSlabSlotLimitAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2721,14 +4407,20 @@ func (m *metricNginxSlabSlotAllocations) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSlabSlotAllocations) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSlabSlotAllocations(cfg MetricConfig) metricNginxSlabSlotAllocations {
+func newMetricNginxSlabSlotAllocations(cfg NginxSlabSlotAllocationsMetricConfig) metricNginxSlabSlotAllocations {
 	m := metricNginxSlabSlotAllocations{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2737,30 +4429,64 @@ func newMetricNginxSlabSlotAllocations(cfg MetricConfig) metricNginxSlabSlotAllo
 }
 
 type metricNginxSlabSlotFree struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                // data buffer for generated metric.
+	config        NginxSlabSlotFreeMetricConfig // metric config provided by user.
+	capacity      int                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.slab.slot.free metric with initial data.
 func (m *metricNginxSlabSlotFree) init() {
 	m.data.SetName("nginx.slab.slot.free")
 	m.data.SetDescription("The current number of free memory slots.")
-	m.data.SetUnit("slots")
+	m.data.SetUnit("{slots}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSlabSlotFree) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxSlabSlotLimitAttributeValue int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabSlotFreeMetricAttributeKeyNginxSlabSlotLimit) {
+		dp.Attributes().PutInt("nginx.slab.slot.limit", nginxSlabSlotLimitAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabSlotFreeMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutInt("nginx.slab.slot.limit", nginxSlabSlotLimitAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2773,14 +4499,20 @@ func (m *metricNginxSlabSlotFree) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSlabSlotFree) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSlabSlotFree(cfg MetricConfig) metricNginxSlabSlotFree {
+func newMetricNginxSlabSlotFree(cfg NginxSlabSlotFreeMetricConfig) metricNginxSlabSlotFree {
 	m := metricNginxSlabSlotFree{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2789,30 +4521,64 @@ func newMetricNginxSlabSlotFree(cfg MetricConfig) metricNginxSlabSlotFree {
 }
 
 type metricNginxSlabSlotUsage struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        NginxSlabSlotUsageMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.slab.slot.usage metric with initial data.
 func (m *metricNginxSlabSlotUsage) init() {
 	m.data.SetName("nginx.slab.slot.usage")
 	m.data.SetDescription("The current number of used memory slots.")
-	m.data.SetUnit("slots")
+	m.data.SetUnit("{slots}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSlabSlotUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxSlabSlotLimitAttributeValue int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabSlotUsageMetricAttributeKeyNginxSlabSlotLimit) {
+		dp.Attributes().PutInt("nginx.slab.slot.limit", nginxSlabSlotLimitAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxSlabSlotUsageMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutInt("nginx.slab.slot.limit", nginxSlabSlotLimitAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2825,14 +4591,20 @@ func (m *metricNginxSlabSlotUsage) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSlabSlotUsage) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSlabSlotUsage(cfg MetricConfig) metricNginxSlabSlotUsage {
+func newMetricNginxSlabSlotUsage(cfg NginxSlabSlotUsageMetricConfig) metricNginxSlabSlotUsage {
 	m := metricNginxSlabSlotUsage{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2841,31 +4613,63 @@ func newMetricNginxSlabSlotUsage(cfg MetricConfig) metricNginxSlabSlotUsage {
 }
 
 type metricNginxSslCertificateVerifyFailures struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                // data buffer for generated metric.
+	config        NginxSslCertificateVerifyFailuresMetricConfig // metric config provided by user.
+	capacity      int                                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.ssl.certificate.verify_failures metric with initial data.
 func (m *metricNginxSslCertificateVerifyFailures) init() {
 	m.data.SetName("nginx.ssl.certificate.verify_failures")
 	m.data.SetDescription("The total number of SSL certificate verification failures.")
-	m.data.SetUnit("certificates")
+	m.data.SetUnit("{certificates}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSslCertificateVerifyFailures) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxSslVerifyFailureReasonAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSslCertificateVerifyFailuresMetricAttributeKeyNginxSslVerifyFailureReason) {
+		dp.Attributes().PutStr("nginx.ssl.verify_failure.reason", nginxSslVerifyFailureReasonAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.ssl.verify_failure.reason", nginxSslVerifyFailureReasonAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2878,14 +4682,20 @@ func (m *metricNginxSslCertificateVerifyFailures) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSslCertificateVerifyFailures) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSslCertificateVerifyFailures(cfg MetricConfig) metricNginxSslCertificateVerifyFailures {
+func newMetricNginxSslCertificateVerifyFailures(cfg NginxSslCertificateVerifyFailuresMetricConfig) metricNginxSslCertificateVerifyFailures {
 	m := metricNginxSslCertificateVerifyFailures{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2894,32 +4704,66 @@ func newMetricNginxSslCertificateVerifyFailures(cfg MetricConfig) metricNginxSsl
 }
 
 type metricNginxSslHandshakes struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        NginxSslHandshakesMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.ssl.handshakes metric with initial data.
 func (m *metricNginxSslHandshakes) init() {
 	m.data.SetName("nginx.ssl.handshakes")
 	m.data.SetDescription("The total number of SSL handshakes.")
-	m.data.SetUnit("handshakes")
+	m.data.SetUnit("{handshakes}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxSslHandshakes) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxSslHandshakeReasonAttributeValue string, nginxSslStatusAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxSslHandshakesMetricAttributeKeyNginxSslHandshakeReason) {
+		dp.Attributes().PutStr("nginx.ssl.handshake.reason", nginxSslHandshakeReasonAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxSslHandshakesMetricAttributeKeyNginxSslStatus) {
+		dp.Attributes().PutStr("nginx.ssl.status", nginxSslStatusAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.ssl.handshake.reason", nginxSslHandshakeReasonAttributeValue)
-	dp.Attributes().PutStr("nginx.ssl.status", nginxSslStatusAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2932,14 +4776,20 @@ func (m *metricNginxSslHandshakes) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxSslHandshakes) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxSslHandshakes(cfg MetricConfig) metricNginxSslHandshakes {
+func newMetricNginxSslHandshakes(cfg NginxSslHandshakesMetricConfig) metricNginxSslHandshakes {
 	m := metricNginxSslHandshakes{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2948,31 +4798,63 @@ func newMetricNginxSslHandshakes(cfg MetricConfig) metricNginxSslHandshakes {
 }
 
 type metricNginxStreamConnectionAccepted struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                            // data buffer for generated metric.
+	config        NginxStreamConnectionAcceptedMetricConfig // metric config provided by user.
+	capacity      int                                       // max observed number of data points added to the metric.
+	aggDataPoints []int64                                   // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.connection.accepted metric with initial data.
 func (m *metricNginxStreamConnectionAccepted) init() {
 	m.data.SetName("nginx.stream.connection.accepted")
 	m.data.SetDescription("The total number of connections accepted from clients.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamConnectionAccepted) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamConnectionAcceptedMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -2985,14 +4867,20 @@ func (m *metricNginxStreamConnectionAccepted) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamConnectionAccepted) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamConnectionAccepted(cfg MetricConfig) metricNginxStreamConnectionAccepted {
+func newMetricNginxStreamConnectionAccepted(cfg NginxStreamConnectionAcceptedMetricConfig) metricNginxStreamConnectionAccepted {
 	m := metricNginxStreamConnectionAccepted{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3001,31 +4889,63 @@ func newMetricNginxStreamConnectionAccepted(cfg MetricConfig) metricNginxStreamC
 }
 
 type metricNginxStreamConnectionDiscarded struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                             // data buffer for generated metric.
+	config        NginxStreamConnectionDiscardedMetricConfig // metric config provided by user.
+	capacity      int                                        // max observed number of data points added to the metric.
+	aggDataPoints []int64                                    // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.connection.discarded metric with initial data.
 func (m *metricNginxStreamConnectionDiscarded) init() {
 	m.data.SetName("nginx.stream.connection.discarded")
 	m.data.SetDescription("Total number of connections completed without creating a session.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamConnectionDiscarded) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamConnectionDiscardedMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3038,14 +4958,20 @@ func (m *metricNginxStreamConnectionDiscarded) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamConnectionDiscarded) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamConnectionDiscarded(cfg MetricConfig) metricNginxStreamConnectionDiscarded {
+func newMetricNginxStreamConnectionDiscarded(cfg NginxStreamConnectionDiscardedMetricConfig) metricNginxStreamConnectionDiscarded {
 	m := metricNginxStreamConnectionDiscarded{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3054,29 +4980,61 @@ func newMetricNginxStreamConnectionDiscarded(cfg MetricConfig) metricNginxStream
 }
 
 type metricNginxStreamConnectionProcessingCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                   // data buffer for generated metric.
+	config        NginxStreamConnectionProcessingCountMetricConfig // metric config provided by user.
+	capacity      int                                              // max observed number of data points added to the metric.
+	aggDataPoints []int64                                          // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.connection.processing.count metric with initial data.
 func (m *metricNginxStreamConnectionProcessingCount) init() {
 	m.data.SetName("nginx.stream.connection.processing.count")
 	m.data.SetDescription("The number of client connections that are currently being processed.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamConnectionProcessingCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamConnectionProcessingCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3089,14 +5047,20 @@ func (m *metricNginxStreamConnectionProcessingCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamConnectionProcessingCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamConnectionProcessingCount(cfg MetricConfig) metricNginxStreamConnectionProcessingCount {
+func newMetricNginxStreamConnectionProcessingCount(cfg NginxStreamConnectionProcessingCountMetricConfig) metricNginxStreamConnectionProcessingCount {
 	m := metricNginxStreamConnectionProcessingCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3105,32 +5069,66 @@ func newMetricNginxStreamConnectionProcessingCount(cfg MetricConfig) metricNginx
 }
 
 type metricNginxStreamIo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric            // data buffer for generated metric.
+	config        NginxStreamIoMetricConfig // metric config provided by user.
+	capacity      int                       // max observed number of data points added to the metric.
+	aggDataPoints []int64                   // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.io metric with initial data.
 func (m *metricNginxStreamIo) init() {
 	m.data.SetName("nginx.stream.io")
 	m.data.SetDescription("The total number of Stream byte IO.")
-	m.data.SetUnit("bytes")
+	m.data.SetUnit("{bytes}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxIoDirectionAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamIoMetricAttributeKeyNginxIoDirection) {
+		dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamIoMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3143,14 +5141,20 @@ func (m *metricNginxStreamIo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamIo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamIo(cfg MetricConfig) metricNginxStreamIo {
+func newMetricNginxStreamIo(cfg NginxStreamIoMetricConfig) metricNginxStreamIo {
 	m := metricNginxStreamIo{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3159,32 +5163,66 @@ func newMetricNginxStreamIo(cfg MetricConfig) metricNginxStreamIo {
 }
 
 type metricNginxStreamSessionStatus struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                       // data buffer for generated metric.
+	config        NginxStreamSessionStatusMetricConfig // metric config provided by user.
+	capacity      int                                  // max observed number of data points added to the metric.
+	aggDataPoints []int64                              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.session.status metric with initial data.
 func (m *metricNginxStreamSessionStatus) init() {
 	m.data.SetName("nginx.stream.session.status")
 	m.data.SetDescription("The total number of completed sessions.")
-	m.data.SetUnit("sessions")
+	m.data.SetUnit("{sessions}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamSessionStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxStatusRangeAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamSessionStatusMetricAttributeKeyNginxStatusRange) {
+		dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamSessionStatusMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3197,14 +5235,20 @@ func (m *metricNginxStreamSessionStatus) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamSessionStatus) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamSessionStatus(cfg MetricConfig) metricNginxStreamSessionStatus {
+func newMetricNginxStreamSessionStatus(cfg NginxStreamSessionStatusMetricConfig) metricNginxStreamSessionStatus {
 	m := metricNginxStreamSessionStatus{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3213,32 +5257,70 @@ func newMetricNginxStreamSessionStatus(cfg MetricConfig) metricNginxStreamSessio
 }
 
 type metricNginxStreamUpstreamPeerConnectionCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                     // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerConnectionCountMetricConfig // metric config provided by user.
+	capacity      int                                                // max observed number of data points added to the metric.
+	aggDataPoints []int64                                            // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.connection.count metric with initial data.
 func (m *metricNginxStreamUpstreamPeerConnectionCount) init() {
 	m.data.SetName("nginx.stream.upstream.peer.connection.count")
 	m.data.SetDescription("The current number of Stream Upstream Peer connections.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerConnectionCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3251,14 +5333,20 @@ func (m *metricNginxStreamUpstreamPeerConnectionCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerConnectionCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerConnectionCount(cfg MetricConfig) metricNginxStreamUpstreamPeerConnectionCount {
+func newMetricNginxStreamUpstreamPeerConnectionCount(cfg NginxStreamUpstreamPeerConnectionCountMetricConfig) metricNginxStreamUpstreamPeerConnectionCount {
 	m := metricNginxStreamUpstreamPeerConnectionCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3267,9 +5355,10 @@ func newMetricNginxStreamUpstreamPeerConnectionCount(cfg MetricConfig) metricNgi
 }
 
 type metricNginxStreamUpstreamPeerConnectionTime struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                    // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerConnectionTimeMetricConfig // metric config provided by user.
+	capacity      int                                               // max observed number of data points added to the metric.
+	aggDataPoints []int64                                           // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.connection.time metric with initial data.
@@ -3279,20 +5368,57 @@ func (m *metricNginxStreamUpstreamPeerConnectionTime) init() {
 	m.data.SetUnit("ms")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerConnectionTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3305,14 +5431,20 @@ func (m *metricNginxStreamUpstreamPeerConnectionTime) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerConnectionTime) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerConnectionTime(cfg MetricConfig) metricNginxStreamUpstreamPeerConnectionTime {
+func newMetricNginxStreamUpstreamPeerConnectionTime(cfg NginxStreamUpstreamPeerConnectionTimeMetricConfig) metricNginxStreamUpstreamPeerConnectionTime {
 	m := metricNginxStreamUpstreamPeerConnectionTime{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3321,34 +5453,72 @@ func newMetricNginxStreamUpstreamPeerConnectionTime(cfg MetricConfig) metricNgin
 }
 
 type metricNginxStreamUpstreamPeerConnections struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                 // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerConnectionsMetricConfig // metric config provided by user.
+	capacity      int                                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.connections metric with initial data.
 func (m *metricNginxStreamUpstreamPeerConnections) init() {
 	m.data.SetName("nginx.stream.upstream.peer.connections")
 	m.data.SetDescription("The total number of client connections forwarded to this stream upstream peer.")
-	m.data.SetUnit("connections")
+	m.data.SetUnit("{connections}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerConnections) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3361,14 +5531,20 @@ func (m *metricNginxStreamUpstreamPeerConnections) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerConnections) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerConnections(cfg MetricConfig) metricNginxStreamUpstreamPeerConnections {
+func newMetricNginxStreamUpstreamPeerConnections(cfg NginxStreamUpstreamPeerConnectionsMetricConfig) metricNginxStreamUpstreamPeerConnections {
 	m := metricNginxStreamUpstreamPeerConnections{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3377,31 +5553,67 @@ func newMetricNginxStreamUpstreamPeerConnections(cfg MetricConfig) metricNginxSt
 }
 
 type metricNginxStreamUpstreamPeerCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                           // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerCountMetricConfig // metric config provided by user.
+	capacity      int                                      // max observed number of data points added to the metric.
+	aggDataPoints []int64                                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.count metric with initial data.
 func (m *metricNginxStreamUpstreamPeerCount) init() {
 	m.data.SetName("nginx.stream.upstream.peer.count")
 	m.data.SetDescription("The current number of stream upstream peers grouped by state.")
-	m.data.SetUnit("peers")
+	m.data.SetUnit("{peers}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerStateAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerCountMetricAttributeKeyNginxPeerState) {
+		dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerCountMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3414,14 +5626,20 @@ func (m *metricNginxStreamUpstreamPeerCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerCount(cfg MetricConfig) metricNginxStreamUpstreamPeerCount {
+func newMetricNginxStreamUpstreamPeerCount(cfg NginxStreamUpstreamPeerCountMetricConfig) metricNginxStreamUpstreamPeerCount {
 	m := metricNginxStreamUpstreamPeerCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3430,33 +5648,69 @@ func newMetricNginxStreamUpstreamPeerCount(cfg MetricConfig) metricNginxStreamUp
 }
 
 type metricNginxStreamUpstreamPeerFails struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                           // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerFailsMetricConfig // metric config provided by user.
+	capacity      int                                      // max observed number of data points added to the metric.
+	aggDataPoints []int64                                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.fails metric with initial data.
 func (m *metricNginxStreamUpstreamPeerFails) init() {
 	m.data.SetName("nginx.stream.upstream.peer.fails")
 	m.data.SetDescription("The total number of unsuccessful attempts to communicate with the stream upstream peer.")
-	m.data.SetUnit("attempts")
+	m.data.SetUnit("{attempts}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerFails) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3469,14 +5723,20 @@ func (m *metricNginxStreamUpstreamPeerFails) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerFails) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerFails(cfg MetricConfig) metricNginxStreamUpstreamPeerFails {
+func newMetricNginxStreamUpstreamPeerFails(cfg NginxStreamUpstreamPeerFailsMetricConfig) metricNginxStreamUpstreamPeerFails {
 	m := metricNginxStreamUpstreamPeerFails{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3485,35 +5745,75 @@ func newMetricNginxStreamUpstreamPeerFails(cfg MetricConfig) metricNginxStreamUp
 }
 
 type metricNginxStreamUpstreamPeerHealthChecks struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                  // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerHealthChecksMetricConfig // metric config provided by user.
+	capacity      int                                             // max observed number of data points added to the metric.
+	aggDataPoints []int64                                         // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.health_checks metric with initial data.
 func (m *metricNginxStreamUpstreamPeerHealthChecks) init() {
 	m.data.SetName("nginx.stream.upstream.peer.health_checks")
 	m.data.SetDescription("The total number of health check requests made to the stream upstream peer.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerHealthChecks) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxHealthCheckAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxHealthCheck) {
+		dp.Attributes().PutStr("nginx.health_check", nginxHealthCheckAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.health_check", nginxHealthCheckAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3526,14 +5826,20 @@ func (m *metricNginxStreamUpstreamPeerHealthChecks) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerHealthChecks) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerHealthChecks(cfg MetricConfig) metricNginxStreamUpstreamPeerHealthChecks {
+func newMetricNginxStreamUpstreamPeerHealthChecks(cfg NginxStreamUpstreamPeerHealthChecksMetricConfig) metricNginxStreamUpstreamPeerHealthChecks {
 	m := metricNginxStreamUpstreamPeerHealthChecks{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3542,35 +5848,75 @@ func newMetricNginxStreamUpstreamPeerHealthChecks(cfg MetricConfig) metricNginxS
 }
 
 type metricNginxStreamUpstreamPeerIo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                        // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerIoMetricConfig // metric config provided by user.
+	capacity      int                                   // max observed number of data points added to the metric.
+	aggDataPoints []int64                               // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.io metric with initial data.
 func (m *metricNginxStreamUpstreamPeerIo) init() {
 	m.data.SetName("nginx.stream.upstream.peer.io")
 	m.data.SetDescription("The total number of Stream Upstream Peer byte IO.")
-	m.data.SetUnit("bytes")
+	m.data.SetUnit("{bytes}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxIoDirectionAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxIoDirection) {
+		dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.io.direction", nginxIoDirectionAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3583,14 +5929,20 @@ func (m *metricNginxStreamUpstreamPeerIo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerIo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerIo(cfg MetricConfig) metricNginxStreamUpstreamPeerIo {
+func newMetricNginxStreamUpstreamPeerIo(cfg NginxStreamUpstreamPeerIoMetricConfig) metricNginxStreamUpstreamPeerIo {
 	m := metricNginxStreamUpstreamPeerIo{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3599,9 +5951,10 @@ func newMetricNginxStreamUpstreamPeerIo(cfg MetricConfig) metricNginxStreamUpstr
 }
 
 type metricNginxStreamUpstreamPeerResponseTime struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                  // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerResponseTimeMetricConfig // metric config provided by user.
+	capacity      int                                             // max observed number of data points added to the metric.
+	aggDataPoints []int64                                         // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.response.time metric with initial data.
@@ -3611,20 +5964,57 @@ func (m *metricNginxStreamUpstreamPeerResponseTime) init() {
 	m.data.SetUnit("ms")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerResponseTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3637,14 +6027,20 @@ func (m *metricNginxStreamUpstreamPeerResponseTime) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerResponseTime) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerResponseTime(cfg MetricConfig) metricNginxStreamUpstreamPeerResponseTime {
+func newMetricNginxStreamUpstreamPeerResponseTime(cfg NginxStreamUpstreamPeerResponseTimeMetricConfig) metricNginxStreamUpstreamPeerResponseTime {
 	m := metricNginxStreamUpstreamPeerResponseTime{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3653,35 +6049,75 @@ func newMetricNginxStreamUpstreamPeerResponseTime(cfg MetricConfig) metricNginxS
 }
 
 type metricNginxStreamUpstreamPeerState struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                           // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerStateMetricConfig // metric config provided by user.
+	capacity      int                                      // max observed number of data points added to the metric.
+	aggDataPoints []int64                                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.state metric with initial data.
 func (m *metricNginxStreamUpstreamPeerState) init() {
 	m.data.SetName("nginx.stream.upstream.peer.state")
 	m.data.SetDescription("Current state of upstream peers in deployment.")
-	m.data.SetUnit("deployments")
+	m.data.SetUnit("{deployments}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerState) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxPeerStateAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerState) {
+		dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.state", nginxPeerStateAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3694,14 +6130,20 @@ func (m *metricNginxStreamUpstreamPeerState) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerState) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerState(cfg MetricConfig) metricNginxStreamUpstreamPeerState {
+func newMetricNginxStreamUpstreamPeerState(cfg NginxStreamUpstreamPeerStateMetricConfig) metricNginxStreamUpstreamPeerState {
 	m := metricNginxStreamUpstreamPeerState{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3710,9 +6152,10 @@ func newMetricNginxStreamUpstreamPeerState(cfg MetricConfig) metricNginxStreamUp
 }
 
 type metricNginxStreamUpstreamPeerTtfbTime struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                              // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerTtfbTimeMetricConfig // metric config provided by user.
+	capacity      int                                         // max observed number of data points added to the metric.
+	aggDataPoints []int64                                     // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.ttfb.time metric with initial data.
@@ -3722,20 +6165,57 @@ func (m *metricNginxStreamUpstreamPeerTtfbTime) init() {
 	m.data.SetUnit("ms")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerTtfbTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3748,14 +6228,20 @@ func (m *metricNginxStreamUpstreamPeerTtfbTime) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerTtfbTime) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerTtfbTime(cfg MetricConfig) metricNginxStreamUpstreamPeerTtfbTime {
+func newMetricNginxStreamUpstreamPeerTtfbTime(cfg NginxStreamUpstreamPeerTtfbTimeMetricConfig) metricNginxStreamUpstreamPeerTtfbTime {
 	m := metricNginxStreamUpstreamPeerTtfbTime{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3764,34 +6250,72 @@ func newMetricNginxStreamUpstreamPeerTtfbTime(cfg MetricConfig) metricNginxStrea
 }
 
 type metricNginxStreamUpstreamPeerUnavailables struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                                  // data buffer for generated metric.
+	config        NginxStreamUpstreamPeerUnavailablesMetricConfig // metric config provided by user.
+	capacity      int                                             // max observed number of data points added to the metric.
+	aggDataPoints []int64                                         // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.peer.unavailables metric with initial data.
 func (m *metricNginxStreamUpstreamPeerUnavailables) init() {
 	m.data.SetName("nginx.stream.upstream.peer.unavailables")
 	m.data.SetDescription("How many times the server became unavailable for client connections (state 'unavail') due to the number of unsuccessful attempts reaching the max_fails threshold.")
-	m.data.SetUnit("requests")
+	m.data.SetUnit("{requests}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamPeerUnavailables) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerAddress) {
+		dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerName) {
+		dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3804,14 +6328,20 @@ func (m *metricNginxStreamUpstreamPeerUnavailables) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerUnavailables) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerUnavailables(cfg MetricConfig) metricNginxStreamUpstreamPeerUnavailables {
+func newMetricNginxStreamUpstreamPeerUnavailables(cfg NginxStreamUpstreamPeerUnavailablesMetricConfig) metricNginxStreamUpstreamPeerUnavailables {
 	m := metricNginxStreamUpstreamPeerUnavailables{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3820,30 +6350,64 @@ func newMetricNginxStreamUpstreamPeerUnavailables(cfg MetricConfig) metricNginxS
 }
 
 type metricNginxStreamUpstreamZombieCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                             // data buffer for generated metric.
+	config        NginxStreamUpstreamZombieCountMetricConfig // metric config provided by user.
+	capacity      int                                        // max observed number of data points added to the metric.
+	aggDataPoints []int64                                    // slice containing number of aggregated datapoints at each index
 }
 
 // init fills nginx.stream.upstream.zombie.count metric with initial data.
 func (m *metricNginxStreamUpstreamZombieCount) init() {
 	m.data.SetName("nginx.stream.upstream.zombie.count")
 	m.data.SetDescription("The current number of peers removed from the group but still processing active client connections.")
-	m.data.SetUnit("deployments")
+	m.data.SetUnit("{deployments}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricNginxStreamUpstreamZombieCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamZombieCountMetricAttributeKeyNginxUpstreamName) {
+		dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, NginxStreamUpstreamZombieCountMetricAttributeKeyNginxZoneName) {
+		dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -3856,14 +6420,20 @@ func (m *metricNginxStreamUpstreamZombieCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamZombieCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricNginxStreamUpstreamZombieCount(cfg MetricConfig) metricNginxStreamUpstreamZombieCount {
+func newMetricNginxStreamUpstreamZombieCount(cfg NginxStreamUpstreamZombieCountMetricConfig) metricNginxStreamUpstreamZombieCount {
 	m := metricNginxStreamUpstreamZombieCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3907,6 +6477,7 @@ type MetricsBuilder struct {
 	metricNginxHTTPUpstreamPeerIo                metricNginxHTTPUpstreamPeerIo
 	metricNginxHTTPUpstreamPeerRequests          metricNginxHTTPUpstreamPeerRequests
 	metricNginxHTTPUpstreamPeerResponseTime      metricNginxHTTPUpstreamPeerResponseTime
+	metricNginxHTTPUpstreamPeerResponseTimeHist  metricNginxHTTPUpstreamPeerResponseTimeHist
 	metricNginxHTTPUpstreamPeerResponses         metricNginxHTTPUpstreamPeerResponses
 	metricNginxHTTPUpstreamPeerState             metricNginxHTTPUpstreamPeerState
 	metricNginxHTTPUpstreamPeerUnavailables      metricNginxHTTPUpstreamPeerUnavailables
@@ -3991,6 +6562,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		metricNginxHTTPUpstreamPeerIo:                newMetricNginxHTTPUpstreamPeerIo(mbc.Metrics.NginxHTTPUpstreamPeerIo),
 		metricNginxHTTPUpstreamPeerRequests:          newMetricNginxHTTPUpstreamPeerRequests(mbc.Metrics.NginxHTTPUpstreamPeerRequests),
 		metricNginxHTTPUpstreamPeerResponseTime:      newMetricNginxHTTPUpstreamPeerResponseTime(mbc.Metrics.NginxHTTPUpstreamPeerResponseTime),
+		metricNginxHTTPUpstreamPeerResponseTimeHist:  newMetricNginxHTTPUpstreamPeerResponseTimeHist(mbc.Metrics.NginxHTTPUpstreamPeerResponseTimeHist),
 		metricNginxHTTPUpstreamPeerResponses:         newMetricNginxHTTPUpstreamPeerResponses(mbc.Metrics.NginxHTTPUpstreamPeerResponses),
 		metricNginxHTTPUpstreamPeerState:             newMetricNginxHTTPUpstreamPeerState(mbc.Metrics.NginxHTTPUpstreamPeerState),
 		metricNginxHTTPUpstreamPeerUnavailables:      newMetricNginxHTTPUpstreamPeerUnavailables(mbc.Metrics.NginxHTTPUpstreamPeerUnavailables),
@@ -4134,6 +6706,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricNginxHTTPUpstreamPeerIo.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerRequests.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerResponseTime.emit(ils.Metrics())
+	mb.metricNginxHTTPUpstreamPeerResponseTimeHist.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerResponses.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerState.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerUnavailables.emit(ils.Metrics())
@@ -4326,6 +6899,11 @@ func (mb *MetricsBuilder) RecordNginxHTTPUpstreamPeerRequestsDataPoint(ts pcommo
 // RecordNginxHTTPUpstreamPeerResponseTimeDataPoint adds a data point to nginx.http.upstream.peer.response.time metric.
 func (mb *MetricsBuilder) RecordNginxHTTPUpstreamPeerResponseTimeDataPoint(ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
 	mb.metricNginxHTTPUpstreamPeerResponseTime.recordDataPoint(mb.startTime, ts, val, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue, nginxUpstreamNameAttributeValue, nginxZoneNameAttributeValue)
+}
+
+// RecordNginxHTTPUpstreamPeerResponseTimeHistDataPoint adds a data point to nginx.http.upstream.peer.response_time_hist metric.
+func (mb *MetricsBuilder) RecordNginxHTTPUpstreamPeerResponseTimeHistDataPoint(ts pcommon.Timestamp, val int64, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxZoneNameAttributeValue string) {
+	mb.metricNginxHTTPUpstreamPeerResponseTimeHist.recordDataPoint(mb.startTime, ts, val, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue, nginxUpstreamNameAttributeValue, nginxZoneNameAttributeValue)
 }
 
 // RecordNginxHTTPUpstreamPeerResponsesDataPoint adds a data point to nginx.http.upstream.peer.responses metric.

@@ -29,11 +29,10 @@ func TestResourceBuilder(t *testing.T) {
 			default:
 				assert.Failf(t, "unexpected test case: %s", tt)
 			}
-
-			val, ok := res.Attributes().Get("resource.id")
+			resourceIDAttrVal, ok := res.Attributes().Get("resource.id")
 			assert.True(t, ok)
 			if ok {
-				assert.Equal(t, "resource.id-val", val.Str())
+				assert.Equal(t, "resource.id-val", resourceIDAttrVal.Str())
 			}
 		})
 	}

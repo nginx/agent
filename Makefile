@@ -318,8 +318,10 @@ stop-mock-otel-collector-without-nap: ## Stop running mock management plane OTel
 
 generate: nginx-metadata-gen nginxplus-metadata-gen ## Generate golang code
 	@echo "🗄️ Generating proto files"
-	@cd api/grpc && $(GORUN) $(BUF) generate
+	@$(GOINST) -ldflags=-linkmode=external $(BUF)
+	@cd api/grpc && $(GOBIN)/buf generate
 	@echo "🗃️ Generating go files"
+	@$(GOINST) $(MDATAGEN)
 	@$(GOGEN) ./...
 
 local-apk-package: ## Create local apk package

@@ -5,6 +5,17 @@ all_set:
       enabled: true
     system.cpu.utilization:
       enabled: true
+      attributes: ["state"]
+  resource_attributes:
+    resource.id:
+      enabled: true
+reaggregate_set:
+  metrics:
+    system.cpu.logical.count:
+      enabled: true
+    system.cpu.utilization:
+      enabled: true
+      attributes: []
   resource_attributes:
     resource.id:
       enabled: true
@@ -14,6 +25,7 @@ none_set:
       enabled: false
     system.cpu.utilization:
       enabled: false
+      attributes: ["state"]
   resource_attributes:
     resource.id:
       enabled: false
