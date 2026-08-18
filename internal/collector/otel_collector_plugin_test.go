@@ -165,8 +165,8 @@ func TestCollector_InitAndClose(t *testing.T) {
 //nolint:revive // cognitive complexity is 13
 func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 	tests := []struct {
-		name      string
 		message   *bus.Message
+		name      string
 		receivers config.Receivers
 	}{
 		{
@@ -486,8 +486,8 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	conf.Collector.Log.Path = ""
 
 	tests := []struct {
-		name               string
 		nginxConfigContext *model.NginxConfigContext
+		name               string
 		existingReceivers  config.Receivers
 		expectedReceivers  config.Receivers
 	}{
@@ -594,8 +594,8 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	conf.Collector.Log.Path = ""
 
 	tests := []struct {
-		name               string
 		nginxConfigContext *model.NginxConfigContext
+		name               string
 		existingReceivers  config.Receivers
 		expectedReceivers  config.Receivers
 	}{

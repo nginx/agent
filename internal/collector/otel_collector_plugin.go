@@ -32,10 +32,9 @@ import (
 )
 
 const (
-	maxTimeToWaitForShutdown      = 30 * time.Second
-	defaultCollectionInterval     = 1 * time.Minute
-	defaultCertCollectionInterval = 15 * time.Second
-	filePermission                = 0o600
+	maxTimeToWaitForShutdown  = 30 * time.Second
+	defaultCollectionInterval = 1 * time.Minute
+	filePermission            = 0o600
 	// To conform to the rfc3164 spec the timestamp in the logs need to be formatted correctly.
 	// Here are some examples of what the timestamp conversions look like.
 	// Notice how if the day begins with a zero that the zero is replaced with an empty space.
@@ -543,7 +542,7 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 		slog.DebugContext(ctx, "NAP logs feature disabled", "enabled_features", oc.config.Features)
 	}
 
-	if oc.config.IsFeatureEnabled(pkgConfig.FeatureCertificates) {
+	if oc.config.Collector.Receivers.CertificateMetrics != nil {
 		reloadCollector = reloadCollector || oc.updateCertificateReceivers(nginxConfigContext)
 	}
 
@@ -798,7 +797,7 @@ func (oc *Collector) updateCertificateReceivers(nginxConfigContext *model.NginxC
 		oc.config.Collector.Receivers.CertificateReceivers,
 		config.CertificateReceiver{
 			InstanceID:         nginxConfigContext.InstanceID,
-			CollectionInterval: defaultCertCollectionInterval,
+			CollectionInterval: oc.config.Collector.Receivers.CertificateMetrics.CollectionInterval,
 			CertFilePaths:      certFilePaths,
 		},
 	)
