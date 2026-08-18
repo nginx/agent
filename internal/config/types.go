@@ -121,9 +121,9 @@ type (
 	}
 
 	Collector struct {
+		Log                   *Log       `yaml:"log"                     mapstructure:"log"`
 		ConfigPath            string     `yaml:"config_path"             mapstructure:"config_path"`
 		AdditionalConfigPaths []string   `yaml:"additional_config_paths" mapstructure:"additional_config_paths"`
-		Log                   *Log       `yaml:"log"                     mapstructure:"log"`
 		Exporters             Exporters  `yaml:"exporters"               mapstructure:"exporters"`
 		Extensions            Extensions `yaml:"extensions"              mapstructure:"extensions"`
 		Processors            Processors `yaml:"processors"              mapstructure:"processors"`
@@ -225,10 +225,11 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		ContainerMetrics     *ContainerMetricsReceiver  `yaml:"container_metrics" mapstructure:"container_metrics"`
-		HostMetrics          *HostMetrics               `yaml:"host_metrics"      mapstructure:"host_metrics"`
-		OtlpReceivers        map[string]*OtlpReceiver   `yaml:"otlp"              mapstructure:"otlp"`
-		TcplogReceivers      map[string]*TcplogReceiver `yaml:"tcplog"            mapstructure:"tcplog"`
+		ContainerMetrics     *ContainerMetricsReceiver  `yaml:"container_metrics"   mapstructure:"container_metrics"`
+		HostMetrics          *HostMetrics               `yaml:"host_metrics"        mapstructure:"host_metrics"`
+		CertificateMetrics   *CertificateMetricsConfig  `yaml:"certificate_metrics" mapstructure:"certificate_metrics"`
+		OtlpReceivers        map[string]*OtlpReceiver   `yaml:"otlp"                mapstructure:"otlp"`
+		TcplogReceivers      map[string]*TcplogReceiver `yaml:"tcplog"              mapstructure:"tcplog"`
 		NginxReceivers       []NginxReceiver            `yaml:"-"`
 		NginxPlusReceivers   []NginxPlusReceiver        `yaml:"-"`
 		CertificateReceivers []CertificateReceiver      `yaml:"-"`
@@ -279,6 +280,10 @@ type (
 	}
 
 	ContainerMetricsReceiver struct {
+		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
+	}
+
+	CertificateMetricsConfig struct {
 		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
 	}
 
