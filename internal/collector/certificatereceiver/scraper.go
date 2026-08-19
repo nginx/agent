@@ -6,12 +6,9 @@ package certificatereceiver
 
 import (
 	"context"
-	"crypto/x509"
-	"log/slog"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/collector/certificatereceiver/internal/metadata"
-	"github.com/nginx/agent/v3/internal/datasource/cert"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -24,7 +21,6 @@ type CertificateScraper struct {
 	mb     *metadata.MetricsBuilder
 	rb     *metadata.ResourceBuilder
 	logger *zap.Logger
-	cache  map[string]*x509.Certificate
 }
 
 func newCertificateScraper(
@@ -41,27 +37,15 @@ func newCertificateScraper(
 		mb:     mb,
 		rb:     rb,
 		logger: logger,
-		cache:  make(map[string]*x509.Certificate),
 	}
 }
 
-func (c *CertificateScraper) Start(ctx context.Context, _ component.Host) error {
-	for _, path := range c.cfg.CertFilePaths {
-		loadedCert, err := cert.LoadCertificate(path)
-		if err != nil {
-			slog.WarnContext(ctx, "Failed to load certificate file", "path", path, "error", err)
-
-			continue
-		}
-
-		c.cache[path] = loadedCert
-	}
-
+func (c *CertificateScraper) Start(_ context.Context, _ component.Host) error {
 	return nil
 }
 
 func (c *CertificateScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
-	if len(c.cfg.CertFilePaths) == 0 {
+	if len(c.cfg.CertMeta) == 0 {
 		return pmetric.NewMetrics(), nil
 	}
 
@@ -71,18 +55,13 @@ func (c *CertificateScraper) Scrape(_ context.Context) (pmetric.Metrics, error) 
 		c.rb.SetInstanceID(c.cfg.InstanceID)
 	}
 
-	for _, path := range c.cfg.CertFilePaths {
-		loadedCert, ok := c.cache[path]
-		if !ok {
-			continue
-		}
-
+	for path, info := range c.cfg.CertMeta {
 		c.mb.RecordNginxSslCertificateExpiryDataPoint(
-			now, loadedCert.NotAfter.Unix(),
+			now, info.NotAfter,
 			path,
-			loadedCert.PublicKeyAlgorithm.String(),
-			loadedCert.SerialNumber.String(),
-			loadedCert.Subject.CommonName,
+			info.PublicKeyAlgorithm,
+			info.SerialNumber,
+			info.CommonName,
 		)
 	}
 

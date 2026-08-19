@@ -16,9 +16,16 @@ const defaultCollectInterval = 15 * time.Second
 
 type Config struct {
 	InstanceID                     string                        `mapstructure:"instance_id"`
-	CertFilePaths                  []string                      `mapstructure:"cert_file_paths"`
+	CertMeta                       map[string]CertMeta           `mapstructure:"cert_meta"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
+}
+
+type CertMeta struct {
+	SerialNumber       string `mapstructure:"serial_number"`
+	CommonName         string `mapstructure:"common_name"`
+	PublicKeyAlgorithm string `mapstructure:"public_key_algorithm"`
+	NotAfter           int64  `mapstructure:"not_after"`
 }
 
 //nolint:ireturn // must return default controller interface

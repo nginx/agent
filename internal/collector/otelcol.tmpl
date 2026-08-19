@@ -129,10 +129,14 @@ receivers:
     {{- if .CollectionInterval }}
     collection_interval: {{ .CollectionInterval }}
     {{- end }}
-    {{- if .CertFilePaths }}
-    cert_file_paths:
-      {{- range .CertFilePaths }}
-      - "{{- . -}}"
+    {{- if .CertMeta }}
+    cert_meta:
+      {{- range $path, $info := .CertMeta }}
+      "{{- $path -}}":
+        serial_number: "{{- $info.SerialNumber -}}"
+        common_name: "{{- $info.CommonName -}}"
+        public_key_algorithm: "{{- $info.PublicKeyAlgorithm -}}"
+        not_after: {{ $info.NotAfter }}
       {{- end }}
     {{- end }}
 {{- end }}
