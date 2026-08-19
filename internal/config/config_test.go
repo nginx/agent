@@ -10,7 +10,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
-	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -33,21 +33,22 @@ const accessLogFormat = `$remote_addr - $remote_user [$time_local] \"$request\" 
 	`\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\"`
 
 func TestRegisterConfigFile(t *testing.T) {
+	if _, err := os.Stat("/etc/nginx-agent/nginx-agent.conf"); err == nil {
+		t.Skip("system nginx-agent.conf found at /etc/nginx-agent/ — cannot isolate RegisterConfigFile")
+	}
+
+	tmpDir := t.TempDir()
+	t.Chdir(tmpDir)
+
+	confFile := filepath.Join(tmpDir, "nginx-agent.conf")
+	require.NoError(t, os.WriteFile(confFile, []byte("log:\n  level: info\n"), 0o600))
+
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	file, err := os.Create("nginx-agent.conf")
-	require.NoError(t, err)
-	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 
-	_, err = file.WriteString("log:")
-	require.NoError(t, err)
-
-	currentDirectory, err := os.Getwd()
-	require.NoError(t, err)
-
-	err = RegisterConfigFile()
+	err := RegisterConfigFile()
 
 	require.NoError(t, err)
-	assert.Equal(t, path.Join(currentDirectory, "nginx-agent.conf"), viperInstance.GetString(ConfigPathKey))
+	assert.Equal(t, confFile, viperInstance.GetString(ConfigPathKey))
 	assert.NotEmpty(t, viperInstance.GetString(UUIDKey))
 }
 
