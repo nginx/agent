@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net"
 	"net/url"
 	"os"
@@ -767,13 +768,14 @@ func (oc *Collector) doesTcplogReceiverAlreadyExist(listenAddress string) bool {
 	return false
 }
 
+// updateCertificateReceivers adds, removes, or restarts the certificate receiver for an instance.
+// It compares cert metadata from CertificateMeta to detect in-place cert renewals.
 func (oc *Collector) updateCertificateReceivers(nginxConfigContext *model.NginxConfigContext) bool {
-	certFilePaths := certFilePathsFromFiles(nginxConfigContext.Files)
+	certMeta := certMetaFromFiles(nginxConfigContext.Files)
 
 	for i, certReceiver := range oc.config.Collector.Receivers.CertificateReceivers {
 		if certReceiver.InstanceID == nginxConfigContext.InstanceID {
-			if len(certFilePaths) == 0 {
-				// No certs remaining — remove the receiver
+			if len(certMeta) == 0 {
 				oc.config.Collector.Receivers.CertificateReceivers = append(
 					oc.config.Collector.Receivers.CertificateReceivers[:i],
 					oc.config.Collector.Receivers.CertificateReceivers[i+1:]...,
@@ -782,14 +784,17 @@ func (oc *Collector) updateCertificateReceivers(nginxConfigContext *model.NginxC
 				return true
 			}
 
-			// Always restart to pick up renewed certs
-			oc.config.Collector.Receivers.CertificateReceivers[i].CertFilePaths = certFilePaths
+			if maps.Equal(certReceiver.CertMeta, certMeta) {
+				return false
+			}
+
+			oc.config.Collector.Receivers.CertificateReceivers[i].CertMeta = certMeta
 
 			return true
 		}
 	}
 
-	if len(certFilePaths) == 0 {
+	if len(certMeta) == 0 {
 		return false
 	}
 
@@ -798,22 +803,31 @@ func (oc *Collector) updateCertificateReceivers(nginxConfigContext *model.NginxC
 		config.CertificateReceiver{
 			InstanceID:         nginxConfigContext.InstanceID,
 			CollectionInterval: oc.config.Collector.Receivers.CertificateMetrics.CollectionInterval,
-			CertFilePaths:      certFilePaths,
+			CertMeta:           certMeta,
 		},
 	)
 
 	return true
 }
 
-func certFilePathsFromFiles(files []*v1.File) []string {
-	var paths []string
+// certMetaFromFiles extracts cert metadata from Files with CertificateMeta.
+func certMetaFromFiles(files []*v1.File) map[string]config.CertMeta {
+	result := make(map[string]config.CertMeta)
+
 	for _, f := range files {
-		if _, ok := f.GetFileMeta().GetFileType().(*v1.FileMeta_CertificateMeta); ok {
-			paths = append(paths, f.GetFileMeta().GetName())
+		if cm, ok := f.GetFileMeta().GetFileType().(*v1.FileMeta_CertificateMeta); ok {
+			path := f.GetFileMeta().GetName()
+			meta := cm.CertificateMeta
+			result[path] = config.CertMeta{
+				SerialNumber:       meta.GetSerialNumber(),
+				CommonName:         meta.GetSubject().GetCommonName(),
+				PublicKeyAlgorithm: meta.GetPublicKeyAlgorithm(),
+				NotAfter:           meta.GetDates().GetNotAfter(),
+			}
 		}
 	}
 
-	return paths
+	return result
 }
 
 func (oc *Collector) updateResourceAttributes(

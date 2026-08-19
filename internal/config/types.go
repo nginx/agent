@@ -288,9 +288,16 @@ type (
 	}
 
 	CertificateReceiver struct {
-		InstanceID         string        `yaml:"instance_id"         mapstructure:"instance_id"`
-		CertFilePaths      []string      `yaml:"-"`
-		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
+		CertMeta           map[string]CertMeta `yaml:"-"`
+		InstanceID         string              `yaml:"instance_id"         mapstructure:"instance_id"`
+		CollectionInterval time.Duration       `yaml:"collection_interval" mapstructure:"collection_interval"`
+	}
+
+	CertMeta struct {
+		SerialNumber       string `yaml:"serial_number"        mapstructure:"serial_number"`
+		CommonName         string `yaml:"common_name"          mapstructure:"common_name"`
+		PublicKeyAlgorithm string `yaml:"public_key_algorithm" mapstructure:"public_key_algorithm"`
+		NotAfter           int64  `yaml:"not_after"            mapstructure:"not_after"`
 	}
 
 	HostMetrics struct {
