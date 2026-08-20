@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 )
 
-const defaultCollectInterval = 15 * time.Second
+const defaultCollectInterval = 1 * time.Minute
 
 type Config struct {
 	InstanceID                     string                        `mapstructure:"instance_id"`

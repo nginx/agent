@@ -114,6 +114,8 @@ func TestScrape_NoCerts(t *testing.T) {
 }
 
 func TestScrape_MultipleCerts(t *testing.T) {
+	expiredNotAfter := time.Now().Add(-7 * 24 * time.Hour).Truncate(time.Second)
+
 	cfg := &Config{
 		InstanceID:           "test-instance",
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
@@ -130,6 +132,12 @@ func TestScrape_MultipleCerts(t *testing.T) {
 				PublicKeyAlgorithm: "RSA",
 				NotAfter:           time.Now().Add(60 * 24 * time.Hour).Unix(),
 			},
+			"/expired.pem": {
+				SerialNumber:       "3",
+				CommonName:         "expired.example.com",
+				PublicKeyAlgorithm: "RSA",
+				NotAfter:           expiredNotAfter.Unix(),
+			},
 		},
 	}
 	scraper := newTestScraper(t, cfg)
@@ -140,5 +148,46 @@ func TestScrape_MultipleCerts(t *testing.T) {
 	require.Equal(t, 1, metrics.ResourceMetrics().Len())
 	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
 	require.Equal(t, 1, ms.Len())
-	require.Equal(t, 2, ms.At(0).Gauge().DataPoints().Len(), "Should emit one data point per certificate")
+	require.Equal(t, 3, ms.At(0).Gauge().DataPoints().Len(), "Should emit one data point per certificate")
+}
+
+func TestScrape_RenewExpiredCert(t *testing.T) {
+	expiredNotAfter := time.Now().Add(-7 * 24 * time.Hour).Truncate(time.Second)
+
+	cfg := &Config{
+		InstanceID:           "test-instance",
+		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		CertMeta: map[string]CertMeta{
+			"/cert.pem": {
+				SerialNumber:       "old-serial",
+				CommonName:         "example.com",
+				PublicKeyAlgorithm: "RSA",
+				NotAfter:           expiredNotAfter.Unix(),
+			},
+		},
+	}
+	scraper := newTestScraper(t, cfg)
+
+	metrics, err := scraper.Scrape(context.Background())
+	require.NoError(t, err)
+	dp := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().At(0).Gauge().DataPoints().At(0)
+	require.Equal(t, expiredNotAfter.Unix(), dp.IntValue())
+
+	// Simulate cert renewal by updating the config with new metadata.
+	renewedNotAfter := time.Now().Add(365 * 24 * time.Hour).Truncate(time.Second)
+	cfg.CertMeta["/cert.pem"] = CertMeta{
+		SerialNumber:       "new-serial",
+		CommonName:         "example.com",
+		PublicKeyAlgorithm: "RSA",
+		NotAfter:           renewedNotAfter.Unix(),
+	}
+
+	metrics, err = scraper.Scrape(context.Background())
+	require.NoError(t, err)
+	dp = metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().At(0).Gauge().DataPoints().At(0)
+	require.Equal(t, renewedNotAfter.Unix(), dp.IntValue())
+
+	serialAttr, ok := dp.Attributes().Get("serial_number")
+	require.True(t, ok)
+	require.Equal(t, "new-serial", serialAttr.AsString())
 }

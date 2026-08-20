@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -219,6 +220,50 @@ func TestTemplateWrite(t *testing.T) {
 
 	// Convert to string for human readable error messages.
 	assert.Equal(t, string(expected), string(actual))
+}
+
+func TestTemplateWrite_ZeroCollectionIntervalOmitted(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cfg := types.AgentConfig()
+	actualConfPath := filepath.Join(tmpDir, "otelcol-cert-test.yaml")
+	cfg.Collector.ConfigPath = actualConfPath
+	cfg.Collector.Receivers.CertificateReceivers = []config.CertificateReceiver{
+		{
+			InstanceID:         "abc",
+			CollectionInterval: 0, // zero Duration must be omitted from output
+			CertMeta: map[string]config.CertMeta{
+				"/etc/ssl/cert.pem": {
+					SerialNumber:       "1234",
+					CommonName:         "example.com",
+					PublicKeyAlgorithm: "RSA",
+					NotAfter:           9999999999,
+				},
+			},
+		},
+	}
+	cfg.Collector.Pipelines.Metrics = map[string]*config.Pipeline{
+		"default": {
+			Receivers: []string{"certificate"},
+			Exporters: []string{"otlp_grpc/default"},
+		},
+	}
+
+	err := writeCollectorConfig(cfg.Collector)
+	require.NoError(t, err)
+
+	actual, err := os.ReadFile(actualConfPath)
+	require.NoError(t, err)
+
+	output := string(actual)
+	assert.Contains(t, output, "certificate:")
+	idx := strings.Index(output, "certificate:")
+	require.Positive(t, idx)
+	certSection := output[idx:]
+	endIdx := strings.Index(certSection, "\n\n")
+	require.Positive(t, endIdx)
+	certSection = certSection[:endIdx]
+	assert.NotContains(t, certSection, "collection_interval")
 }
 
 func TestFilePermissions(t *testing.T) {
