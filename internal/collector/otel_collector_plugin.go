@@ -545,6 +545,9 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 
 	if oc.config.Collector.Receivers.CertificateMetrics != nil {
 		reloadCollector = reloadCollector || oc.updateCertificateReceivers(nginxConfigContext)
+	} else if len(oc.config.Collector.Receivers.CertificateReceivers) > 0 {
+		oc.config.Collector.Receivers.CertificateReceivers = nil
+		reloadCollector = true
 	}
 
 	return reloadCollector

@@ -8,24 +8,18 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/collector/certificatereceiver/internal/metadata"
+	"github.com/nginx/agent/v3/internal/config"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 )
 
-const defaultCollectInterval = 15 * time.Second
+const defaultCollectInterval = 1 * time.Minute
 
 type Config struct {
 	InstanceID                     string                        `mapstructure:"instance_id"`
-	CertMeta                       map[string]CertMeta           `mapstructure:"cert_meta"`
+	CertMeta                       map[string]config.CertMeta    `mapstructure:"cert_meta"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
-}
-
-type CertMeta struct {
-	SerialNumber       string `mapstructure:"serial_number"`
-	CommonName         string `mapstructure:"common_name"`
-	PublicKeyAlgorithm string `mapstructure:"public_key_algorithm"`
-	NotAfter           int64  `mapstructure:"not_after"`
 }
 
 //nolint:ireturn // must return default controller interface
