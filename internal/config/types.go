@@ -121,9 +121,9 @@ type (
 	}
 
 	Collector struct {
+		Log                   *Log       `yaml:"log"                     mapstructure:"log"`
 		ConfigPath            string     `yaml:"config_path"             mapstructure:"config_path"`
 		AdditionalConfigPaths []string   `yaml:"additional_config_paths" mapstructure:"additional_config_paths"`
-		Log                   *Log       `yaml:"log"                     mapstructure:"log"`
 		Exporters             Exporters  `yaml:"exporters"               mapstructure:"exporters"`
 		Extensions            Extensions `yaml:"extensions"              mapstructure:"extensions"`
 		Processors            Processors `yaml:"processors"              mapstructure:"processors"`
@@ -225,12 +225,14 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		ContainerMetrics   *ContainerMetricsReceiver  `yaml:"container_metrics" mapstructure:"container_metrics"`
-		HostMetrics        *HostMetrics               `yaml:"host_metrics"      mapstructure:"host_metrics"`
-		OtlpReceivers      map[string]*OtlpReceiver   `yaml:"otlp"              mapstructure:"otlp"`
-		TcplogReceivers    map[string]*TcplogReceiver `yaml:"tcplog"            mapstructure:"tcplog"`
-		NginxReceivers     []NginxReceiver            `yaml:"-"`
-		NginxPlusReceivers []NginxPlusReceiver        `yaml:"-"`
+		ContainerMetrics     *ContainerMetricsReceiver  `yaml:"container_metrics"   mapstructure:"container_metrics"`
+		HostMetrics          *HostMetrics               `yaml:"host_metrics"        mapstructure:"host_metrics"`
+		CertificateMetrics   *CertificateMetricsConfig  `yaml:"certificate_metrics" mapstructure:"certificate_metrics"`
+		OtlpReceivers        map[string]*OtlpReceiver   `yaml:"otlp"                mapstructure:"otlp"`
+		TcplogReceivers      map[string]*TcplogReceiver `yaml:"tcplog"              mapstructure:"tcplog"`
+		NginxReceivers       []NginxReceiver            `yaml:"-"`
+		NginxPlusReceivers   []NginxPlusReceiver        `yaml:"-"`
+		CertificateReceivers []CertificateReceiver      `yaml:"-"`
 	}
 
 	OtlpReceiver struct {
@@ -279,6 +281,23 @@ type (
 
 	ContainerMetricsReceiver struct {
 		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
+	}
+
+	CertificateMetricsConfig struct {
+		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
+	}
+
+	CertificateReceiver struct {
+		CertMeta           map[string]CertMeta `yaml:"-"`
+		InstanceID         string              `yaml:"instance_id"         mapstructure:"instance_id"`
+		CollectionInterval time.Duration       `yaml:"collection_interval" mapstructure:"collection_interval"`
+	}
+
+	CertMeta struct {
+		SerialNumber       string `yaml:"serial_number"        mapstructure:"serial_number"`
+		CommonName         string `yaml:"common_name"          mapstructure:"common_name"`
+		PublicKeyAlgorithm string `yaml:"public_key_algorithm" mapstructure:"public_key_algorithm"`
+		NotAfter           int64  `yaml:"not_after"            mapstructure:"not_after"`
 	}
 
 	HostMetrics struct {
@@ -465,16 +484,13 @@ func (c *Config) AreReceiversConfigured() bool {
 		return false
 	}
 
-	return c.Collector.Receivers.NginxPlusReceivers != nil ||
-		len(c.Collector.Receivers.NginxPlusReceivers) > 0 ||
-		c.Collector.Receivers.OtlpReceivers != nil ||
+	return len(c.Collector.Receivers.NginxPlusReceivers) > 0 ||
 		len(c.Collector.Receivers.OtlpReceivers) > 0 ||
-		c.Collector.Receivers.NginxReceivers != nil ||
 		len(c.Collector.Receivers.NginxReceivers) > 0 ||
 		c.Collector.Receivers.HostMetrics != nil ||
 		c.Collector.Receivers.ContainerMetrics != nil ||
-		c.Collector.Receivers.TcplogReceivers != nil ||
-		len(c.Collector.Receivers.TcplogReceivers) > 0
+		len(c.Collector.Receivers.TcplogReceivers) > 0 ||
+		len(c.Collector.Receivers.CertificateReceivers) > 0
 }
 
 func (c *Config) NewContextWithLabels(ctx context.Context) context.Context {

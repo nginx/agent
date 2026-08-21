@@ -18,6 +18,8 @@ import (
 	"github.com/nginx/agent/v3/test/stub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/provider/envprovider"
 	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
@@ -165,8 +167,8 @@ func TestCollector_InitAndClose(t *testing.T) {
 //nolint:revive // cognitive complexity is 13
 func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 	tests := []struct {
-		name      string
 		message   *bus.Message
+		name      string
 		receivers config.Receivers
 	}{
 		{
@@ -486,8 +488,8 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	conf.Collector.Log.Path = ""
 
 	tests := []struct {
-		name               string
 		nginxConfigContext *model.NginxConfigContext
+		name               string
 		existingReceivers  config.Receivers
 		expectedReceivers  config.Receivers
 	}{
@@ -594,8 +596,8 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	conf.Collector.Log.Path = ""
 
 	tests := []struct {
-		name               string
 		nginxConfigContext *model.NginxConfigContext
+		name               string
 		existingReceivers  config.Receivers
 		expectedReceivers  config.Receivers
 	}{
@@ -1078,6 +1080,172 @@ func TestCollector_writeRunningConfig(t *testing.T) {
 				assert.Equal(t, string(expected), string(actual))
 			} else {
 				assert.Equal(t, tt.writeConfigErr.Error(), writeErr.Error())
+			}
+		})
+	}
+}
+
+func TestCertMetaFromFiles(t *testing.T) {
+	tests := []struct {
+		expected map[string]config.CertMeta
+		name     string
+		files    []*mpi.File
+	}{
+		{
+			name:     "no files",
+			files:    nil,
+			expected: make(map[string]config.CertMeta),
+		},
+		{
+			name: "non-cert files ignored",
+			files: []*mpi.File{
+				{FileMeta: protos.FileMeta("/etc/nginx/nginx.conf", "abc")},
+			},
+			expected: make(map[string]config.CertMeta),
+		},
+		{
+			name: "cert files extracted",
+			files: []*mpi.File{
+				{FileMeta: protos.CertMeta("/etc/nginx/cert.pem", "hash1")},
+				{FileMeta: protos.FileMeta("/etc/nginx/nginx.conf", "hash2")},
+			},
+			expected: map[string]config.CertMeta{
+				"/etc/nginx/cert.pem": {
+					SerialNumber: "12345-67890",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := certMetaFromFiles(tt.files)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestUpdateCertificateReceivers(t *testing.T) {
+	const instanceID = "instance-1"
+
+	certFile := func(path, serial string) *mpi.File {
+		return &mpi.File{
+			FileMeta: &mpi.FileMeta{
+				Name: path,
+				FileType: &mpi.FileMeta_CertificateMeta{
+					CertificateMeta: &mpi.CertificateMeta{
+						SerialNumber: serial,
+						Subject:      &mpi.X509Name{CommonName: "test"},
+						Dates:        &mpi.CertificateDates{NotAfter: 1000},
+					},
+				},
+			},
+		}
+	}
+
+	metaFor := func(serial string) config.CertMeta {
+		return config.CertMeta{
+			SerialNumber: serial,
+			CommonName:   "test",
+			NotAfter:     1000,
+		}
+	}
+
+	tests := []struct {
+		expectedPaths   map[string]config.CertMeta
+		name            string
+		existingRecvs   []config.CertificateReceiver
+		files           []*mpi.File
+		expectedRecvs   int
+		expectedRestart bool
+	}{
+		{
+			name:            "new instance with certs",
+			existingRecvs:   nil,
+			files:           []*mpi.File{certFile("/a.pem", "111")},
+			expectedRestart: true,
+			expectedRecvs:   1,
+			expectedPaths:   map[string]config.CertMeta{"/a.pem": metaFor("111")},
+		},
+		{
+			name:            "new instance with no certs",
+			existingRecvs:   nil,
+			files:           nil,
+			expectedRestart: false,
+			expectedRecvs:   0,
+		},
+		{
+			name: "existing instance, same cert info, no restart",
+			existingRecvs: []config.CertificateReceiver{{
+				InstanceID: instanceID,
+				CertMeta:   map[string]config.CertMeta{"/a.pem": metaFor("111")},
+			}},
+			files:           []*mpi.File{certFile("/a.pem", "111")},
+			expectedRestart: false,
+			expectedRecvs:   1,
+			expectedPaths:   map[string]config.CertMeta{"/a.pem": metaFor("111")},
+		},
+		{
+			name: "existing instance, serial changed, restart",
+			existingRecvs: []config.CertificateReceiver{{
+				InstanceID: instanceID,
+				CertMeta:   map[string]config.CertMeta{"/a.pem": metaFor("111")},
+			}},
+			files:           []*mpi.File{certFile("/a.pem", "222")},
+			expectedRestart: true,
+			expectedRecvs:   1,
+			expectedPaths:   map[string]config.CertMeta{"/a.pem": metaFor("222")},
+		},
+		{
+			name: "existing instance, path added, restart",
+			existingRecvs: []config.CertificateReceiver{{
+				InstanceID: instanceID,
+				CertMeta:   map[string]config.CertMeta{"/a.pem": metaFor("111")},
+			}},
+			files:           []*mpi.File{certFile("/a.pem", "111"), certFile("/b.pem", "222")},
+			expectedRestart: true,
+			expectedRecvs:   1,
+			expectedPaths: map[string]config.CertMeta{
+				"/a.pem": metaFor("111"),
+				"/b.pem": metaFor("222"),
+			},
+		},
+		{
+			name: "existing instance, all certs removed",
+			existingRecvs: []config.CertificateReceiver{{
+				InstanceID: instanceID,
+				CertMeta:   map[string]config.CertMeta{"/a.pem": metaFor("111")},
+			}},
+			files:           nil,
+			expectedRestart: true,
+			expectedRecvs:   0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oc := &Collector{
+				config: &config.Config{
+					Collector: &config.Collector{
+						Receivers: config.Receivers{
+							CertificateMetrics:   &config.CertificateMetricsConfig{},
+							CertificateReceivers: tt.existingRecvs,
+						},
+					},
+				},
+			}
+
+			ctx := &model.NginxConfigContext{
+				InstanceID: instanceID,
+				Files:      tt.files,
+			}
+
+			got := oc.updateCertificateReceivers(ctx)
+			assert.Equal(t, tt.expectedRestart, got)
+			assert.Len(t, oc.config.Collector.Receivers.CertificateReceivers, tt.expectedRecvs)
+
+			if tt.expectedRecvs > 0 && tt.expectedPaths != nil {
+				assert.Equal(t, tt.expectedPaths, oc.config.Collector.Receivers.CertificateReceivers[0].CertMeta)
 			}
 		})
 	}
