@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -34,11 +35,13 @@ type NginxPlusScraper struct {
 	serverZoneMetrics   *record.ServerZoneMetrics
 	httpMetrics         *record.HTTPMetrics
 	plusClient          *plusapi.NginxClient
+	httpClient          *http.Client
 	cfg                 *Config
 	mb                  *metadata.MetricsBuilder
 	rb                  *metadata.ResourceBuilder
 	logger              *zap.Logger
 	settings            receiver.Settings
+	startTime           pcommon.Timestamp
 }
 
 func newNginxPlusScraper(
@@ -98,6 +101,8 @@ func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error 
 		plusapi.WithMaxAPIVersion(), plusapi.WithHTTPClient(httpClient),
 	)
 	nps.plusClient = plusClient
+	nps.httpClient = httpClient
+	nps.startTime = pcommon.NewTimestampFromTime(time.Now())
 	if err != nil {
 		return err
 	}
@@ -131,11 +136,57 @@ func (nps *NginxPlusScraper) Scrape(ctx context.Context) (pmetric.Metrics, error
 	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
 	nps.recordMetrics(stats)
 
-	return nps.mb.Emit(metadata.WithResource(nps.rb.Emit())), nil
+	metrics := nps.mb.Emit(metadata.WithResource(nps.rb.Emit()))
+
+	if nps.cfg.MetricsBuilderConfig.Metrics.NginxHTTPUpstreamPeerResponseTimeHist.Enabled {
+		histPayload, upstreamsErr := nps.fetchHTTPUpstreams(ctx)
+		if upstreamsErr != nil {
+			nps.logger.Debug("Failed to fetch upstream response_time_hist", zap.Error(upstreamsErr))
+		}
+
+		record.AppendHTTPUpstreamPeerResponseTimeHist(
+			metrics,
+			histPayload,
+			nps.startTime,
+			pcommon.NewTimestampFromTime(time.Now()),
+		)
+	}
+
+	return metrics, nil
 }
 
 func (nps *NginxPlusScraper) Shutdown(ctx context.Context) error {
 	return nil
+}
+
+// fetchHTTPUpstreams retrieves the /api/<version>/http/upstreams payload directly,
+// including the response_time_hist field that nginx-plus-go-client does not expose.
+func (nps *NginxPlusScraper) fetchHTTPUpstreams(ctx context.Context) (record.HTTPUpstreamsPayload, error) {
+	url := fmt.Sprintf("%s/%d/http/upstreams",
+		strings.TrimPrefix(nps.cfg.APIDetails.URL, "unix:"),
+		nps.plusClient.Version(),
+	)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create upstreams request: %w", err)
+	}
+
+	resp, err := nps.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get %s: %w", url, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("expected %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	var payload record.HTTPUpstreamsPayload
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&payload); decodeErr != nil {
+		return nil, fmt.Errorf("error unmarshaling upstreams: %w", decodeErr)
+	}
+
+	return payload, nil
 }
 
 func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {

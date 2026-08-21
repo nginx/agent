@@ -20,7 +20,7 @@ func TestResourceBuilder(t *testing.T) {
 
 			switch tt {
 			case "default":
-				assert.Equal(t, 0, res.Attributes().Len())
+				assert.Equal(t, 1, res.Attributes().Len())
 			case "all_set":
 				assert.Equal(t, 1, res.Attributes().Len())
 			case "none_set":
@@ -29,11 +29,10 @@ func TestResourceBuilder(t *testing.T) {
 			default:
 				assert.Failf(t, "unexpected test case: %s", tt)
 			}
-
-			val, ok := res.Attributes().Get("resource.id")
-			assert.Equal(t, tt == "all_set", ok)
+			resourceIDAttrVal, ok := res.Attributes().Get("resource.id")
+			assert.True(t, ok)
 			if ok {
-				assert.Equal(t, "resource.id-val", val.Str())
+				assert.Equal(t, "resource.id-val", resourceIDAttrVal.Str())
 			}
 		})
 	}

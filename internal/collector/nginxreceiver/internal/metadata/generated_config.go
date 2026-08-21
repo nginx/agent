@@ -3,54 +3,227 @@
 package metadata
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/filter"
 )
 
-// MetricConfig provides common config for a particular metric.
-type MetricConfig struct {
-	Enabled bool `mapstructure:"enabled"`
+// NginxHTTPConnectionCountMetricAttributeKey specifies the key of an attribute for the nginx.http.connection.count metric.
+type NginxHTTPConnectionCountMetricAttributeKey string
 
+const (
+	NginxHTTPConnectionCountMetricAttributeKeyNginxConnectionsOutcome NginxHTTPConnectionCountMetricAttributeKey = "nginx.connections.outcome"
+)
+
+// NginxHTTPConnectionCountMetricConfig provides config for the nginx.http.connection.count metric.
+type NginxHTTPConnectionCountMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
 	enabledSetByUser bool
+
+	AggregationStrategy string                                       `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []NginxHTTPConnectionCountMetricAttributeKey `mapstructure:"attributes"`
 }
 
-func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
+func (ms *NginxHTTPConnectionCountMetricConfig) Unmarshal(parser *confmap.Conf) error {
 	if parser == nil {
 		return nil
 	}
+
 	err := parser.Unmarshal(ms)
 	if err != nil {
 		return err
 	}
+
 	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *NginxHTTPConnectionCountMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case NginxHTTPConnectionCountMetricAttributeKeyNginxConnectionsOutcome:
+		default:
+			return fmt.Errorf("metric nginx.http.connection.count doesn't have an attribute %v, valid attributes: [nginx.connections.outcome]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// NginxHTTPConnectionsMetricAttributeKey specifies the key of an attribute for the nginx.http.connections metric.
+type NginxHTTPConnectionsMetricAttributeKey string
+
+const (
+	NginxHTTPConnectionsMetricAttributeKeyNginxConnectionsOutcome NginxHTTPConnectionsMetricAttributeKey = "nginx.connections.outcome"
+)
+
+// NginxHTTPConnectionsMetricConfig provides config for the nginx.http.connections metric.
+type NginxHTTPConnectionsMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                   `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []NginxHTTPConnectionsMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *NginxHTTPConnectionsMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *NginxHTTPConnectionsMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case NginxHTTPConnectionsMetricAttributeKeyNginxConnectionsOutcome:
+		default:
+			return fmt.Errorf("metric nginx.http.connections doesn't have an attribute %v, valid attributes: [nginx.connections.outcome]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// NginxHTTPRequestCountMetricConfig provides config for the nginx.http.request.count metric.
+type NginxHTTPRequestCountMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+}
+
+func (ms *NginxHTTPRequestCountMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+// NginxHTTPRequestsMetricConfig provides config for the nginx.http.requests metric.
+type NginxHTTPRequestsMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+}
+
+func (ms *NginxHTTPRequestsMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+// NginxHTTPResponseCountMetricAttributeKey specifies the key of an attribute for the nginx.http.response.count metric.
+type NginxHTTPResponseCountMetricAttributeKey string
+
+const (
+	NginxHTTPResponseCountMetricAttributeKeyNginxStatusRange NginxHTTPResponseCountMetricAttributeKey = "nginx.status_range"
+)
+
+// NginxHTTPResponseCountMetricConfig provides config for the nginx.http.response.count metric.
+type NginxHTTPResponseCountMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                     `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []NginxHTTPResponseCountMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *NginxHTTPResponseCountMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *NginxHTTPResponseCountMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case NginxHTTPResponseCountMetricAttributeKeyNginxStatusRange:
+		default:
+			return fmt.Errorf("metric nginx.http.response.count doesn't have an attribute %v, valid attributes: [nginx.status_range]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
 	return nil
 }
 
 // MetricsConfig provides config for nginx metrics.
 type MetricsConfig struct {
-	NginxHTTPConnectionCount MetricConfig `mapstructure:"nginx.http.connection.count"`
-	NginxHTTPConnections     MetricConfig `mapstructure:"nginx.http.connections"`
-	NginxHTTPRequestCount    MetricConfig `mapstructure:"nginx.http.request.count"`
-	NginxHTTPRequests        MetricConfig `mapstructure:"nginx.http.requests"`
-	NginxHTTPResponseCount   MetricConfig `mapstructure:"nginx.http.response.count"`
+	NginxHTTPConnectionCount NginxHTTPConnectionCountMetricConfig `mapstructure:"nginx.http.connection.count"`
+	NginxHTTPConnections     NginxHTTPConnectionsMetricConfig     `mapstructure:"nginx.http.connections"`
+	NginxHTTPRequestCount    NginxHTTPRequestCountMetricConfig    `mapstructure:"nginx.http.request.count"`
+	NginxHTTPRequests        NginxHTTPRequestsMetricConfig        `mapstructure:"nginx.http.requests"`
+	NginxHTTPResponseCount   NginxHTTPResponseCountMetricConfig   `mapstructure:"nginx.http.response.count"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		NginxHTTPConnectionCount: MetricConfig{
+		NginxHTTPConnectionCount: NginxHTTPConnectionCountMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []NginxHTTPConnectionCountMetricAttributeKey{NginxHTTPConnectionCountMetricAttributeKeyNginxConnectionsOutcome},
+		},
+		NginxHTTPConnections: NginxHTTPConnectionsMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []NginxHTTPConnectionsMetricAttributeKey{NginxHTTPConnectionsMetricAttributeKeyNginxConnectionsOutcome},
+		},
+		NginxHTTPRequestCount: NginxHTTPRequestCountMetricConfig{
 			Enabled: true,
 		},
-		NginxHTTPConnections: MetricConfig{
+		NginxHTTPRequests: NginxHTTPRequestsMetricConfig{
 			Enabled: true,
 		},
-		NginxHTTPRequestCount: MetricConfig{
-			Enabled: true,
-		},
-		NginxHTTPRequests: MetricConfig{
-			Enabled: true,
-		},
-		NginxHTTPResponseCount: MetricConfig{
-			Enabled: true,
+		NginxHTTPResponseCount: NginxHTTPResponseCountMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []NginxHTTPResponseCountMetricAttributeKey{NginxHTTPResponseCountMetricAttributeKeyNginxStatusRange},
 		},
 	}
 }
@@ -104,9 +277,14 @@ type MetricsBuilderConfig struct {
 	ResourceAttributes ResourceAttributesConfig `mapstructure:"resource_attributes"`
 }
 
-func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+func NewDefaultMetricsBuilderConfig() MetricsBuilderConfig {
 	return MetricsBuilderConfig{
 		Metrics:            DefaultMetricsConfig(),
 		ResourceAttributes: DefaultResourceAttributesConfig(),
 	}
+}
+
+// Deprecated: Use NewDefaultMetricsBuilderConfig.
+func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+	return NewDefaultMetricsBuilderConfig()
 }

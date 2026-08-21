@@ -3,14 +3,37 @@ all_set:
   metrics:
     nginx.http.connection.count:
       enabled: true
+      attributes: ["nginx.connections.outcome"]
     nginx.http.connections:
       enabled: true
+      attributes: ["nginx.connections.outcome"]
     nginx.http.request.count:
       enabled: true
     nginx.http.requests:
       enabled: true
     nginx.http.response.count:
       enabled: true
+      attributes: ["nginx.status_range"]
+  resource_attributes:
+    instance.id:
+      enabled: true
+    instance.type:
+      enabled: true
+reaggregate_set:
+  metrics:
+    nginx.http.connection.count:
+      enabled: true
+      attributes: []
+    nginx.http.connections:
+      enabled: true
+      attributes: []
+    nginx.http.request.count:
+      enabled: true
+    nginx.http.requests:
+      enabled: true
+    nginx.http.response.count:
+      enabled: true
+      attributes: []
   resource_attributes:
     instance.id:
       enabled: true
@@ -20,14 +43,17 @@ none_set:
   metrics:
     nginx.http.connection.count:
       enabled: false
+      attributes: ["nginx.connections.outcome"]
     nginx.http.connections:
       enabled: false
+      attributes: ["nginx.connections.outcome"]
     nginx.http.request.count:
       enabled: false
     nginx.http.requests:
       enabled: false
     nginx.http.response.count:
       enabled: false
+      attributes: ["nginx.status_range"]
   resource_attributes:
     instance.id:
       enabled: false
