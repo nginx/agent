@@ -36,7 +36,7 @@ require (
 require (
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/nginx/agent/sdk/v2 v2.46.7
-	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
+	github.com/nginx/nginx-plus-go-client/v3 v3.0.2
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/cors v1.11.1
 	go.uber.org/goleak v1.3.0
