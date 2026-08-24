@@ -54,7 +54,7 @@ func TestScrape_FutureExpiry(t *testing.T) {
 
 	ms := rm.ScopeMetrics().At(0).Metrics()
 	require.Equal(t, 1, ms.Len())
-	require.Equal(t, "nginx.ssl.certificate.expiry", ms.At(0).Name())
+	require.Equal(t, "nginx.ssl.certificate.expiry.time", ms.At(0).Name())
 
 	dp := ms.At(0).Gauge().DataPoints().At(0)
 	require.Equal(t, notAfter.Unix(), dp.IntValue())

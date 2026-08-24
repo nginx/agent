@@ -56,7 +56,7 @@ func (c *CertificateScraper) Scrape(_ context.Context) (pmetric.Metrics, error) 
 	}
 
 	for path, info := range c.cfg.CertMeta {
-		c.mb.RecordNginxSslCertificateExpiryDataPoint(
+		c.mb.RecordNginxSslCertificateExpiryTimeDataPoint(
 			now, info.NotAfter,
 			path,
 			info.PublicKeyAlgorithm,

@@ -12,7 +12,7 @@ metrics:
     enabled: false
 ```
 
-### nginx.ssl.certificate.expiry
+### nginx.ssl.certificate.expiry.time
 
 The Unix timestamp (in seconds) at which an SSL/TLS certificate expires
 

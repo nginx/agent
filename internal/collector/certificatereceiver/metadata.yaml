@@ -28,7 +28,7 @@ attributes:
     type: string
 
 metrics:
-  nginx.ssl.certificate.expiry:
+  nginx.ssl.certificate.expiry.time:
     enabled: true
     description: "The Unix timestamp (in seconds) at which an SSL/TLS certificate expires"
     stability:

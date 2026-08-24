@@ -70,7 +70,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxSslCertificateExpiryDataPoint(ts, 1, "file_path-val", "public_key_algorithm-val", "serial_number-val", "subject.common_name-val")
+			mb.RecordNginxSslCertificateExpiryTimeDataPoint(ts, 1, "file_path-val", "public_key_algorithm-val", "serial_number-val", "subject.common_name-val")
 
 			rb := mb.NewResourceBuilder()
 			rb.SetInstanceID("instance.id-val")
@@ -96,9 +96,9 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
-				case "nginx.ssl.certificate.expiry":
-					assert.False(t, validatedMetrics["nginx.ssl.certificate.expiry"], "Found a duplicate in the metrics slice: nginx.ssl.certificate.expiry")
-					validatedMetrics["nginx.ssl.certificate.expiry"] = true
+				case "nginx.ssl.certificate.expiry.time":
+					assert.False(t, validatedMetrics["nginx.ssl.certificate.expiry.time"], "Found a duplicate in the metrics slice: nginx.ssl.certificate.expiry.time")
+					validatedMetrics["nginx.ssl.certificate.expiry.time"] = true
 					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
 					assert.Equal(t, "The Unix timestamp (in seconds) at which an SSL/TLS certificate expires", ms.At(i).Description())

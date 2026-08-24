@@ -13,35 +13,35 @@ import (
 )
 
 var MetricsInfo = metricsInfo{
-	NginxSslCertificateExpiry: metricInfo{
-		Name: "nginx.ssl.certificate.expiry",
+	NginxSslCertificateExpiryTime: metricInfo{
+		Name: "nginx.ssl.certificate.expiry.time",
 	},
 }
 
 type metricsInfo struct {
-	NginxSslCertificateExpiry metricInfo
+	NginxSslCertificateExpiryTime metricInfo
 }
 
 type metricInfo struct {
 	Name string
 }
 
-type metricNginxSslCertificateExpiry struct {
+type metricNginxSslCertificateExpiryTime struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills nginx.ssl.certificate.expiry metric with initial data.
-func (m *metricNginxSslCertificateExpiry) init() {
-	m.data.SetName("nginx.ssl.certificate.expiry")
+// init fills nginx.ssl.certificate.expiry.time metric with initial data.
+func (m *metricNginxSslCertificateExpiryTime) init() {
+	m.data.SetName("nginx.ssl.certificate.expiry.time")
 	m.data.SetDescription("The Unix timestamp (in seconds) at which an SSL/TLS certificate expires")
 	m.data.SetUnit("s")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxSslCertificateExpiry) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, filePathAttributeValue string, publicKeyAlgorithmAttributeValue string, serialNumberAttributeValue string, subjectCommonNameAttributeValue string) {
+func (m *metricNginxSslCertificateExpiryTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, filePathAttributeValue string, publicKeyAlgorithmAttributeValue string, serialNumberAttributeValue string, subjectCommonNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -56,14 +56,14 @@ func (m *metricNginxSslCertificateExpiry) recordDataPoint(start pcommon.Timestam
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxSslCertificateExpiry) updateCapacity() {
+func (m *metricNginxSslCertificateExpiryTime) updateCapacity() {
 	if m.data.Gauge().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Gauge().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxSslCertificateExpiry) emit(metrics pmetric.MetricSlice) {
+func (m *metricNginxSslCertificateExpiryTime) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -71,8 +71,8 @@ func (m *metricNginxSslCertificateExpiry) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricNginxSslCertificateExpiry(cfg MetricConfig) metricNginxSslCertificateExpiry {
-	m := metricNginxSslCertificateExpiry{config: cfg}
+func newMetricNginxSslCertificateExpiryTime(cfg MetricConfig) metricNginxSslCertificateExpiryTime {
+	m := metricNginxSslCertificateExpiryTime{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -83,14 +83,14 @@ func newMetricNginxSslCertificateExpiry(cfg MetricConfig) metricNginxSslCertific
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
-	config                          MetricsBuilderConfig // config of the metrics builder.
-	startTime                       pcommon.Timestamp    // start time that will be applied to all recorded data points.
-	metricsCapacity                 int                  // maximum observed number of metrics per resource.
-	metricsBuffer                   pmetric.Metrics      // accumulates metrics data before emitting.
-	buildInfo                       component.BuildInfo  // contains version information.
-	resourceAttributeIncludeFilter  map[string]filter.Filter
-	resourceAttributeExcludeFilter  map[string]filter.Filter
-	metricNginxSslCertificateExpiry metricNginxSslCertificateExpiry
+	config                              MetricsBuilderConfig // config of the metrics builder.
+	startTime                           pcommon.Timestamp    // start time that will be applied to all recorded data points.
+	metricsCapacity                     int                  // maximum observed number of metrics per resource.
+	metricsBuffer                       pmetric.Metrics      // accumulates metrics data before emitting.
+	buildInfo                           component.BuildInfo  // contains version information.
+	resourceAttributeIncludeFilter      map[string]filter.Filter
+	resourceAttributeExcludeFilter      map[string]filter.Filter
+	metricNginxSslCertificateExpiryTime metricNginxSslCertificateExpiryTime
 }
 
 // MetricBuilderOption applies changes to default metrics builder.
@@ -112,13 +112,13 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 }
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
-		config:                          mbc,
-		startTime:                       pcommon.NewTimestampFromTime(time.Now()),
-		metricsBuffer:                   pmetric.NewMetrics(),
-		buildInfo:                       settings.BuildInfo,
-		metricNginxSslCertificateExpiry: newMetricNginxSslCertificateExpiry(mbc.Metrics.NginxSslCertificateExpiry),
-		resourceAttributeIncludeFilter:  make(map[string]filter.Filter),
-		resourceAttributeExcludeFilter:  make(map[string]filter.Filter),
+		config:                              mbc,
+		startTime:                           pcommon.NewTimestampFromTime(time.Now()),
+		metricsBuffer:                       pmetric.NewMetrics(),
+		buildInfo:                           settings.BuildInfo,
+		metricNginxSslCertificateExpiryTime: newMetricNginxSslCertificateExpiryTime(mbc.Metrics.NginxSslCertificateExpiryTime),
+		resourceAttributeIncludeFilter:      make(map[string]filter.Filter),
+		resourceAttributeExcludeFilter:      make(map[string]filter.Filter),
 	}
 	if mbc.ResourceAttributes.InstanceID.MetricsInclude != nil {
 		mb.resourceAttributeIncludeFilter["instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceID.MetricsInclude)
@@ -195,7 +195,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
-	mb.metricNginxSslCertificateExpiry.emit(ils.Metrics())
+	mb.metricNginxSslCertificateExpiryTime.emit(ils.Metrics())
 
 	for _, op := range options {
 		op.apply(rm)
@@ -227,9 +227,9 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	return metrics
 }
 
-// RecordNginxSslCertificateExpiryDataPoint adds a data point to nginx.ssl.certificate.expiry metric.
-func (mb *MetricsBuilder) RecordNginxSslCertificateExpiryDataPoint(ts pcommon.Timestamp, val int64, filePathAttributeValue string, publicKeyAlgorithmAttributeValue string, serialNumberAttributeValue string, subjectCommonNameAttributeValue string) {
-	mb.metricNginxSslCertificateExpiry.recordDataPoint(mb.startTime, ts, val, filePathAttributeValue, publicKeyAlgorithmAttributeValue, serialNumberAttributeValue, subjectCommonNameAttributeValue)
+// RecordNginxSslCertificateExpiryTimeDataPoint adds a data point to nginx.ssl.certificate.expiry.time metric.
+func (mb *MetricsBuilder) RecordNginxSslCertificateExpiryTimeDataPoint(ts pcommon.Timestamp, val int64, filePathAttributeValue string, publicKeyAlgorithmAttributeValue string, serialNumberAttributeValue string, subjectCommonNameAttributeValue string) {
+	mb.metricNginxSslCertificateExpiryTime.recordDataPoint(mb.startTime, ts, val, filePathAttributeValue, publicKeyAlgorithmAttributeValue, serialNumberAttributeValue, subjectCommonNameAttributeValue)
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

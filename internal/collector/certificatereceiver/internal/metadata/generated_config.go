@@ -28,12 +28,12 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for certificate metrics.
 type MetricsConfig struct {
-	NginxSslCertificateExpiry MetricConfig `mapstructure:"nginx.ssl.certificate.expiry"`
+	NginxSslCertificateExpiryTime MetricConfig `mapstructure:"nginx.ssl.certificate.expiry.time"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		NginxSslCertificateExpiry: MetricConfig{
+		NginxSslCertificateExpiryTime: MetricConfig{
 			Enabled: true,
 		},
 	}

@@ -27,7 +27,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxSslCertificateExpiry: MetricConfig{Enabled: true},
+					NginxSslCertificateExpiryTime: MetricConfig{Enabled: true},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID: ResourceAttributeConfig{Enabled: true},
@@ -38,7 +38,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxSslCertificateExpiry: MetricConfig{Enabled: false},
+					NginxSslCertificateExpiryTime: MetricConfig{Enabled: false},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID: ResourceAttributeConfig{Enabled: false},
