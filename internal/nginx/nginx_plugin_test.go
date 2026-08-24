@@ -396,7 +396,8 @@ func TestNginx_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
-					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				),
 			},
 			err: nil,
 			upstreams: &client.StreamUpstreams{
@@ -418,7 +419,8 @@ func TestNginx_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
-					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				),
 			},
 			err: errors.New("failed to get stream upstreams servers"),
 			upstreams: &client.StreamUpstreams{
@@ -538,7 +540,8 @@ func TestNginx_Process_APIAction_GetUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
-					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				),
 			},
 			err: nil,
 			upstreams: &client.Upstreams{
@@ -562,7 +565,8 @@ func TestNginx_Process_APIAction_GetUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
-					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				),
 			},
 			err: errors.New("failed to get upstreams"),
 			upstreams: &client.Upstreams{

@@ -61,8 +61,8 @@ func (s *MPITestSuite) Test_APIActionRequest_GetEmptyUpstreams() {
 }`, s.nginxInstanceID)
 
 	client := resty.New()
-	client.SetRetryCount(utils.RetryCount).SetRetryWaitTime(utils.RetryWaitTime).SetRetryMaxWaitTime(
-		utils.RetryMaxWaitTime)
+	client.SetRetryCount(utils.RetryCount).SetRetryWaitTime(utils.RetryWaitTime).
+		SetRetryMaxWaitTime(utils.RetryMaxWaitTime)
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", utils.MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)

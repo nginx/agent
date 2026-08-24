@@ -79,7 +79,8 @@ func New(logPath, level string) *slog.Logger {
 				CorrelationIDContextKey,
 				ServerTypeContextKey,
 			},
-		})
+		},
+	)
 }
 
 func LogLevel(level string) slog.Level {
@@ -178,7 +179,8 @@ func CorrelationIDAttr(ctx context.Context) slog.Attr {
 		slog.DebugContext(
 			ctx,
 			"Correlation ID not found in context, generating new correlation ID",
-			correlationID)
+			correlationID,
+		)
 
 		return correlationID
 	}

@@ -95,7 +95,8 @@ func TestScraper(t *testing.T) {
 		pmetrictest.IgnoreMetricDataPointsOrder(),
 		pmetrictest.IgnoreTimestamp(),
 		pmetrictest.IgnoreMetricsOrder(),
-		pmetrictest.IgnoreResourceAttributeValue("instance.id")),
+		pmetrictest.IgnoreResourceAttributeValue("instance.id"),
+	),
 	)
 }
 

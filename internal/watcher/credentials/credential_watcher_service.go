@@ -107,8 +107,7 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 
 func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath string) {
 	if cws.isWatching(filePath) {
-		slog.DebugContext(
-			ctx, "Credential watcher is already watching ", "path", filePath)
+		slog.DebugContext(ctx, "Credential watcher is already watching ", "path", filePath)
 
 		return
 	}

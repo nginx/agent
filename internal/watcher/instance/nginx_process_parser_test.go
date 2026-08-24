@@ -137,7 +137,8 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 					configure arguments: ` + ossArgs,
 			expected: map[string]*mpi.Instance{
 				protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.NginxOssInstance(
-					[]string{expectedModules}),
+					[]string{expectedModules},
+				),
 			},
 		},
 		{
@@ -150,7 +151,8 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 				configure arguments: ` + plusArgs,
 			expected: map[string]*mpi.Instance{
 				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.NginxPlusInstance(
-					[]string{expectedModules}),
+					[]string{expectedModules},
+				),
 			},
 		},
 		{

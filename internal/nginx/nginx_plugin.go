@@ -463,7 +463,8 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				Error:   err.Error(),
 			},
 			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
-			instanceID)
+			instanceID,
+		)
 		n.completeConfigApply(ctx, &model.NginxConfigContext{}, dataplaneResponse)
 	case model.OK:
 		slog.DebugContext(ctx, "Changes required for config apply request")

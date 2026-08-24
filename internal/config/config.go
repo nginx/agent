@@ -557,27 +557,32 @@ func registerDataPlaneFlags(fs *flag.FlagSet) {
 	fs.Duration(
 		NginxReloadBackoffInitialIntervalKey,
 		DefNginxReloadBackoffInitialInterval,
-		"The NGINX reload backoff initial interval, value in seconds")
+		"The NGINX reload backoff initial interval, value in seconds",
+	)
 
 	fs.Duration(
 		NginxReloadBackoffMaxIntervalKey,
 		DefNginxReloadBackoffMaxInterval,
-		"The NGINX reload backoff max interval, value in seconds")
+		"The NGINX reload backoff max interval, value in seconds",
+	)
 
 	fs.Duration(
 		NginxReloadBackoffMaxElapsedTimeKey,
 		DefNginxReloadBackoffMaxElapsedTime,
-		"The NGINX reload backoff max elapsed time, value in seconds")
+		"The NGINX reload backoff max elapsed time, value in seconds",
+	)
 
 	fs.Float64(
 		NginxReloadBackoffRandomizationFactorKey,
 		DefNginxReloadBackoffRandomizationFactor,
-		"The NGINX reload backoff randomization factor, value float")
+		"The NGINX reload backoff randomization factor, value float",
+	)
 
 	fs.Float64(
 		NginxReloadBackoffMultiplierKey,
 		DefNginxReloadBackoffMultiplier,
-		"The NGINX reload backoff multiplier, value float")
+		"The NGINX reload backoff multiplier, value float",
+	)
 }
 
 func registerCommonFlags(fs *flag.FlagSet) {
@@ -593,33 +598,39 @@ func registerClientFlags(fs *flag.FlagSet) {
 	fs.Duration(
 		ClientHTTPTimeoutKey,
 		DefHTTPTimeout,
-		"The client HTTP Timeout, value in seconds")
+		"The client HTTP Timeout, value in seconds",
+	)
 
 	// Backoff Flags
 	fs.Duration(
 		ClientBackoffInitialIntervalKey,
 		DefBackoffInitialInterval,
-		"The client backoff initial interval, value in seconds")
+		"The client backoff initial interval, value in seconds",
+	)
 
 	fs.Duration(
 		ClientBackoffMaxIntervalKey,
 		DefBackoffMaxInterval,
-		"The client backoff max interval, value in seconds")
+		"The client backoff max interval, value in seconds",
+	)
 
 	fs.Duration(
 		ClientBackoffMaxElapsedTimeKey,
 		DefBackoffMaxElapsedTime,
-		"The client backoff max elapsed time, value in seconds")
+		"The client backoff max elapsed time, value in seconds",
+	)
 
 	fs.Float64(
 		ClientBackoffRandomizationFactorKey,
 		DefBackoffRandomizationFactor,
-		"The client backoff randomization factor, value float")
+		"The client backoff randomization factor, value float",
+	)
 
 	fs.Float64(
 		ClientBackoffMultiplierKey,
 		DefBackoffMultiplier,
-		"The client backoff multiplier, value float")
+		"The client backoff multiplier, value float",
+	)
 
 	// GRPC Flags
 	fs.Duration(
@@ -637,7 +648,8 @@ func registerClientFlags(fs *flag.FlagSet) {
 	fs.Bool(
 		ClientKeepAlivePermitWithoutStreamKey,
 		DefGRPCKeepAlivePermitWithoutStream,
-		"Update the client grpc setting, KeepAlive PermitWithoutStream value")
+		"Update the client grpc setting, KeepAlive PermitWithoutStream value",
+	)
 
 	fs.Int(
 		ClientGRPCMaxMessageSizeKey,
@@ -762,7 +774,8 @@ func registerCommandFlags(fs *flag.FlagSet) {
 	fs.Duration(
 		CommandServerProxyTimeoutKey,
 		DefCommandServerProxyTimeoutKey,
-		"The explicit forward proxy HTTP Timeout, value in seconds")
+		"The explicit forward proxy HTTP Timeout, value in seconds",
+	)
 	fs.String(
 		CommandServerProxyURLKey,
 		DefCommandServerProxyURlKey,
