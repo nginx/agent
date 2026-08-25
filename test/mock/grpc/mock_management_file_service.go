@@ -368,7 +368,8 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 			&v1.FileDataChunk{
 				Meta:  messageMeta,
 				Chunk: &chunk,
-			})
+			},
+		)
 		validatedError := internalgrpc.ValidateGrpcError(err)
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to send get file stream chunk", "error", validatedError)

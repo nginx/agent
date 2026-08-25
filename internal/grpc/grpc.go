@@ -270,7 +270,8 @@ func addPerRPCCredentials(commandConfig *config.Command, resourceID string, opts
 			&PerRPCCredentials{
 				Token: token,
 				ID:    resourceID,
-			}),
+			},
+		),
 	)
 
 	return opts

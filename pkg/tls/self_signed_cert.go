@@ -95,8 +95,8 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 	caCert, caCertPEM, caErr := GenerateCertificate(&caRequest)
 	if caErr != nil {
 		return &x509.Certificate{}, &ecdsa.PrivateKey{}, fmt.Errorf(
-			"error generating certificate authority: %w",
-			caErr)
+			"error generating certificate authority: %w", caErr,
+		)
 	}
 
 	// Write the CA certificate to a file

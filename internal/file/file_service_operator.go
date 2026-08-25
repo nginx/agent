@@ -134,8 +134,6 @@ func (fso *FileServiceOperator) UpdateOverview(
 	configPath string,
 	iteration int,
 ) error {
-	correlationID := logger.CorrelationID(ctx)
-
 	// error case for the UpdateOverview attempts
 	if iteration > maxAttempts {
 		return errors.New("too many UpdateOverview attempts")

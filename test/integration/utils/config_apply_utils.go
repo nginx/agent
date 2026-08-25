@@ -207,12 +207,13 @@ func WriteConfigFileMock(t *testing.T, nginxInstanceID, file1, file2, file3 stri
 	t.Logf("File: %s", file.Name())
 
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxPlusConfigWithMultipleInclude(
-			file1, file2, file3)), permissions)
+		writeErr := os.WriteFile(file.Name(),
+			[]byte(configs.NginxPlusConfigWithMultipleInclude(file1, file2, file3)), permissions)
 		require.NoError(t, writeErr)
 	} else {
 		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxConfigWithMultipleInclude(
-			file1, file2, file3)), permissions)
+			file1, file2, file3,
+		)), permissions)
 		require.NoError(t, writeErr)
 	}
 
@@ -234,11 +235,13 @@ func WriteConfigFileDataplane(t *testing.T, file1, file2, file3 string) {
 
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
 		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxPlusConfigWithMultipleInclude(
-			file1, file2, file3)), permissions)
+			file1, file2, file3,
+		)), permissions)
 		require.NoError(t, writeErr)
 	} else {
 		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxConfigWithMultipleInclude(
-			file1, file2, file3)), permissions)
+			file1, file2, file3,
+		)), permissions)
 		require.NoError(t, writeErr)
 	}
 

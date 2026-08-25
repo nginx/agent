@@ -111,8 +111,8 @@ func (lzm *LocationZoneMetrics) recordLocationZoneHTTPMetrics(lz plusapi.Locatio
 
 	// Requests
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		metricsutil.Increase(
-			int64(lz.Responses.Responses1xx), lzm.PreviousLocationZoneResponses[lzName].OneHundredStatusRange),
+		metricsutil.Increase(int64(lz.Responses.Responses1xx), lzm.PreviousLocationZoneResponses[lzName].
+			OneHundredStatusRange),
 		metadata.AttributeNginxStatusRange1xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
@@ -120,28 +120,32 @@ func (lzm *LocationZoneMetrics) recordLocationZoneHTTPMetrics(lz plusapi.Locatio
 	// Response Count Status
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(lz.Responses.Responses2xx), lzm.PreviousLocationZoneResponses[lzName].TwoHundredStatusRange),
+			int64(lz.Responses.Responses2xx), lzm.PreviousLocationZoneResponses[lzName].TwoHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange2xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
 
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(lz.Responses.Responses3xx), lzm.PreviousLocationZoneResponses[lzName].ThreeHundredStatusRange),
+			int64(lz.Responses.Responses3xx), lzm.PreviousLocationZoneResponses[lzName].ThreeHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange3xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
 
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(lz.Responses.Responses4xx), lzm.PreviousLocationZoneResponses[lzName].FourHundredStatusRange),
+			int64(lz.Responses.Responses4xx), lzm.PreviousLocationZoneResponses[lzName].FourHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange4xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)
 
 	lzm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(lz.Responses.Responses5xx), lzm.PreviousLocationZoneResponses[lzName].FiveHundredStatusRange),
+			int64(lz.Responses.Responses5xx), lzm.PreviousLocationZoneResponses[lzName].FiveHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange5xx,
 		lzName,
 		metadata.AttributeNginxZoneTypeLOCATION)

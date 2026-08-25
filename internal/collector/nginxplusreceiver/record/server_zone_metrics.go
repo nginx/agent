@@ -99,36 +99,40 @@ func (szm *ServerZoneMetrics) recordServerZoneHTTPMetrics(sz plusapi.ServerZone,
 
 	// Response Count Status
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
-		metricsutil.Increase(
-			int64(sz.Responses.Responses1xx), szm.PreviousServerZoneResponses[szName].OneHundredStatusRange),
+		metricsutil.Increase(int64(sz.Responses.Responses1xx), szm.PreviousServerZoneResponses[szName].
+			OneHundredStatusRange),
 		metadata.AttributeNginxStatusRange1xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(sz.Responses.Responses2xx), szm.PreviousServerZoneResponses[szName].TwoHundredStatusRange),
+			int64(sz.Responses.Responses2xx), szm.PreviousServerZoneResponses[szName].TwoHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange2xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(sz.Responses.Responses3xx), szm.PreviousServerZoneResponses[szName].ThreeHundredStatusRange),
+			int64(sz.Responses.Responses3xx), szm.PreviousServerZoneResponses[szName].ThreeHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange3xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(sz.Responses.Responses4xx), szm.PreviousServerZoneResponses[szName].FourHundredStatusRange),
+			int64(sz.Responses.Responses4xx), szm.PreviousServerZoneResponses[szName].FourHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange4xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
 
 	szm.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		metricsutil.Increase(
-			int64(sz.Responses.Responses5xx), szm.PreviousServerZoneResponses[szName].FiveHundredStatusRange),
+			int64(sz.Responses.Responses5xx), szm.PreviousServerZoneResponses[szName].FiveHundredStatusRange,
+		),
 		metadata.AttributeNginxStatusRange5xx,
 		szName,
 		metadata.AttributeNginxZoneTypeSERVER)
