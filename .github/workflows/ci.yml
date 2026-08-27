@@ -436,11 +436,6 @@ jobs:
       matrix:
         container:
         - image: "alpine"
-          version: "3.24"
-          plus: "r37"
-          release: "alpine"
-          path: "/nginx-plus/agent"
-        - image: "alpine"
           version: "3.22"
           plus: "r35"
           release: "alpine"
@@ -610,11 +605,6 @@ jobs:
     strategy:
       matrix:
         container:
-          - image: "alpine"
-          - version: "3.24"
-          - plus: "r37"
-          - release: "alpine"
-          - path: "/nginx-plus/agent"
           - image: "alpine"
             version: "3.22"
             plus: "r35"
