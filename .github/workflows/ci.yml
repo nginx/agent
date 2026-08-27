@@ -167,6 +167,8 @@ jobs:
                     version: "3.22"
                   - image: "alpine"
                     version: "3.23"
+                  - image: "alpine"
+                    version: "3.24"
                   - image: "debian"
                     version: "bullseye-slim"
                   - image: "debian"
