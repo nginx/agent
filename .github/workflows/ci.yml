@@ -242,7 +242,7 @@ jobs:
         - image: "redhatenterprise"
           version: "9"
         - image: "alpine"
-          version: "3.23"
+          version: "3.24"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get Secrets from Azure Key Vault
@@ -304,7 +304,7 @@ jobs:
           - image: "redhatenterprise"
             version: "9"
           - image: "alpine"
-            version: "3.22"
+            version: "3.24"
           #- image: "oraclelinux"
           #  version: "8"
     steps:
@@ -435,6 +435,11 @@ jobs:
     strategy:
       matrix:
         container:
+        - image: "alpine"
+          version: "3.24"
+          plus: "r35"
+          release: "alpine"
+          path: "/nginx-plus/agent"
         - image: "alpine"
           version: "3.22"
           plus: "r35"
@@ -605,6 +610,11 @@ jobs:
     strategy:
       matrix:
         container:
+          - image: "alpine"
+          - version: "3.24"
+          - plus: "r37"
+          - release: "alpine"
+          - path: "/nginx-plus/agent"
           - image: "alpine"
             version: "3.22"
             plus: "r35"
