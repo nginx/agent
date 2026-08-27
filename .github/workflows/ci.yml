@@ -437,7 +437,7 @@ jobs:
         container:
         - image: "alpine"
           version: "3.24"
-          plus: "r35"
+          plus: "r37"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "alpine"
