@@ -378,7 +378,7 @@ jobs:
   performance-test:
     name: Performance Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write  # for OIDC authentication
       contents: read
@@ -411,7 +411,7 @@ jobs:
 
   build-signed-snapshot:
     name: Build signed snapshot
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ !startsWith(github.ref_name, 'release-') && !startsWith(github.ref_name, 'dependabot/') && !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -467,7 +467,7 @@ jobs:
 
   build-example:
     name: Build Grafana Dashboard Example
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
