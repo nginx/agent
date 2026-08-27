@@ -1168,3 +1168,10 @@ func TestGetNginxProcess(t *testing.T) {
 		assert.Equal(t, tt.expect, isNginxProcess)
 	}
 }
+
+func TestIsNginxMaster(t *testing.T) {
+	assert.True(t, isNginxMaster("nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf"))
+	assert.True(t, isNginxMaster("{nginx-debug} nginx: master process /usr/sbin/nginx-debug -g daemon off;"))
+	assert.False(t, isNginxMaster("nginx: worker process"))
+	assert.False(t, isNginxMaster("nginx: OneAgent companion process"))
+}
