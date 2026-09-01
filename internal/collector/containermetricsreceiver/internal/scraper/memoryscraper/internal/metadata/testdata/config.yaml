@@ -3,6 +3,15 @@ all_set:
   metrics:
     system.memory.usage:
       enabled: true
+      attributes: ["state"]
+  resource_attributes:
+    resource.id:
+      enabled: true
+reaggregate_set:
+  metrics:
+    system.memory.usage:
+      enabled: true
+      attributes: []
   resource_attributes:
     resource.id:
       enabled: true
@@ -10,6 +19,7 @@ none_set:
   metrics:
     system.memory.usage:
       enabled: false
+      attributes: ["state"]
   resource_attributes:
     resource.id:
       enabled: false

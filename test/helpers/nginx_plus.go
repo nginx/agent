@@ -243,6 +243,28 @@ func NewMockNGINXPlusAPIServer(t *testing.T) *httptest.Server {
 						"unavail": 99,
         				"header_time" : 20,
         				"response_time" : 36,
+        				"response_time_hist" : {
+        					"count" : 9817,
+        					"sum" : 57625,
+        					"buckets" : {
+        						"5" : 4428,
+        						"10" : 4755,
+        						"25" : 350,
+        						"50" : 235,
+        						"75" : 54,
+        						"100" : 47,
+        						"250" : 1,
+        						"500" : 0,
+        						"750" : 0,
+        						"1000" : 0,
+        						"2500" : 0,
+        						"5000" : 0,
+        						"7500" : 0,
+        						"10000" : 0,
+        						"inf" : 0
+        					}
+        				},
+
 						"health_checks": {
 							"checks": 321,
 							"fails": 22,

@@ -6,12 +6,13 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [ aphralG, dhurley, craigell, sean-breen, CVanF5 ]
+    active: [aphralG, dhurley, craigell, sean-breen, CVanF5]
 
 resource_attributes:
   resource.id:
     description: The resource id.
     type: string
+    enabled: true
 
 attributes:
   state:
@@ -20,19 +21,20 @@ attributes:
     enum: [idle, interrupt, nice, softirq, steal, system, user, wait]
 
 metrics:
-  system.cpu.utilization:
-    enabled: true
-    description: Difference in system.cpu.time since the last measurement per logical CPU, divided by the elapsed time (value in interval [0,1]).
-    unit: "1"
-    gauge:
-      value_type: double
-    attributes: [ state ]
   system.cpu.logical.count:
     enabled: true
     description: Number of available logical CPUs.
+    stability: development
     unit: "{cpu}"
     sum:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-
+  system.cpu.utilization:
+    enabled: true
+    description: Difference in system.cpu.time since the last measurement per logical CPU, divided by the elapsed time (value in interval [0,1]).
+    stability: development
+    unit: "1"
+    gauge:
+      value_type: double
+    attributes: [state]

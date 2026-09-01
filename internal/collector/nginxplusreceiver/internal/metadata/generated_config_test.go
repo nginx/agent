@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 )
 
@@ -19,71 +20,310 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	}{
 		{
 			name: "default",
-			want: DefaultMetricsBuilderConfig(),
+			want: NewDefaultMetricsBuilderConfig(),
 		},
 		{
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxCacheBytesRead:                    MetricConfig{Enabled: true},
-					NginxCacheMemoryLimit:                  MetricConfig{Enabled: true},
-					NginxCacheMemoryUsage:                  MetricConfig{Enabled: true},
-					NginxCacheResponses:                    MetricConfig{Enabled: true},
-					NginxConfigReloads:                     MetricConfig{Enabled: true},
-					NginxHTTPConnectionCount:               MetricConfig{Enabled: true},
-					NginxHTTPConnections:                   MetricConfig{Enabled: true},
-					NginxHTTPLimitConnRequests:             MetricConfig{Enabled: true},
-					NginxHTTPLimitReqRequests:              MetricConfig{Enabled: true},
-					NginxHTTPRequestCount:                  MetricConfig{Enabled: true},
-					NginxHTTPRequestDiscarded:              MetricConfig{Enabled: true},
-					NginxHTTPRequestIo:                     MetricConfig{Enabled: true},
-					NginxHTTPRequestProcessingCount:        MetricConfig{Enabled: true},
-					NginxHTTPRequests:                      MetricConfig{Enabled: true},
-					NginxHTTPResponseCount:                 MetricConfig{Enabled: true},
-					NginxHTTPResponseStatus:                MetricConfig{Enabled: true},
-					NginxHTTPResponses:                     MetricConfig{Enabled: true},
-					NginxHTTPUpstreamKeepaliveCount:        MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerConnectionCount:   MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerCount:             MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerFails:             MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerHeaderTime:        MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerHealthChecks:      MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerIo:                MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerRequests:          MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerResponseTime:      MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerResponses:         MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerState:             MetricConfig{Enabled: true},
-					NginxHTTPUpstreamPeerUnavailables:      MetricConfig{Enabled: true},
-					NginxHTTPUpstreamQueueLimit:            MetricConfig{Enabled: true},
-					NginxHTTPUpstreamQueueOverflows:        MetricConfig{Enabled: true},
-					NginxHTTPUpstreamQueueUsage:            MetricConfig{Enabled: true},
-					NginxHTTPUpstreamZombieCount:           MetricConfig{Enabled: true},
-					NginxSlabPageFree:                      MetricConfig{Enabled: true},
-					NginxSlabPageLimit:                     MetricConfig{Enabled: true},
-					NginxSlabPageUsage:                     MetricConfig{Enabled: true},
-					NginxSlabPageUtilization:               MetricConfig{Enabled: true},
-					NginxSlabSlotAllocations:               MetricConfig{Enabled: true},
-					NginxSlabSlotFree:                      MetricConfig{Enabled: true},
-					NginxSlabSlotUsage:                     MetricConfig{Enabled: true},
-					NginxSslCertificateVerifyFailures:      MetricConfig{Enabled: true},
-					NginxSslHandshakes:                     MetricConfig{Enabled: true},
-					NginxStreamConnectionAccepted:          MetricConfig{Enabled: true},
-					NginxStreamConnectionDiscarded:         MetricConfig{Enabled: true},
-					NginxStreamConnectionProcessingCount:   MetricConfig{Enabled: true},
-					NginxStreamIo:                          MetricConfig{Enabled: true},
-					NginxStreamSessionStatus:               MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerConnectionCount: MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerConnectionTime:  MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerConnections:     MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerCount:           MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerFails:           MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerHealthChecks:    MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerIo:              MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerResponseTime:    MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerState:           MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerTtfbTime:        MetricConfig{Enabled: true},
-					NginxStreamUpstreamPeerUnavailables:    MetricConfig{Enabled: true},
-					NginxStreamUpstreamZombieCount:         MetricConfig{Enabled: true},
+					NginxCacheBytesRead: NginxCacheBytesReadMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxCacheBytesReadMetricAttributeKey{NginxCacheBytesReadMetricAttributeKeyNginxCacheName, NginxCacheBytesReadMetricAttributeKeyNginxCacheOutcome},
+					},
+					NginxCacheMemoryLimit: NginxCacheMemoryLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxCacheMemoryLimitMetricAttributeKey{NginxCacheMemoryLimitMetricAttributeKeyNginxCacheName},
+					},
+					NginxCacheMemoryUsage: NginxCacheMemoryUsageMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxCacheMemoryUsageMetricAttributeKey{NginxCacheMemoryUsageMetricAttributeKeyNginxCacheName},
+					},
+					NginxCacheResponses: NginxCacheResponsesMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxCacheResponsesMetricAttributeKey{NginxCacheResponsesMetricAttributeKeyNginxCacheName, NginxCacheResponsesMetricAttributeKeyNginxCacheOutcome},
+					},
+					NginxConfigReloads: NginxConfigReloadsMetricConfig{
+						Enabled: true,
+					},
+					NginxHTTPConnectionCount: NginxHTTPConnectionCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPConnectionCountMetricAttributeKey{NginxHTTPConnectionCountMetricAttributeKeyNginxConnectionsOutcome},
+					},
+					NginxHTTPConnections: NginxHTTPConnectionsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPConnectionsMetricAttributeKey{NginxHTTPConnectionsMetricAttributeKeyNginxConnectionsOutcome},
+					},
+					NginxHTTPLimitConnRequests: NginxHTTPLimitConnRequestsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPLimitConnRequestsMetricAttributeKey{NginxHTTPLimitConnRequestsMetricAttributeKeyNginxLimitConnOutcome, NginxHTTPLimitConnRequestsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPLimitReqRequests: NginxHTTPLimitReqRequestsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPLimitReqRequestsMetricAttributeKey{NginxHTTPLimitReqRequestsMetricAttributeKeyNginxLimitReqOutcome, NginxHTTPLimitReqRequestsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPRequestCount: NginxHTTPRequestCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPRequestCountMetricAttributeKey{NginxHTTPRequestCountMetricAttributeKeyNginxZoneName, NginxHTTPRequestCountMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequestDiscarded: NginxHTTPRequestDiscardedMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPRequestDiscardedMetricAttributeKey{NginxHTTPRequestDiscardedMetricAttributeKeyNginxZoneName, NginxHTTPRequestDiscardedMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequestIo: NginxHTTPRequestIoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPRequestIoMetricAttributeKey{NginxHTTPRequestIoMetricAttributeKeyNginxIoDirection, NginxHTTPRequestIoMetricAttributeKeyNginxZoneName, NginxHTTPRequestIoMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequestProcessingCount: NginxHTTPRequestProcessingCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPRequestProcessingCountMetricAttributeKey{NginxHTTPRequestProcessingCountMetricAttributeKeyNginxZoneName, NginxHTTPRequestProcessingCountMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequests: NginxHTTPRequestsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPRequestsMetricAttributeKey{NginxHTTPRequestsMetricAttributeKeyNginxZoneName, NginxHTTPRequestsMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPResponseCount: NginxHTTPResponseCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPResponseCountMetricAttributeKey{NginxHTTPResponseCountMetricAttributeKeyNginxStatusRange, NginxHTTPResponseCountMetricAttributeKeyNginxZoneName, NginxHTTPResponseCountMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPResponseStatus: NginxHTTPResponseStatusMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPResponseStatusMetricAttributeKey{NginxHTTPResponseStatusMetricAttributeKeyNginxStatusRange, NginxHTTPResponseStatusMetricAttributeKeyNginxZoneName, NginxHTTPResponseStatusMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPResponses: NginxHTTPResponsesMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPResponsesMetricAttributeKey{NginxHTTPResponsesMetricAttributeKeyNginxZoneName, NginxHTTPResponsesMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPUpstreamKeepaliveCount: NginxHTTPUpstreamKeepaliveCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamKeepaliveCountMetricAttributeKey{NginxHTTPUpstreamKeepaliveCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamKeepaliveCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerConnectionCount: NginxHTTPUpstreamPeerConnectionCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerConnectionCountMetricAttributeKey{NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerCount: NginxHTTPUpstreamPeerCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerCountMetricAttributeKey{NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxPeerState, NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerFails: NginxHTTPUpstreamPeerFailsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerFailsMetricAttributeKey{NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerHeaderTime: NginxHTTPUpstreamPeerHeaderTimeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKey{NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerHealthChecks: NginxHTTPUpstreamPeerHealthChecksMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerHealthChecksMetricAttributeKey{NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxHealthCheck, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerIo: NginxHTTPUpstreamPeerIoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerIoMetricAttributeKey{NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxIoDirection, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerRequests: NginxHTTPUpstreamPeerRequestsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerRequestsMetricAttributeKey{NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerResponseTime: NginxHTTPUpstreamPeerResponseTimeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerResponseTimeMetricAttributeKey{NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerResponseTimeHist: NginxHTTPUpstreamPeerResponseTimeHistMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKey{NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerResponses: NginxHTTPUpstreamPeerResponsesMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerResponsesMetricAttributeKey{NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxStatusRange, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerState: NginxHTTPUpstreamPeerStateMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerStateMetricAttributeKey{NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerState, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerUnavailables: NginxHTTPUpstreamPeerUnavailablesMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerUnavailablesMetricAttributeKey{NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamQueueLimit: NginxHTTPUpstreamQueueLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamQueueLimitMetricAttributeKey{NginxHTTPUpstreamQueueLimitMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamQueueLimitMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamQueueOverflows: NginxHTTPUpstreamQueueOverflowsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamQueueOverflowsMetricAttributeKey{NginxHTTPUpstreamQueueOverflowsMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamQueueOverflowsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamQueueUsage: NginxHTTPUpstreamQueueUsageMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamQueueUsageMetricAttributeKey{NginxHTTPUpstreamQueueUsageMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamQueueUsageMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamZombieCount: NginxHTTPUpstreamZombieCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamZombieCountMetricAttributeKey{NginxHTTPUpstreamZombieCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamZombieCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageFree: NginxSlabPageFreeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageFreeMetricAttributeKey{NginxSlabPageFreeMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageLimit: NginxSlabPageLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageLimitMetricAttributeKey{NginxSlabPageLimitMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageUsage: NginxSlabPageUsageMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageUsageMetricAttributeKey{NginxSlabPageUsageMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageUtilization: NginxSlabPageUtilizationMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageUtilizationMetricAttributeKey{NginxSlabPageUtilizationMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabSlotAllocations: NginxSlabSlotAllocationsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxSlabSlotAllocationsMetricAttributeKey{NginxSlabSlotAllocationsMetricAttributeKeyNginxSlabSlotAllocationResult, NginxSlabSlotAllocationsMetricAttributeKeyNginxSlabSlotLimit, NginxSlabSlotAllocationsMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabSlotFree: NginxSlabSlotFreeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabSlotFreeMetricAttributeKey{NginxSlabSlotFreeMetricAttributeKeyNginxSlabSlotLimit, NginxSlabSlotFreeMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabSlotUsage: NginxSlabSlotUsageMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabSlotUsageMetricAttributeKey{NginxSlabSlotUsageMetricAttributeKeyNginxSlabSlotLimit, NginxSlabSlotUsageMetricAttributeKeyNginxZoneName},
+					},
+					NginxSslCertificateVerifyFailures: NginxSslCertificateVerifyFailuresMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxSslCertificateVerifyFailuresMetricAttributeKey{NginxSslCertificateVerifyFailuresMetricAttributeKeyNginxSslVerifyFailureReason},
+					},
+					NginxSslHandshakes: NginxSslHandshakesMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxSslHandshakesMetricAttributeKey{NginxSslHandshakesMetricAttributeKeyNginxSslHandshakeReason, NginxSslHandshakesMetricAttributeKeyNginxSslStatus},
+					},
+					NginxStreamConnectionAccepted: NginxStreamConnectionAcceptedMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamConnectionAcceptedMetricAttributeKey{NginxStreamConnectionAcceptedMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamConnectionDiscarded: NginxStreamConnectionDiscardedMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamConnectionDiscardedMetricAttributeKey{NginxStreamConnectionDiscardedMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamConnectionProcessingCount: NginxStreamConnectionProcessingCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamConnectionProcessingCountMetricAttributeKey{NginxStreamConnectionProcessingCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamIo: NginxStreamIoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamIoMetricAttributeKey{NginxStreamIoMetricAttributeKeyNginxIoDirection, NginxStreamIoMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamSessionStatus: NginxStreamSessionStatusMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamSessionStatusMetricAttributeKey{NginxStreamSessionStatusMetricAttributeKeyNginxStatusRange, NginxStreamSessionStatusMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerConnectionCount: NginxStreamUpstreamPeerConnectionCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerConnectionCountMetricAttributeKey{NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerConnectionTime: NginxStreamUpstreamPeerConnectionTimeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerConnectionTimeMetricAttributeKey{NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerConnections: NginxStreamUpstreamPeerConnectionsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerConnectionsMetricAttributeKey{NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerCount: NginxStreamUpstreamPeerCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerCountMetricAttributeKey{NginxStreamUpstreamPeerCountMetricAttributeKeyNginxPeerState, NginxStreamUpstreamPeerCountMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerFails: NginxStreamUpstreamPeerFailsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerFailsMetricAttributeKey{NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerHealthChecks: NginxStreamUpstreamPeerHealthChecksMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerHealthChecksMetricAttributeKey{NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxHealthCheck, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerIo: NginxStreamUpstreamPeerIoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerIoMetricAttributeKey{NginxStreamUpstreamPeerIoMetricAttributeKeyNginxIoDirection, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerResponseTime: NginxStreamUpstreamPeerResponseTimeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerResponseTimeMetricAttributeKey{NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerState: NginxStreamUpstreamPeerStateMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerStateMetricAttributeKey{NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerState, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerTtfbTime: NginxStreamUpstreamPeerTtfbTimeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerTtfbTimeMetricAttributeKey{NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerUnavailables: NginxStreamUpstreamPeerUnavailablesMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerUnavailablesMetricAttributeKey{NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamZombieCount: NginxStreamUpstreamZombieCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamZombieCountMetricAttributeKey{NginxStreamUpstreamZombieCountMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamZombieCountMetricAttributeKeyNginxZoneName},
+					},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: true},
@@ -95,65 +335,304 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxCacheBytesRead:                    MetricConfig{Enabled: false},
-					NginxCacheMemoryLimit:                  MetricConfig{Enabled: false},
-					NginxCacheMemoryUsage:                  MetricConfig{Enabled: false},
-					NginxCacheResponses:                    MetricConfig{Enabled: false},
-					NginxConfigReloads:                     MetricConfig{Enabled: false},
-					NginxHTTPConnectionCount:               MetricConfig{Enabled: false},
-					NginxHTTPConnections:                   MetricConfig{Enabled: false},
-					NginxHTTPLimitConnRequests:             MetricConfig{Enabled: false},
-					NginxHTTPLimitReqRequests:              MetricConfig{Enabled: false},
-					NginxHTTPRequestCount:                  MetricConfig{Enabled: false},
-					NginxHTTPRequestDiscarded:              MetricConfig{Enabled: false},
-					NginxHTTPRequestIo:                     MetricConfig{Enabled: false},
-					NginxHTTPRequestProcessingCount:        MetricConfig{Enabled: false},
-					NginxHTTPRequests:                      MetricConfig{Enabled: false},
-					NginxHTTPResponseCount:                 MetricConfig{Enabled: false},
-					NginxHTTPResponseStatus:                MetricConfig{Enabled: false},
-					NginxHTTPResponses:                     MetricConfig{Enabled: false},
-					NginxHTTPUpstreamKeepaliveCount:        MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerConnectionCount:   MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerCount:             MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerFails:             MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerHeaderTime:        MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerHealthChecks:      MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerIo:                MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerRequests:          MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerResponseTime:      MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerResponses:         MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerState:             MetricConfig{Enabled: false},
-					NginxHTTPUpstreamPeerUnavailables:      MetricConfig{Enabled: false},
-					NginxHTTPUpstreamQueueLimit:            MetricConfig{Enabled: false},
-					NginxHTTPUpstreamQueueOverflows:        MetricConfig{Enabled: false},
-					NginxHTTPUpstreamQueueUsage:            MetricConfig{Enabled: false},
-					NginxHTTPUpstreamZombieCount:           MetricConfig{Enabled: false},
-					NginxSlabPageFree:                      MetricConfig{Enabled: false},
-					NginxSlabPageLimit:                     MetricConfig{Enabled: false},
-					NginxSlabPageUsage:                     MetricConfig{Enabled: false},
-					NginxSlabPageUtilization:               MetricConfig{Enabled: false},
-					NginxSlabSlotAllocations:               MetricConfig{Enabled: false},
-					NginxSlabSlotFree:                      MetricConfig{Enabled: false},
-					NginxSlabSlotUsage:                     MetricConfig{Enabled: false},
-					NginxSslCertificateVerifyFailures:      MetricConfig{Enabled: false},
-					NginxSslHandshakes:                     MetricConfig{Enabled: false},
-					NginxStreamConnectionAccepted:          MetricConfig{Enabled: false},
-					NginxStreamConnectionDiscarded:         MetricConfig{Enabled: false},
-					NginxStreamConnectionProcessingCount:   MetricConfig{Enabled: false},
-					NginxStreamIo:                          MetricConfig{Enabled: false},
-					NginxStreamSessionStatus:               MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerConnectionCount: MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerConnectionTime:  MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerConnections:     MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerCount:           MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerFails:           MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerHealthChecks:    MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerIo:              MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerResponseTime:    MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerState:           MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerTtfbTime:        MetricConfig{Enabled: false},
-					NginxStreamUpstreamPeerUnavailables:    MetricConfig{Enabled: false},
-					NginxStreamUpstreamZombieCount:         MetricConfig{Enabled: false},
+					NginxCacheBytesRead: NginxCacheBytesReadMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxCacheBytesReadMetricAttributeKey{NginxCacheBytesReadMetricAttributeKeyNginxCacheName, NginxCacheBytesReadMetricAttributeKeyNginxCacheOutcome},
+					},
+					NginxCacheMemoryLimit: NginxCacheMemoryLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxCacheMemoryLimitMetricAttributeKey{NginxCacheMemoryLimitMetricAttributeKeyNginxCacheName},
+					},
+					NginxCacheMemoryUsage: NginxCacheMemoryUsageMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxCacheMemoryUsageMetricAttributeKey{NginxCacheMemoryUsageMetricAttributeKeyNginxCacheName},
+					},
+					NginxCacheResponses: NginxCacheResponsesMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxCacheResponsesMetricAttributeKey{NginxCacheResponsesMetricAttributeKeyNginxCacheName, NginxCacheResponsesMetricAttributeKeyNginxCacheOutcome},
+					},
+					NginxConfigReloads: NginxConfigReloadsMetricConfig{
+						Enabled: false,
+					},
+					NginxHTTPConnectionCount: NginxHTTPConnectionCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPConnectionCountMetricAttributeKey{NginxHTTPConnectionCountMetricAttributeKeyNginxConnectionsOutcome},
+					},
+					NginxHTTPConnections: NginxHTTPConnectionsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPConnectionsMetricAttributeKey{NginxHTTPConnectionsMetricAttributeKeyNginxConnectionsOutcome},
+					},
+					NginxHTTPLimitConnRequests: NginxHTTPLimitConnRequestsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPLimitConnRequestsMetricAttributeKey{NginxHTTPLimitConnRequestsMetricAttributeKeyNginxLimitConnOutcome, NginxHTTPLimitConnRequestsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPLimitReqRequests: NginxHTTPLimitReqRequestsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPLimitReqRequestsMetricAttributeKey{NginxHTTPLimitReqRequestsMetricAttributeKeyNginxLimitReqOutcome, NginxHTTPLimitReqRequestsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPRequestCount: NginxHTTPRequestCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPRequestCountMetricAttributeKey{NginxHTTPRequestCountMetricAttributeKeyNginxZoneName, NginxHTTPRequestCountMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequestDiscarded: NginxHTTPRequestDiscardedMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPRequestDiscardedMetricAttributeKey{NginxHTTPRequestDiscardedMetricAttributeKeyNginxZoneName, NginxHTTPRequestDiscardedMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequestIo: NginxHTTPRequestIoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPRequestIoMetricAttributeKey{NginxHTTPRequestIoMetricAttributeKeyNginxIoDirection, NginxHTTPRequestIoMetricAttributeKeyNginxZoneName, NginxHTTPRequestIoMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequestProcessingCount: NginxHTTPRequestProcessingCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPRequestProcessingCountMetricAttributeKey{NginxHTTPRequestProcessingCountMetricAttributeKeyNginxZoneName, NginxHTTPRequestProcessingCountMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPRequests: NginxHTTPRequestsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPRequestsMetricAttributeKey{NginxHTTPRequestsMetricAttributeKeyNginxZoneName, NginxHTTPRequestsMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPResponseCount: NginxHTTPResponseCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPResponseCountMetricAttributeKey{NginxHTTPResponseCountMetricAttributeKeyNginxStatusRange, NginxHTTPResponseCountMetricAttributeKeyNginxZoneName, NginxHTTPResponseCountMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPResponseStatus: NginxHTTPResponseStatusMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPResponseStatusMetricAttributeKey{NginxHTTPResponseStatusMetricAttributeKeyNginxStatusRange, NginxHTTPResponseStatusMetricAttributeKeyNginxZoneName, NginxHTTPResponseStatusMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPResponses: NginxHTTPResponsesMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPResponsesMetricAttributeKey{NginxHTTPResponsesMetricAttributeKeyNginxZoneName, NginxHTTPResponsesMetricAttributeKeyNginxZoneType},
+					},
+					NginxHTTPUpstreamKeepaliveCount: NginxHTTPUpstreamKeepaliveCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamKeepaliveCountMetricAttributeKey{NginxHTTPUpstreamKeepaliveCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamKeepaliveCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerConnectionCount: NginxHTTPUpstreamPeerConnectionCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerConnectionCountMetricAttributeKey{NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerConnectionCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerCount: NginxHTTPUpstreamPeerCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerCountMetricAttributeKey{NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxPeerState, NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerFails: NginxHTTPUpstreamPeerFailsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerFailsMetricAttributeKey{NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerFailsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerHeaderTime: NginxHTTPUpstreamPeerHeaderTimeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKey{NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerHealthChecks: NginxHTTPUpstreamPeerHealthChecksMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerHealthChecksMetricAttributeKey{NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxHealthCheck, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerHealthChecksMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerIo: NginxHTTPUpstreamPeerIoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerIoMetricAttributeKey{NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxIoDirection, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerIoMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerRequests: NginxHTTPUpstreamPeerRequestsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerRequestsMetricAttributeKey{NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerRequestsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerResponseTime: NginxHTTPUpstreamPeerResponseTimeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerResponseTimeMetricAttributeKey{NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerResponseTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerResponseTimeHist: NginxHTTPUpstreamPeerResponseTimeHistMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKey{NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerResponses: NginxHTTPUpstreamPeerResponsesMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerResponsesMetricAttributeKey{NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxStatusRange, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerResponsesMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerState: NginxHTTPUpstreamPeerStateMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerStateMetricAttributeKey{NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxPeerState, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerStateMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamPeerUnavailables: NginxHTTPUpstreamPeerUnavailablesMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamPeerUnavailablesMetricAttributeKey{NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerAddress, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerName, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamPeerUnavailablesMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamQueueLimit: NginxHTTPUpstreamQueueLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamQueueLimitMetricAttributeKey{NginxHTTPUpstreamQueueLimitMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamQueueLimitMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamQueueOverflows: NginxHTTPUpstreamQueueOverflowsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxHTTPUpstreamQueueOverflowsMetricAttributeKey{NginxHTTPUpstreamQueueOverflowsMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamQueueOverflowsMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamQueueUsage: NginxHTTPUpstreamQueueUsageMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamQueueUsageMetricAttributeKey{NginxHTTPUpstreamQueueUsageMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamQueueUsageMetricAttributeKeyNginxZoneName},
+					},
+					NginxHTTPUpstreamZombieCount: NginxHTTPUpstreamZombieCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxHTTPUpstreamZombieCountMetricAttributeKey{NginxHTTPUpstreamZombieCountMetricAttributeKeyNginxUpstreamName, NginxHTTPUpstreamZombieCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageFree: NginxSlabPageFreeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageFreeMetricAttributeKey{NginxSlabPageFreeMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageLimit: NginxSlabPageLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageLimitMetricAttributeKey{NginxSlabPageLimitMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageUsage: NginxSlabPageUsageMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageUsageMetricAttributeKey{NginxSlabPageUsageMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabPageUtilization: NginxSlabPageUtilizationMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabPageUtilizationMetricAttributeKey{NginxSlabPageUtilizationMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabSlotAllocations: NginxSlabSlotAllocationsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxSlabSlotAllocationsMetricAttributeKey{NginxSlabSlotAllocationsMetricAttributeKeyNginxSlabSlotAllocationResult, NginxSlabSlotAllocationsMetricAttributeKeyNginxSlabSlotLimit, NginxSlabSlotAllocationsMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabSlotFree: NginxSlabSlotFreeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabSlotFreeMetricAttributeKey{NginxSlabSlotFreeMetricAttributeKeyNginxSlabSlotLimit, NginxSlabSlotFreeMetricAttributeKeyNginxZoneName},
+					},
+					NginxSlabSlotUsage: NginxSlabSlotUsageMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxSlabSlotUsageMetricAttributeKey{NginxSlabSlotUsageMetricAttributeKeyNginxSlabSlotLimit, NginxSlabSlotUsageMetricAttributeKeyNginxZoneName},
+					},
+					NginxSslCertificateVerifyFailures: NginxSslCertificateVerifyFailuresMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxSslCertificateVerifyFailuresMetricAttributeKey{NginxSslCertificateVerifyFailuresMetricAttributeKeyNginxSslVerifyFailureReason},
+					},
+					NginxSslHandshakes: NginxSslHandshakesMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxSslHandshakesMetricAttributeKey{NginxSslHandshakesMetricAttributeKeyNginxSslHandshakeReason, NginxSslHandshakesMetricAttributeKeyNginxSslStatus},
+					},
+					NginxStreamConnectionAccepted: NginxStreamConnectionAcceptedMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamConnectionAcceptedMetricAttributeKey{NginxStreamConnectionAcceptedMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamConnectionDiscarded: NginxStreamConnectionDiscardedMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamConnectionDiscardedMetricAttributeKey{NginxStreamConnectionDiscardedMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamConnectionProcessingCount: NginxStreamConnectionProcessingCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamConnectionProcessingCountMetricAttributeKey{NginxStreamConnectionProcessingCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamIo: NginxStreamIoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamIoMetricAttributeKey{NginxStreamIoMetricAttributeKeyNginxIoDirection, NginxStreamIoMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamSessionStatus: NginxStreamSessionStatusMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamSessionStatusMetricAttributeKey{NginxStreamSessionStatusMetricAttributeKeyNginxStatusRange, NginxStreamSessionStatusMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerConnectionCount: NginxStreamUpstreamPeerConnectionCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerConnectionCountMetricAttributeKey{NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerConnectionCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerConnectionTime: NginxStreamUpstreamPeerConnectionTimeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerConnectionTimeMetricAttributeKey{NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerConnectionTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerConnections: NginxStreamUpstreamPeerConnectionsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerConnectionsMetricAttributeKey{NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerConnectionsMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerCount: NginxStreamUpstreamPeerCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerCountMetricAttributeKey{NginxStreamUpstreamPeerCountMetricAttributeKeyNginxPeerState, NginxStreamUpstreamPeerCountMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerCountMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerFails: NginxStreamUpstreamPeerFailsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerFailsMetricAttributeKey{NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerFailsMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerHealthChecks: NginxStreamUpstreamPeerHealthChecksMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerHealthChecksMetricAttributeKey{NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxHealthCheck, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerHealthChecksMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerIo: NginxStreamUpstreamPeerIoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerIoMetricAttributeKey{NginxStreamUpstreamPeerIoMetricAttributeKeyNginxIoDirection, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerIoMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerResponseTime: NginxStreamUpstreamPeerResponseTimeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerResponseTimeMetricAttributeKey{NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerResponseTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerState: NginxStreamUpstreamPeerStateMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerStateMetricAttributeKey{NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxPeerState, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerStateMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerTtfbTime: NginxStreamUpstreamPeerTtfbTimeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamPeerTtfbTimeMetricAttributeKey{NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerTtfbTimeMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamPeerUnavailables: NginxStreamUpstreamPeerUnavailablesMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []NginxStreamUpstreamPeerUnavailablesMetricAttributeKey{NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerAddress, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxPeerName, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamPeerUnavailablesMetricAttributeKeyNginxZoneName},
+					},
+					NginxStreamUpstreamZombieCount: NginxStreamUpstreamZombieCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []NginxStreamUpstreamZombieCountMetricAttributeKey{NginxStreamUpstreamZombieCountMetricAttributeKeyNginxUpstreamName, NginxStreamUpstreamZombieCountMetricAttributeKeyNginxZoneName},
+					},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: false},
@@ -165,10 +644,717 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(MetricConfig{}, ResourceAttributeConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(NginxCacheBytesReadMetricConfig{}, NginxCacheMemoryLimitMetricConfig{}, NginxCacheMemoryUsageMetricConfig{}, NginxCacheResponsesMetricConfig{}, NginxConfigReloadsMetricConfig{}, NginxHTTPConnectionCountMetricConfig{}, NginxHTTPConnectionsMetricConfig{}, NginxHTTPLimitConnRequestsMetricConfig{}, NginxHTTPLimitReqRequestsMetricConfig{}, NginxHTTPRequestCountMetricConfig{}, NginxHTTPRequestDiscardedMetricConfig{}, NginxHTTPRequestIoMetricConfig{}, NginxHTTPRequestProcessingCountMetricConfig{}, NginxHTTPRequestsMetricConfig{}, NginxHTTPResponseCountMetricConfig{}, NginxHTTPResponseStatusMetricConfig{}, NginxHTTPResponsesMetricConfig{}, NginxHTTPUpstreamKeepaliveCountMetricConfig{}, NginxHTTPUpstreamPeerConnectionCountMetricConfig{}, NginxHTTPUpstreamPeerCountMetricConfig{}, NginxHTTPUpstreamPeerFailsMetricConfig{}, NginxHTTPUpstreamPeerHeaderTimeMetricConfig{}, NginxHTTPUpstreamPeerHealthChecksMetricConfig{}, NginxHTTPUpstreamPeerIoMetricConfig{}, NginxHTTPUpstreamPeerRequestsMetricConfig{}, NginxHTTPUpstreamPeerResponseTimeMetricConfig{}, NginxHTTPUpstreamPeerResponseTimeHistMetricConfig{}, NginxHTTPUpstreamPeerResponsesMetricConfig{}, NginxHTTPUpstreamPeerStateMetricConfig{}, NginxHTTPUpstreamPeerUnavailablesMetricConfig{}, NginxHTTPUpstreamQueueLimitMetricConfig{}, NginxHTTPUpstreamQueueOverflowsMetricConfig{}, NginxHTTPUpstreamQueueUsageMetricConfig{}, NginxHTTPUpstreamZombieCountMetricConfig{}, NginxSlabPageFreeMetricConfig{}, NginxSlabPageLimitMetricConfig{}, NginxSlabPageUsageMetricConfig{}, NginxSlabPageUtilizationMetricConfig{}, NginxSlabSlotAllocationsMetricConfig{}, NginxSlabSlotFreeMetricConfig{}, NginxSlabSlotUsageMetricConfig{}, NginxSslCertificateVerifyFailuresMetricConfig{}, NginxSslHandshakesMetricConfig{}, NginxStreamConnectionAcceptedMetricConfig{}, NginxStreamConnectionDiscardedMetricConfig{}, NginxStreamConnectionProcessingCountMetricConfig{}, NginxStreamIoMetricConfig{}, NginxStreamSessionStatusMetricConfig{}, NginxStreamUpstreamPeerConnectionCountMetricConfig{}, NginxStreamUpstreamPeerConnectionTimeMetricConfig{}, NginxStreamUpstreamPeerConnectionsMetricConfig{}, NginxStreamUpstreamPeerCountMetricConfig{}, NginxStreamUpstreamPeerFailsMetricConfig{}, NginxStreamUpstreamPeerHealthChecksMetricConfig{}, NginxStreamUpstreamPeerIoMetricConfig{}, NginxStreamUpstreamPeerResponseTimeMetricConfig{}, NginxStreamUpstreamPeerStateMetricConfig{}, NginxStreamUpstreamPeerTtfbTimeMetricConfig{}, NginxStreamUpstreamPeerUnavailablesMetricConfig{}, NginxStreamUpstreamZombieCountMetricConfig{}, ResourceAttributeConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
+}
+func TestNginxCacheBytesReadMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxCacheBytesRead
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxCacheBytesReadMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.cache.bytes_read doesn't have an attribute invalid, valid attributes: [nginx.cache.name, nginx.cache.outcome]")
+
+	cfg = DefaultMetricsConfig().NginxCacheBytesRead
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxCacheMemoryLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxCacheMemoryLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxCacheMemoryLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.cache.memory.limit doesn't have an attribute invalid, valid attributes: [nginx.cache.name]")
+
+	cfg = DefaultMetricsConfig().NginxCacheMemoryLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxCacheMemoryUsageMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxCacheMemoryUsage
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxCacheMemoryUsageMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.cache.memory.usage doesn't have an attribute invalid, valid attributes: [nginx.cache.name]")
+
+	cfg = DefaultMetricsConfig().NginxCacheMemoryUsage
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxCacheResponsesMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxCacheResponses
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxCacheResponsesMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.cache.responses doesn't have an attribute invalid, valid attributes: [nginx.cache.name, nginx.cache.outcome]")
+
+	cfg = DefaultMetricsConfig().NginxCacheResponses
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPConnectionCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPConnectionCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPConnectionCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.connection.count doesn't have an attribute invalid, valid attributes: [nginx.connections.outcome]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPConnectionCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPConnectionsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPConnections
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPConnectionsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.connections doesn't have an attribute invalid, valid attributes: [nginx.connections.outcome]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPConnections
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPLimitConnRequestsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPLimitConnRequests
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPLimitConnRequestsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.limit_conn.requests doesn't have an attribute invalid, valid attributes: [nginx.limit_conn.outcome, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPLimitConnRequests
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPLimitReqRequestsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPLimitReqRequests
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPLimitReqRequestsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.limit_req.requests doesn't have an attribute invalid, valid attributes: [nginx.limit_req.outcome, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPLimitReqRequests
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPRequestCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPRequestCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPRequestCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.request.count doesn't have an attribute invalid, valid attributes: [nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPRequestCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPRequestDiscardedMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPRequestDiscarded
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPRequestDiscardedMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.request.discarded doesn't have an attribute invalid, valid attributes: [nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPRequestDiscarded
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPRequestIoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPRequestIo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPRequestIoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.request.io doesn't have an attribute invalid, valid attributes: [nginx.io.direction, nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPRequestIo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPRequestProcessingCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPRequestProcessingCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPRequestProcessingCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.request.processing.count doesn't have an attribute invalid, valid attributes: [nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPRequestProcessingCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPRequestsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPRequests
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPRequestsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.requests doesn't have an attribute invalid, valid attributes: [nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPRequests
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPResponseCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPResponseCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPResponseCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.response.count doesn't have an attribute invalid, valid attributes: [nginx.status_range, nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPResponseCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPResponseStatusMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPResponseStatus
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPResponseStatusMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.response.status doesn't have an attribute invalid, valid attributes: [nginx.status_range, nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPResponseStatus
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPResponsesMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPResponses
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPResponsesMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.responses doesn't have an attribute invalid, valid attributes: [nginx.zone.name, nginx.zone.type]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPResponses
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamKeepaliveCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamKeepaliveCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamKeepaliveCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.keepalive.count doesn't have an attribute invalid, valid attributes: [nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamKeepaliveCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerConnectionCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerConnectionCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerConnectionCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.connection.count doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerConnectionCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.count doesn't have an attribute invalid, valid attributes: [nginx.peer.state, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerFailsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerFails
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerFailsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.fails doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerFails
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerHeaderTimeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerHeaderTime
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerHeaderTimeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.header.time doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerHeaderTime
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerHealthChecksMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerHealthChecks
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerHealthChecksMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.health_checks doesn't have an attribute invalid, valid attributes: [nginx.health_check, nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerHealthChecks
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerIoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerIo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerIoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.io doesn't have an attribute invalid, valid attributes: [nginx.io.direction, nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerIo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerRequestsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerRequests
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerRequestsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.requests doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerRequests
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerResponseTimeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerResponseTime
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerResponseTimeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.response.time doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerResponseTime
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerResponseTimeHistMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerResponseTimeHist
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerResponseTimeHistMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.response_time_hist doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerResponseTimeHist
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerResponsesMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerResponses
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerResponsesMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.responses doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.status_range, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerResponses
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerStateMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerState
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerStateMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.state doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.peer.state, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerState
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamPeerUnavailablesMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamPeerUnavailables
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamPeerUnavailablesMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.peer.unavailables doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamPeerUnavailables
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamQueueLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamQueueLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamQueueLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.queue.limit doesn't have an attribute invalid, valid attributes: [nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamQueueLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamQueueOverflowsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamQueueOverflows
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamQueueOverflowsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.queue.overflows doesn't have an attribute invalid, valid attributes: [nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamQueueOverflows
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamQueueUsageMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamQueueUsage
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamQueueUsageMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.queue.usage doesn't have an attribute invalid, valid attributes: [nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamQueueUsage
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxHTTPUpstreamZombieCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxHTTPUpstreamZombieCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxHTTPUpstreamZombieCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.http.upstream.zombie.count doesn't have an attribute invalid, valid attributes: [nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxHTTPUpstreamZombieCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSlabPageFreeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSlabPageFree
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSlabPageFreeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.slab.page.free doesn't have an attribute invalid, valid attributes: [nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxSlabPageFree
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSlabPageLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSlabPageLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSlabPageLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.slab.page.limit doesn't have an attribute invalid, valid attributes: [nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxSlabPageLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSlabPageUsageMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSlabPageUsage
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSlabPageUsageMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.slab.page.usage doesn't have an attribute invalid, valid attributes: [nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxSlabPageUsage
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSlabPageUtilizationMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSlabPageUtilization
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSlabPageUtilizationMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.slab.page.utilization doesn't have an attribute invalid, valid attributes: [nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxSlabPageUtilization
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSlabSlotAllocationsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSlabSlotAllocations
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSlabSlotAllocationsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.slab.slot.allocations doesn't have an attribute invalid, valid attributes: [nginx.slab.slot.allocation.result, nginx.slab.slot.limit, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxSlabSlotAllocations
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSlabSlotFreeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSlabSlotFree
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSlabSlotFreeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.slab.slot.free doesn't have an attribute invalid, valid attributes: [nginx.slab.slot.limit, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxSlabSlotFree
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSlabSlotUsageMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSlabSlotUsage
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSlabSlotUsageMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.slab.slot.usage doesn't have an attribute invalid, valid attributes: [nginx.slab.slot.limit, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxSlabSlotUsage
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSslCertificateVerifyFailuresMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSslCertificateVerifyFailures
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSslCertificateVerifyFailuresMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.ssl.certificate.verify_failures doesn't have an attribute invalid, valid attributes: [nginx.ssl.verify_failure.reason]")
+
+	cfg = DefaultMetricsConfig().NginxSslCertificateVerifyFailures
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxSslHandshakesMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxSslHandshakes
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxSslHandshakesMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.ssl.handshakes doesn't have an attribute invalid, valid attributes: [nginx.ssl.handshake.reason, nginx.ssl.status]")
+
+	cfg = DefaultMetricsConfig().NginxSslHandshakes
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamConnectionAcceptedMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamConnectionAccepted
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamConnectionAcceptedMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.connection.accepted doesn't have an attribute invalid, valid attributes: [nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamConnectionAccepted
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamConnectionDiscardedMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamConnectionDiscarded
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamConnectionDiscardedMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.connection.discarded doesn't have an attribute invalid, valid attributes: [nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamConnectionDiscarded
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamConnectionProcessingCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamConnectionProcessingCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamConnectionProcessingCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.connection.processing.count doesn't have an attribute invalid, valid attributes: [nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamConnectionProcessingCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamIoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamIo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamIoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.io doesn't have an attribute invalid, valid attributes: [nginx.io.direction, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamIo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamSessionStatusMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamSessionStatus
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamSessionStatusMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.session.status doesn't have an attribute invalid, valid attributes: [nginx.status_range, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamSessionStatus
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerConnectionCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerConnectionCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerConnectionCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.connection.count doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerConnectionCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerConnectionTimeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerConnectionTime
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerConnectionTimeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.connection.time doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerConnectionTime
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerConnectionsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerConnections
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerConnectionsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.connections doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerConnections
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.count doesn't have an attribute invalid, valid attributes: [nginx.peer.state, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerFailsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerFails
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerFailsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.fails doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerFails
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerHealthChecksMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerHealthChecks
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerHealthChecksMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.health_checks doesn't have an attribute invalid, valid attributes: [nginx.health_check, nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerHealthChecks
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerIoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerIo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerIoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.io doesn't have an attribute invalid, valid attributes: [nginx.io.direction, nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerIo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerResponseTimeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerResponseTime
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerResponseTimeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.response.time doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerResponseTime
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerStateMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerState
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerStateMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.state doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.peer.state, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerState
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerTtfbTimeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerTtfbTime
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerTtfbTimeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.ttfb.time doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerTtfbTime
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamPeerUnavailablesMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamPeerUnavailables
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamPeerUnavailablesMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.peer.unavailables doesn't have an attribute invalid, valid attributes: [nginx.peer.address, nginx.peer.name, nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamPeerUnavailables
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestNginxStreamUpstreamZombieCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().NginxStreamUpstreamZombieCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []NginxStreamUpstreamZombieCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric nginx.stream.upstream.zombie.count doesn't have an attribute invalid, valid attributes: [nginx.upstream.name, nginx.zone.name]")
+
+	cfg = DefaultMetricsConfig().NginxStreamUpstreamZombieCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
 }
 
 func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
@@ -176,8 +1362,8 @@ func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
 	require.NoError(t, err)
 	sub, err := cm.Sub(name)
 	require.NoError(t, err)
-	cfg := DefaultMetricsBuilderConfig()
-	require.NoError(t, sub.Unmarshal(&cfg))
+	cfg := NewDefaultMetricsBuilderConfig()
+	require.NoError(t, sub.Unmarshal(&cfg, confmap.WithIgnoreUnused()))
 	return cfg
 }
 

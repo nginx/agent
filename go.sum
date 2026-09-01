@@ -322,6 +322,8 @@ github.com/google/go-tpm v0.9.8/go.mod h1:h9jEsEECg7gtLis0upRBQU+GhYVH6jMjrFxI8u
 github.com/google/go-tpm-tools v0.4.7 h1:J3ycC8umYxM9A4eF73EofRZu4BxY0jjQnUnkhIBbvws=
 github.com/google/go-tpm-tools v0.4.7/go.mod h1:gSyXTZHe3fgbzb6WEGd90QucmsnT1SRdlye82gH8QjQ=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
+github.com/google/jsonschema-go v0.4.3 h1:/DBOLZTfDow7pe2GmaJNhltueGTtDKICi8V8p+DQPd0=
+github.com/google/jsonschema-go v0.4.3/go.mod h1:r5quNTdLOYEz95Ru18zA0ydNbBuYoo9tgaYcxEYhJVE=
 github.com/google/pprof v0.0.0-20260507013755-92041b743c96 h1:YDDnaZ9afWajDboPMt9Vikqca/yWAX7KAxVzb4lJU1M=
 github.com/google/pprof v0.0.0-20260507013755-92041b743c96/go.mod h1:MxpfABSjhmINe3F1It9d+8exIHFvUqtLIRCdOGNXqiI=
 github.com/google/s2a-go v0.1.9 h1:LGD7gtMgezd8a/Xak7mEWL0PjoTQFvpRudN895yqKW0=
@@ -380,6 +382,8 @@ github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUq
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/iancoleman/strcase v0.3.0 h1:nTXanmYxhfFAMjZL34Ov6gkzEsSJZ5DbhxWjvSASxEI=
 github.com/iancoleman/strcase v0.3.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
+github.com/iimos/ucum v0.0.3 h1:nXmi4ZM9ITooXgzLbFg9lL/RcB8TLI91qmgGQ8XT56s=
+github.com/iimos/ucum v0.0.3/go.mod h1:GLkwylGGfhLPvLSpmbgJr52tmpq+3EBh0LYSQR3i8MY=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/ionos-cloud/sdk-go/v6 v6.3.7 h1:t773JkC/asnyVqeQ+OvN9WCRZuosSoPtJfyM82EFCWY=
@@ -670,6 +674,8 @@ github.com/sagikazarmark/locafero v0.11.0 h1:1iurJgmM9G3PA/I+wWYIOw/5SyBtxapeHDc
 github.com/sagikazarmark/locafero v0.11.0/go.mod h1:nVIGvgyzw595SUSUE6tvCp3YYTeHs15MvlmU87WwIik=
 github.com/samber/slog-gin v1.21.1 h1:DUsQyZdeT2vEfz/3xkoD4KWYVeuYWGz3XrEkjLwNCO4=
 github.com/samber/slog-gin v1.21.1/go.mod h1:7R4VMQGENllRLLnwGyoB5nUSB+qzxThpGe5G02xla6o=
+github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 h1:KRzFb2m7YtdldCEkzs6KqmJw4nqEVZGK7IN2kJkjTuQ=
+github.com/santhosh-tekuri/jsonschema/v6 v6.0.2/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
 github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36 h1:ObX9hZmK+VmijreZO/8x9pQ8/P/ToHD/bdSb4Eg4tUo=
 github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36/go.mod h1:LEsDu4BubxK7/cWhtlQWfuxwL4rf/2UEpxXz1o1EMtM=
 github.com/shirou/gopsutil/v4 v4.26.7 h1:IXzpHz/dkMRYAhKkOXr1HB6SuzWU3eoyyeWe7g3bNZc=
@@ -765,6 +771,8 @@ go.opentelemetry.io/collector v0.157.0 h1:+RLtpnbZQSWcPedeSEa02OtNVlHaMqS10tTdc0
 go.opentelemetry.io/collector v0.157.0/go.mod h1:848A/k7Fii/OAXaBg0DY2eK/MJkGJOR9osN9WxGZiCk=
 go.opentelemetry.io/collector/client v1.63.0 h1:QSu/+nsQUldXh8AQz6ooJ5T62wGx9U0nx32BXJrwHrQ=
 go.opentelemetry.io/collector/client v1.63.0/go.mod h1:IDDEIMIX0AcOptjCsGh1lTs2inBK8+BWCnkiCaTsSHY=
+go.opentelemetry.io/collector/cmd/mdatagen v0.157.0 h1:et4F9De30zLodrJgZi/Bnq9ewBN5QByTypm2CKCah80=
+go.opentelemetry.io/collector/cmd/mdatagen v0.157.0/go.mod h1:Z7KwJhnIPzg3FXx6qA3HnwUfb+VSIg8FExhDXpr8ADU=
 go.opentelemetry.io/collector/component v1.63.0 h1:l98ZCxfCTt/O6dYB0JVKKtewaFLe/a6N2qQe61Tbf2o=
 go.opentelemetry.io/collector/component v1.63.0/go.mod h1:yLGMmT7jUiqvuGvkqlfR1CBi0dRkSV67tq22I08ZMPk=
 go.opentelemetry.io/collector/component/componentstatus v0.157.0 h1:6aARK84axselDP/YGM1cKVPvg6eIyN7Bg9x8x5GzJb4=
@@ -867,6 +875,8 @@ go.opentelemetry.io/collector/internal/fanoutconsumer v0.157.0 h1:XZmWvCXXwYeSuh
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.157.0/go.mod h1:L9PfDggPQVIAjFspaq0WNLZ83TzmeTO9livFnwkM8a4=
 go.opentelemetry.io/collector/internal/memorylimiter v0.157.0 h1:eI6eDu2mVG84SaB7F6T2sRimxlgkAnzu9DQV0xljLWA=
 go.opentelemetry.io/collector/internal/memorylimiter v0.157.0/go.mod h1:5WtX8W4/RLJyrtMRbCcGjhC2pdmEA36wsY13TdcuTyE=
+go.opentelemetry.io/collector/internal/schemagen v0.157.0 h1:aEWxMzu4wj0sikEBgh/qZYqfyIXw9p7VlR1OtAlzpw4=
+go.opentelemetry.io/collector/internal/schemagen v0.157.0/go.mod h1:5gbeW5pn9IP43yjBsrYcdimmnn0OW8jZtGHoNmzHA3U=
 go.opentelemetry.io/collector/internal/sharedcomponent v0.157.0 h1:hFJmgGIQVMhtjnDFYxlvQP+awnv5/RJpBYKHOs29O9Q=
 go.opentelemetry.io/collector/internal/sharedcomponent v0.157.0/go.mod h1:dLiBwF06dRSEtStL6VaJCfbrRkDOAFR//lHMP+pGbRY=
 go.opentelemetry.io/collector/internal/telemetry v0.157.0 h1:gmczR2ifOmfxP4gcbiRIXvSkADb8F4QjqqXaEBlHFyo=
