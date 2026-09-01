@@ -411,6 +411,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		expectedConfigContext *model.NginxConfigContext
 		expectedLog           string
 		allowedDirectories    []string
+		features              []string
 	}{
 		{
 			name:     "Test 1: Valid response",
@@ -637,6 +638,9 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 
 			agentConfig := types.AgentConfig()
 			agentConfig.AllowedDirectories = test.allowedDirectories
+			if len(test.features) > 0 {
+				agentConfig.Features = test.features
+			}
 
 			nginxConfig := NewNginxConfigParser(agentConfig)
 
