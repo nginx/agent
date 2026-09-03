@@ -204,15 +204,28 @@ summary() {
         printf "%s\n" "$ID" "$ID_LIKE" | grep -Eq '\brhel\b|\bcentos\b|\bol\b|\balmalinux\b|\brocky\b|\bamzn\b|\boraclelinux\b' 2>/dev/null
     }
 
+    # Returns 0 if the given config file has usable auth configured (a non-empty token or
+    # tokenpath), ignoring commented-out lines.
+    conf_has_auth() {
+        _f="$1"
+        [ -f "${_f}" ] || return 1
+        _tok=$(sed -n 's/^[[:space:]]*token:[[:space:]]*//p' "${_f}" 2>/dev/null | head -1 | tr -d "\"' \t\r")
+        _tp=$(sed -n 's/^[[:space:]]*tokenpath:[[:space:]]*//p' "${_f}" 2>/dev/null | head -1 | tr -d "\"' \t\r")
+        [ -n "${_tok}" ] || [ -n "${_tp}" ]
+    }
+
     PREV_VER_FILE="${AGENT_LIB_DIR}/nginx-agent.preupgrade.version"
     PREV_MAJOR=""
     if [ -f "${PREV_VER_FILE}" ]; then
         PREV_MAJOR=$(sed -n 's/^.*version v\([0-9]\+\).*$/\1/p' "${PREV_VER_FILE}" || true)
     fi
     
-    # Restore config on RPM-based systems for V3→V3 upgrades
-    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ -f "${PREBACKUP}" ]; then
-        printf "PostInstall: Restoring nginx-agent config from %s (prev major=%s) on RPM system\n" "${PREBACKUP}" "${PREV_MAJOR}"
+    # Restore config on RPM-based systems for V3→V3 upgrades, but only as a fallback:
+    # only when the live config has lost its auth AND the backup still has it.
+    if is_rpm_based && [ "${PREV_MAJOR}" = "3" ] && [ -f "${PREBACKUP}" ] \
+        && ! conf_has_auth "${AGENT_ETC_DIR}/nginx-agent.conf" \
+        && conf_has_auth "${PREBACKUP}"; then
+        printf "PostInstall: live config has no auth; restoring nginx-agent config from %s (prev major=%s) on RPM system\n" "${PREBACKUP}" "${PREV_MAJOR}"
         mkdir -p "${AGENT_ETC_DIR}" || true
         cp -a "${PREBACKUP}" "${AGENT_ETC_DIR}/nginx-agent.conf" || true
         chown root:${AGENT_GROUP} "${AGENT_ETC_DIR}/nginx-agent.conf" || true
