@@ -42,7 +42,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_model v0.6.3
 	github.com/prometheus/common v0.71.0
-	github.com/shirou/gopsutil/v4 v4.26.7
+	github.com/shirou/gopsutil/v4 v4.26.8
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
 	github.com/testcontainers/testcontainers-go v0.43.0
