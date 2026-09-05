@@ -16,59 +16,59 @@ metrics:
 
 The current number of connections.
 
-| Unit | Metric Type | Value Type | Stability |
-| ---- | ----------- | ---------- | --------- |
-| connections | Gauge | Int | Development |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| connections | Gauge | Int |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` | Recommended |
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
 ### nginx.http.connections
 
 The total number of connections, since NGINX was last started or reloaded.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
-| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| connections | Sum | Int | Cumulative | true | Development |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| connections | Sum | Int | Cumulative | true |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` | Recommended |
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
 ### nginx.http.request.count
 
 The total number of client requests received, since the last collection interval.
 
-| Unit | Metric Type | Value Type | Stability |
-| ---- | ----------- | ---------- | --------- |
-| requests | Gauge | Int | Development |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| requests | Gauge | Int |
 
 ### nginx.http.requests
 
 The total number of client requests received, since NGINX was last started or reloaded.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
-| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
-| requests | Sum | Int | Cumulative | true | Development |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| requests | Sum | Int | Cumulative | true |
 
 ### nginx.http.response.count
 
 The total number of HTTP responses since the last collection interval, grouped by status code range.
 
-| Unit | Metric Type | Value Type | Stability |
-| ---- | ----------- | ---------- | --------- |
-| responses | Gauge | Int | Development |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| responses | Gauge | Int |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` | Recommended |
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
 
 ## Resource Attributes
 
