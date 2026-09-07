@@ -16,18 +16,18 @@ metrics:
 
 The Unix timestamp (in seconds) at which an SSL/TLS certificate expires
 
-| Unit | Metric Type | Value Type | Stability |
-| ---- | ----------- | ---------- | --------- |
-| s | Gauge | Int | Development |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| s | Gauge | Int |
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| file_path | The full file path of the certificate. | Any Str | Recommended |
-| public_key_algorithm | The public key algorithm. | Any Str | Recommended |
-| serial_number | The serial number of the certificate. | Any Str | Recommended |
-| subject.common_name | The Common Name of the certificate. | Any Str | Recommended |
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| file_path | The full file path of the certificate. | Any Str |
+| public_key_algorithm | The public key algorithm. | Any Str |
+| serial_number | The serial number of the certificate. | Any Str |
+| subject.common_name | The Common Name of the certificate. | Any Str |
 
 ## Resource Attributes
 
