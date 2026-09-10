@@ -155,6 +155,16 @@ command:
         printf "%s\n" "$ID" "$ID_LIKE" | grep -Eq '\brhel\b|\bcentos\b|\bol\b|\balmalinux\b|\brocky\b|\bamzn\b' 2>/dev/null
     }
 
+    # Returns 0 if the given config file has usable auth configured (a non-empty token or
+    # tokenpath), ignoring commented-out lines.
+    conf_has_auth() {
+        _f="$1"
+        [ -f "${_f}" ] || return 1
+        _tok=$(sed -n 's/^[[:space:]]*token:[[:space:]]*//p' "${_f}" 2>/dev/null | head -1 | tr -d "\"' \t\r")
+        _tp=$(sed -n 's/^[[:space:]]*tokenpath:[[:space:]]*//p' "${_f}" 2>/dev/null | head -1 | tr -d "\"' \t\r")
+        [ -n "${_tok}" ] || [ -n "${_tp}" ]
+    }
+
     INSTALLED_VERSION=""
     INSTALLED_MAJOR=""
     if command -v nginx-agent >/dev/null 2>&1; then
@@ -167,7 +177,8 @@ command:
 
     if is_rhel_family && [ -n "${INSTALLED_MAJOR}" ] && [ "${INSTALLED_MAJOR}" -eq 3 ] && [ -f "${AGENT_CONFIG_FILE}" ]; then
         mkdir -p "${AGENT_LIB_DIR}" || true
-        if [ ! -f "${AGENT_CONFIG_BACKUP}" ]; then
+        # Refresh the backup on every upgrade, but only snapshot a config that still has usable auth
+        if conf_has_auth "${AGENT_CONFIG_FILE}"; then
             echo "Backing up existing config to ${AGENT_CONFIG_BACKUP}"
             cp -a "${AGENT_CONFIG_FILE}" "${AGENT_CONFIG_BACKUP}" || true
         fi
