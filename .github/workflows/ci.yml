@@ -446,7 +446,7 @@ jobs:
           path: ./build/azure/packages/nginx-agent.tar.gz
           retention-days: 1
       - name: Azure Login
-        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Upload Snapshot
