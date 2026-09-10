@@ -32,7 +32,7 @@ GOTIDY  = ${GOMOD} tidy
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
 # | ubuntu           | 22.04, 24.04 25.04, 25.10 26.04           |                                                                |
-# | debian           | bullseye-slim, bookworm-slim, trixie-slim |                                                                |
+# | debian           | bookworm-slim, trixie-slim                | bullseye EOL 2026-08-31, removed 2026-09                       |
 # | redhatenterprise | 8, 9, 10                                  |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |
 # | almalinux        | 8, 9, 10                                  |                                                                |
