@@ -238,7 +238,9 @@ github.com/nats-io/nuid
 # github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000 => .
 ## explicit; go 1.26.0
 # github.com/nginx/nginx-plus-go-client/v3 v3.0.1
-## explicit; go 1.24.2
+## explicit; go 1.25.0
+# github.com/nginx/nginx-plus-go-client/v3 v3.0.2
+## explicit; go 1.25.0
 github.com/nginx/nginx-plus-go-client/v3/client
 # github.com/nginx/nginx-prometheus-exporter v1.5.1
 ## explicit; go 1.25.0
