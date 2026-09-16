@@ -906,6 +906,9 @@ func (ncp *NginxConfigParser) parseAddressFromServerDirective(parent *crossplane
 
 	for _, dir := range parent.Block {
 		if dir.Directive == "listen" {
+			if ncp.isProxyProtocolListenDirective(dir) {
+				continue
+			}
 			for _, host := range hosts {
 				port, host = ncp.parseListenDirectiveAddress(dir, port, host)
 				addresses = append(addresses, host+":"+port)
@@ -949,6 +952,22 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	port, err := strconv.Atoi(value)
 
 	return err == nil && port >= 1 && port <= 65535
+}
+
+// checks if any of the arguments contain "proxy_protocol".
+func (ncp *NginxConfigParser) hasProxyProtocolArgument(args []string) bool {
+	for i := 1; i < len(args); i++ {
+		if args[i] == "proxy_protocol" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// checks if a directive is a listen directive with proxy_protocol enabled.
+func (ncp *NginxConfigParser) isProxyProtocolListenDirective(dir *crossplane.Directive) bool {
+	return dir.Directive == "listen" && ncp.hasProxyProtocolArgument(dir.Args)
 }
 
 // checks if any of the arguments contain "ssl".
