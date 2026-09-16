@@ -12,6 +12,11 @@ WORKDIR /agent
 COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
+# Debian bullseye LTS ended 2026-08-31; point apt at archive.debian.org so bullseye-slim CI keeps working.
+RUN if grep -q '^VERSION_CODENAME=bullseye' /etc/os-release; then \
+        sed -i 's|deb.debian.org|archive.debian.org|g; s|security.debian.org|archive.debian.org|g; /bullseye-updates/d; /bullseye-security/d' /etc/apt/sources.list; \
+    fi
+
 RUN set -x \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home-dir /nonexistent --uid 101 nginx \
