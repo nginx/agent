@@ -43,7 +43,13 @@ GOTIDY  = ${GOMOD} tidy
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 24.04
+# Debian bullseye reached LTS EOL 2026-08-31. Use Debian's official EOL archive image
+# so preinstalled packages match archive.debian.org and apt-get resolves consistently.
+ifeq ($(OS_RELEASE)-$(OS_VERSION),debian-bullseye-slim)
+BASE_IMAGE  = "${CONTAINER_REGISTRY}/debian/eol:${OS_VERSION}"
+else
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
+endif
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 IMAGE_PATH ?= "/nginx/agent"
 IMAGE_BUILD_TARGET ?= install-agent-local
