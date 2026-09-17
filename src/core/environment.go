@@ -597,12 +597,8 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 		user, _ := nginxProcess.UsernameWithContext(ctx)
 		ppid, _ := nginxProcess.PpidWithContext(ctx)
 		cmd, _ := nginxProcess.CmdlineWithContext(ctx)
-		isMaster := false
 
-		_, ok := nginxProcesses[ppid]
-		if !ok {
-			isMaster = true
-		}
+		isMaster := isNginxMaster(cmd)
 
 		var exe string
 		if isMaster {
@@ -637,6 +633,13 @@ func (env *EnvironmentType) isNginxProcess(name string, cmd string) bool {
 	isNameValid := name == "nginx" || name == "nginx-debug"
 	isCmdValid := strings.HasPrefix(cmd, "nginx:") || strings.HasPrefix(cmd, "{nginx-debug} nginx:")
 	return !strings.Contains(cmd, "upgrade") && isNameValid && isCmdValid
+}
+
+// isNginxMaster reports whether the given process command line belongs to an
+// nginx master process.
+func isNginxMaster(cmd string) bool {
+	return strings.HasPrefix(cmd, "nginx: master") ||
+		strings.HasPrefix(cmd, "{nginx-debug} nginx: master")
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {
