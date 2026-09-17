@@ -32,7 +32,7 @@ GOTIDY  = ${GOMOD} tidy
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
 # | ubuntu           | 22.04, 24.04 25.04, 25.10 26.04           |                                                                |
-# | debian           | bookworm-slim, trixie-slim                | bullseye EOL 2026-08-31, removed 2026-09                       |
+# | debian           | bullseye-slim, bookworm-slim, trixie-slim | bullseye: LTS EOL 2026-08-31, apt via archive.debian.org       |
 # | redhatenterprise | 8, 9, 10                                  |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |
 # | almalinux        | 8, 9, 10                                  |                                                                |
@@ -43,7 +43,13 @@ GOTIDY  = ${GOMOD} tidy
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 24.04
+# Debian bullseye reached LTS EOL 2026-08-31. Use Debian's official EOL archive image
+# so preinstalled packages match archive.debian.org and apt-get resolves consistently.
+ifeq ($(OS_RELEASE)-$(OS_VERSION),debian-bullseye-slim)
+BASE_IMAGE  = "${CONTAINER_REGISTRY}/debian/eol:${OS_VERSION}"
+else
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
+endif
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 IMAGE_PATH ?= "/nginx/agent"
 IMAGE_BUILD_TARGET ?= install-agent-local
