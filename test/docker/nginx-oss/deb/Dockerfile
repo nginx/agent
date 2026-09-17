@@ -12,6 +12,21 @@ WORKDIR /agent
 COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
+# Pin bullseye apt to the snapshot the debian/eol image was built from so
+# preinstalled packages match repo indices (avoiding archive.debian.org's
+# pruned bullseye-security pool and drift against the image's baked-in state).
+# These are the URLs the debian/eol maintainer ships pre-configured (commented)
+# in the image's own /etc/apt/sources.list.
+RUN if grep -q '^VERSION_CODENAME=bullseye' /etc/os-release; then \
+        SNAPSHOT=20250809T133719Z; \
+        { \
+            echo "deb http://snapshot.debian.org/archive/debian-archive/$SNAPSHOT/debian bullseye main"; \
+            echo "deb http://snapshot.debian.org/archive/debian-security/$SNAPSHOT bullseye-security main"; \
+            echo "deb http://snapshot.debian.org/archive/debian-archive/$SNAPSHOT/debian bullseye-updates main"; \
+        } > /etc/apt/sources.list; \
+        echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until; \
+    fi
+
 RUN set -x \
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home-dir /nonexistent --uid 101 nginx \
