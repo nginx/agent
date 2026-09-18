@@ -46,6 +46,7 @@ type (
 		commandCredentialUpdatesChannel    chan credentials.CredentialUpdateMessage
 		auxiliaryCredentialUpdatesChannel  chan credentials.CredentialUpdateMessage
 		cancel                             context.CancelFunc
+		pendingNginxConfigContexts         map[string]*model.NginxConfigContext
 		instancesWithConfigApplyInProgress []string
 		wg                                 sync.WaitGroup
 		watcherMutex                       sync.Mutex
@@ -88,6 +89,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		commandCredentialUpdatesChannel:    make(chan credentials.CredentialUpdateMessage),
 		auxiliaryCredentialUpdatesChannel:  make(chan credentials.CredentialUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
+		pendingNginxConfigContexts:         make(map[string]*model.NginxConfigContext),
 		watcherMutex:                       sync.Mutex{},
 		agentConfigMutex:                   sync.Mutex{},
 	}
@@ -218,6 +220,16 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 			return element == instanceID
 		},
 	)
+	pendingContext := w.pendingNginxConfigContexts[instanceID]
+	if pendingContext != nil {
+		delete(w.pendingNginxConfigContexts, instanceID)
+		if pendingContext.Equal(configContext) {
+			w.messagePipe.Process(ctx, &bus.Message{
+				Topic: bus.NginxConfigUpdateTopic,
+				Data:  pendingContext,
+			})
+		}
+	}
 
 	w.fileWatcherService.EnableWatcher(ctx)
 	w.instanceWatcherService.SetEnabled(true)
@@ -293,19 +305,18 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 				)
 				w.messagePipe.Process(
 					newCtx,
-					&bus.Message{Topic: bus.
-						NginxConfigUpdateTopic, Data: message.NginxConfigContext},
+					&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message.NginxConfigContext},
 				)
 			} else {
 				slog.DebugContext(
 					newCtx,
-					"Not sending updated NGINX config context since config apply is in progress",
+					"Buffering updated NGINX config context since config apply is in progress",
 					"nginx_config_context", message.NginxConfigContext,
 				)
+				w.pendingNginxConfigContexts[message.NginxConfigContext.InstanceID] = message.NginxConfigContext
 			}
 
 			w.fileWatcherService.Update(ctx, message.NginxConfigContext)
-
 			w.watcherMutex.Unlock()
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
