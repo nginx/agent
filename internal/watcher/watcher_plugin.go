@@ -46,8 +46,8 @@ type (
 		commandCredentialUpdatesChannel    chan credentials.CredentialUpdateMessage
 		auxiliaryCredentialUpdatesChannel  chan credentials.CredentialUpdateMessage
 		cancel                             context.CancelFunc
-		instancesWithConfigApplyInProgress []string
 		pendingNginxConfigContexts         map[string]*model.NginxConfigContext
+		instancesWithConfigApplyInProgress []string
 		wg                                 sync.WaitGroup
 		watcherMutex                       sync.Mutex
 		agentConfigMutex                   sync.Mutex

@@ -273,6 +273,7 @@ func TestWatcher_Process_EnableWatchersTopic_FlushesPendingContext(t *testing.T)
 			require.Eventually(t, func() bool {
 				watcherPlugin.watcherMutex.Lock()
 				defer watcherPlugin.watcherMutex.Unlock()
+
 				return watcherPlugin.pendingNginxConfigContexts[instanceID] == pendingContext
 			}, time.Second, time.Millisecond)
 
