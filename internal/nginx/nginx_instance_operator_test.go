@@ -91,28 +91,52 @@ func TestInstanceOperator_Validate(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		out      *bytes.Buffer
-		err      error
-		expected error
-		name     string
+		out          *bytes.Buffer
+		err          error
+		expected     error
+		name         string
+		configPath   string
+		expectedArgs []string
 	}{
 		{
-			name:     "Test 1: Validate successful",
-			out:      bytes.NewBufferString(""),
-			err:      nil,
-			expected: nil,
+			name:         "Test 1: Validate successful",
+			out:          bytes.NewBufferString(""),
+			err:          nil,
+			expected:     nil,
+			configPath:   "",
+			expectedArgs: []string{"-t"},
 		},
 		{
-			name:     "Test 2: Validate failed",
-			out:      bytes.NewBufferString("[emerg]"),
-			err:      errors.New("error validating"),
-			expected: fmt.Errorf("NGINX config test failed %w: [emerg]", errors.New("error validating")),
+			name:         "Test 2: Validate failed",
+			out:          bytes.NewBufferString("[emerg]"),
+			err:          errors.New("error validating"),
+			expected:     fmt.Errorf("NGINX config test failed %w: [emerg]", errors.New("error validating")),
+			configPath:   "",
+			expectedArgs: []string{"-t"},
 		},
 		{
-			name:     "Test 3: Validate Config failed",
-			out:      bytes.NewBufferString("nginx [emerg]"),
-			err:      nil,
-			expected: errors.New("error running nginx -t -c:\nnginx [emerg]"),
+			name:         "Test 3: Validate Config failed",
+			out:          bytes.NewBufferString("nginx [emerg]"),
+			err:          nil,
+			expected:     errors.New("error running nginx -t -c:\nnginx [emerg]"),
+			configPath:   "",
+			expectedArgs: []string{"-t"},
+		},
+		{
+			name:         "Test 4: Validate with rootless config path",
+			out:          bytes.NewBufferString(""),
+			err:          nil,
+			expected:     nil,
+			configPath:   "/home/rootless/myNGINX/etc/nginx/nginx.conf",
+			expectedArgs: []string{"-t", "-c", "/home/rootless/myNGINX/etc/nginx/nginx.conf"},
+		},
+		{
+			name:         "Test 5: Validate with default config path",
+			out:          bytes.NewBufferString(""),
+			err:          nil,
+			expected:     nil,
+			configPath:   "/etc/nginx/nginx.conf",
+			expectedArgs: []string{"-t", "-c", "/etc/nginx/nginx.conf"},
 		},
 	}
 
@@ -122,6 +146,7 @@ func TestInstanceOperator_Validate(t *testing.T) {
 			mockExec.RunCmdReturns(test.out, test.err)
 
 			instance := protos.NginxOssInstance([]string{})
+			instance.GetInstanceRuntime().ConfigPath = test.configPath
 
 			operator := NewInstanceOperator(types.AgentConfig())
 			operator.executer = mockExec
@@ -129,6 +154,10 @@ func TestInstanceOperator_Validate(t *testing.T) {
 			err := operator.Validate(ctx, instance)
 
 			assert.Equal(t, test.expected, err)
+
+			assert.Equal(t, 1, mockExec.RunCmdCallCount())
+			_, _, callArgs := mockExec.RunCmdArgsForCall(0)
+			assert.Equal(t, test.expectedArgs, callArgs)
 		})
 	}
 }

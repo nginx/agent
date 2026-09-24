@@ -48,7 +48,14 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 	slog.InfoContext(ctx, "Validating NGINX configuration")
 	exePath := instance.GetInstanceRuntime().GetBinaryPath()
 
-	out, err := i.executer.RunCmd(ctx, filepath.Clean(exePath), "-t")
+	// Pass -c flag if config path is available (required for rootless images)
+	configPath := instance.GetInstanceRuntime().GetConfigPath()
+	args := []string{"-t"}
+	if configPath != "" {
+		args = append(args, "-c", filepath.Clean(configPath))
+	}
+
+	out, err := i.executer.RunCmd(ctx, filepath.Clean(exePath), args...)
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
 	}
