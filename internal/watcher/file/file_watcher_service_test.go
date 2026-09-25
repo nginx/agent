@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"syscall"
 	"testing"
 	"time"
 
@@ -319,4 +320,23 @@ func TestFileWatcherService_checkForUpdates(t *testing.T) {
 	case <-time.After(150 * time.Millisecond):
 		t.Fatalf("Expected file update event")
 	}
+}
+
+func TestFileWatcherService_handleEvent_nonRegularFile(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	fifoPath := filepath.Join(tempDir, "hang.conf")
+
+	err := syscall.Mkfifo(fifoPath, 0o644)
+	require.NoError(t, err)
+
+	fws := NewFileWatcherService(types.AgentConfig())
+
+	fws.handleEvent(t.Context(), fsnotify.Event{
+		Name: fifoPath,
+		Op:   fsnotify.Create,
+	})
+
+	assert.True(t, fws.filesChanged.Load())
 }

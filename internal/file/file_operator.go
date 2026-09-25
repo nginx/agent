@@ -211,6 +211,15 @@ func (fo *FileOperator) WriteManifestFile(
 }
 
 func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath string) error {
+	info, statErr := os.Stat(sourcePath)
+	if statErr != nil {
+		return fmt.Errorf("failed to stat source file %s: %w", sourcePath, statErr)
+	}
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("cannot backup non-regular file %s (type: %s) — resolve file manually on the data plane",
+			sourcePath, info.Mode().Type())
+	}
+
 	inputFile, openErr := os.Open(sourcePath)
 	if openErr != nil {
 		return fmt.Errorf("failed to open source file %s: %w", sourcePath, openErr)

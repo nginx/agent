@@ -312,6 +312,12 @@ func (fso *FileServiceOperator) RenameFile(
 ) error {
 	slog.InfoContext(ctx, fmt.Sprintf("Renaming file %s to %s", source, desination))
 
+	if info, err := os.Stat(desination); err == nil && !info.Mode().IsRegular() {
+		return fmt.Errorf("cannot write to non-regular destination file %s (type: %s) - "+
+			"resolve file manually on the data plane",
+			desination, info.Mode().Type())
+	}
+
 	// Create parent directories for the target file if they don't exist
 	if err := os.MkdirAll(filepath.Dir(desination), dirPerm); err != nil {
 		return fmt.Errorf("failed to create directories for %s: %w", desination, err)
