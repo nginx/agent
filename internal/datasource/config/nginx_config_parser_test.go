@@ -346,6 +346,32 @@ server {
        }
 }
 `
+	testConfProxyProtocolOnly = `server {
+    server_name   localhost;
+    listen        8888 proxy_protocol;
+    listen        [::]:8888 default_server ipv6only=on proxy_protocol;
+
+    location = /stub_status {
+        stub_status;
+    }
+
+    location /api {
+        api write=on;
+    }
+}`
+	testConfProxyProtocolMixed = `server {
+    server_name   localhost;
+    listen        8888 proxy_protocol;
+    listen        8080;
+
+    location = /stub_status {
+        stub_status;
+    }
+
+    location /api {
+        api write=on;
+    }
+}`
 	testConf27 = `http {
 	access_log /var/log/nginx/access.log;
 	access_log /var/log/nginx/access.log; 
@@ -1306,6 +1332,25 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 			name: "Test 25: Multiple Plus APIs, Prioritize Write-Enabled (9092)",
 			conf: testConf25,
 		},
+		{
+			oss: &model.APIDetails{
+				URL:      "http://localhost:8080/stub_status",
+				Listen:   "localhost:8080",
+				Location: "/stub_status",
+			},
+			plus: &model.APIDetails{
+				URL:          "http://localhost:8080/api",
+				Listen:       "localhost:8080",
+				Location:     "/api",
+				WriteEnabled: true,
+			},
+			name: "Test 26: Mixed proxy_protocol and standard listen directives - ignore proxy_protocol",
+			conf: testConfProxyProtocolMixed,
+		},
+		{
+			name: "Test 27: Only proxy_protocol listen directives - return no plain HTTP API details",
+			conf: testConfProxyProtocolOnly,
+		},
 	}
 
 	for _, test := range tests {
@@ -1329,10 +1374,16 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 			oss, plus := traverseConfigForAPIs(t, ctx, payload)
 
 			if test.oss != nil {
+				require.NotEmpty(t, oss)
 				assert.Equal(t, test.oss, oss[0])
+			} else if test.plus == nil {
+				assert.Empty(t, oss)
 			}
 			if test.plus != nil {
+				require.NotEmpty(t, plus)
 				assert.Equal(t, test.plus, plus[0])
+			} else if test.oss == nil {
+				assert.Empty(t, plus)
 			}
 			helpers.ValidateLog(t, test.expectedLog, logBuf)
 
