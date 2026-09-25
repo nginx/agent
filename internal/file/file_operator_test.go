@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"testing"
 
 	"github.com/nginx/agent/v3/pkg/files"
@@ -178,4 +179,20 @@ func TestFileOperator_MoveFile_destFileDoesNotExist(t *testing.T) {
 
 	assert.FileExists(t, tempFile)
 	assert.NoFileExists(t, newFile)
+}
+
+func TestFileOperator_MoveFile_sourceIsNonRegularFile(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	fifoPath := filepath.Join(tempDir, "hang.conf")
+
+	err := syscall.Mkfifo(fifoPath, 0o644)
+	require.NoError(t, err)
+
+	fileOperator := NewFileOperator(&sync.RWMutex{})
+	err = fileOperator.MoveFile(t.Context(), fifoPath, filepath.Join(tempDir, "hang.conf.bak"))
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "non-regular file")
 }

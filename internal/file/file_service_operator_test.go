@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -194,4 +195,41 @@ func TestFileManagerService_UpdateFile_LargeFile(t *testing.T) {
 	assert.Equal(t, 14, int(fakeClientStreamingClient.sendCount.Load()))
 
 	helpers.RemoveFileWithErrorCheck(t, testFile.Name())
+}
+
+func TestFileServiceOperator_RenameFile_success(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	src := filepath.Join(tempDir, "source.conf")
+	dest := filepath.Join(tempDir, "dest.conf")
+
+	err := os.WriteFile(src, []byte("nginx config"), 0o600)
+	require.NoError(t, err)
+
+	fso := NewFileServiceOperator(types.AgentConfig(), nil, &sync.RWMutex{})
+	err = fso.RenameFile(t.Context(), src, dest)
+
+	require.NoError(t, err)
+	assert.FileExists(t, dest)
+}
+
+func TestFileServiceOperator_RenameFile_destIsNonRegularFile(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	src := filepath.Join(tempDir, "source.conf")
+	dest := filepath.Join(tempDir, "dest.conf")
+
+	err := os.WriteFile(src, []byte("nginx config"), 0o600)
+	require.NoError(t, err)
+
+	err = syscall.Mkfifo(dest, 0o644)
+	require.NoError(t, err)
+
+	fso := NewFileServiceOperator(types.AgentConfig(), nil, &sync.RWMutex{})
+	err = fso.RenameFile(t.Context(), src, dest)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "non-regular")
 }

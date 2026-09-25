@@ -205,6 +205,17 @@ func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.E
 			return
 		}
 
+		if event.Has(fsnotify.Create) || event.Has(fsnotify.Rename) {
+			if info, err := os.Stat(event.Name); err == nil && !info.Mode().IsRegular() {
+				slog.ErrorContext(ctx,
+					"Managed config file changed to un-supported type — "+
+						"config apply will fail until file is reverted to a supported type manually on the data plane",
+					"path", event.Name,
+					"type", info.Mode().Type(),
+				)
+			}
+		}
+
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
 		fws.filesChanged.Store(true)
 	}
