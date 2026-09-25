@@ -226,6 +226,71 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	}
 }
 
+func TestWatcher_Process_EnableWatchersTopic_FlushesPendingContext(t *testing.T) {
+	tests := []struct {
+		name         string
+		configPath   string
+		emptyContext bool
+		messageCount int
+	}{
+		{name: "Test 1: Matching context", messageCount: 1},
+		{name: "Test 2: Mismatched context", configPath: "/different/nginx.conf"},
+		{name: "Test 3: Empty context flush", emptyContext: true, messageCount: 1},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			instanceID := "instance-id"
+			pendingContext := testModel.ConfigContext()
+			pendingContext.InstanceID = instanceID
+			completedContext := testModel.ConfigContext()
+			completedContext.InstanceID = instanceID
+			completedContext.ConfigPath = test.configPath
+			if test.emptyContext {
+				completedContext = &model.NginxConfigContext{}
+			}
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+			watcherPlugin := NewWatcher(types.AgentConfig())
+			watcherPlugin.messagePipe = messagePipe
+			watcherPlugin.instanceWatcherService = &watcherfakes.FakeInstanceWatcherServiceInterface{}
+			watcherPlugin.instancesWithConfigApplyInProgress = []string{instanceID}
+
+			done := make(chan struct{})
+			go func() {
+				watcherPlugin.monitorWatchers(ctx)
+				close(done)
+			}()
+			defer func() {
+				cancel()
+				<-done
+			}()
+
+			watcherPlugin.nginxConfigContextChannel <- instance.NginxConfigContextMessage{
+				NginxConfigContext: pendingContext,
+			}
+			require.Eventually(t, func() bool {
+				watcherPlugin.watcherMutex.Lock()
+				defer watcherPlugin.watcherMutex.Unlock()
+
+				return watcherPlugin.pendingNginxConfigContexts[instanceID] == pendingContext
+			}, time.Second, time.Millisecond)
+
+			watcherPlugin.Process(ctx, &bus.Message{
+				Topic: bus.EnableWatchersTopic,
+				Data: &model.EnableWatchers{
+					InstanceID:    instanceID,
+					ConfigContext: completedContext,
+				},
+			})
+
+			assert.Len(t, messagePipe.Messages(), test.messageCount)
+			assert.Empty(t, watcherPlugin.pendingNginxConfigContexts)
+		})
+	}
+}
+
 func TestWatcher_Subscriptions(t *testing.T) {
 	watcherPlugin := NewWatcher(types.AgentConfig())
 	assert.Equal(
