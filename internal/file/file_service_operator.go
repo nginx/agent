@@ -308,22 +308,22 @@ func (fso *FileServiceOperator) UpdateFile(
 
 // renameFile, renames (moves) file from tempDir to new location to update file.
 func (fso *FileServiceOperator) RenameFile(
-	ctx context.Context, source, desination string,
+	ctx context.Context, source, destination string,
 ) error {
-	slog.InfoContext(ctx, fmt.Sprintf("Renaming file %s to %s", source, desination))
+	slog.InfoContext(ctx, fmt.Sprintf("Renaming file %s to %s", source, destination))
 
-	if info, err := os.Stat(desination); err == nil && !info.Mode().IsRegular() {
+	if info, err := os.Stat(destination); err == nil && !info.Mode().IsRegular() {
 		return fmt.Errorf("cannot write to non-regular destination file %s (type: %s) - "+
 			"resolve file manually on the data plane",
-			desination, info.Mode().Type())
+			destination, info.Mode().Type())
 	}
 
 	// Create parent directories for the target file if they don't exist
-	if err := os.MkdirAll(filepath.Dir(desination), dirPerm); err != nil {
-		return fmt.Errorf("failed to create directories for %s: %w", desination, err)
+	if err := os.MkdirAll(filepath.Dir(destination), dirPerm); err != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", destination, err)
 	}
 
-	moveErr := os.Rename(source, desination)
+	moveErr := os.Rename(source, destination)
 	if moveErr != nil {
 		return fmt.Errorf("failed to rename file: %w", moveErr)
 	}
