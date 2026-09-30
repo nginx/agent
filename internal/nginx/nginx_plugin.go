@@ -43,7 +43,7 @@ type NginxPlugin struct {
 
 type errResponse struct {
 	Status string `json:"status"`
-	Text   string `json:"test"`
+	Text   string `json:"text"`
 	Code   string `json:"code"`
 }
 
