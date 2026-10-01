@@ -950,7 +950,14 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 
 // setProxyEnvs sets the HTTP_PROXY and HTTPS_PROXY environment variables and logs the action.
 func setProxyEnvs(ctx context.Context, proxyEnvURL, msg string) {
-	slog.DebugContext(ctx, msg, "url", proxyEnvURL)
+	logURL := proxyEnvURL
+	if u, err := url.Parse(proxyEnvURL); err == nil && u.User != nil {
+		u.User = nil
+		logURL = u.String()
+	}
+
+	slog.DebugContext(ctx, msg, "url", logURL)
+
 	if setenvErr := os.Setenv("HTTPS_PROXY", proxyEnvURL); setenvErr != nil {
 		slog.ErrorContext(ctx, "Failed to set OTLP exporter proxy environment variables", "error", setenvErr)
 	}
