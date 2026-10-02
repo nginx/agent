@@ -32,6 +32,11 @@ func ProcessInfo(ctx context.Context, proc *nginxprocess.Process,
 	exePath := proc.Exe
 
 	if exePath == "" {
+		// First try extracting from process cmdline
+		exePath = exeFromCmdline(proc.Cmd)
+	}
+	if exePath == "" {
+		// Fall back to existing PATH lookup
 		exePath = Exe(ctx, executer)
 		if exePath == "" {
 			return nil, fmt.Errorf("unable to find NGINX exe for process %d", proc.PID)
@@ -152,6 +157,19 @@ func parseConfigureArguments(line string) map[string]interface{} {
 	}
 
 	return result
+}
+
+func exeFromCmdline(cmd string) string {
+	const prefix = "nginx: master process "
+	if !strings.HasPrefix(cmd, prefix) {
+		return ""
+	}
+	parts := strings.Fields(strings.TrimPrefix(cmd, prefix))
+	if len(parts) > 0 && parts[0] != "" {
+		return parts[0]
+	}
+
+	return ""
 }
 
 func isFlag(vals []string) bool {

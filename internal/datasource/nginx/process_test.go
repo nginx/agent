@@ -26,6 +26,48 @@ func TestGetConfigPathFromCommand(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestExeFromCmdline(t *testing.T) {
+	tests := []struct {
+		cmd      string
+		expected string
+		name     string
+	}{
+		{
+			name: "Test 1: Extract exe from rootless NGINX",
+			cmd: "nginx: master process /home/rootless/myNGINX/usr/sbin/nginx -p /home/rootless/myNGINX " +
+				"-c /home/rootless/myNGINX/etc/nginx/nginx.conf",
+			expected: "/home/rootless/myNGINX/usr/sbin/nginx",
+		},
+		{
+			name:     "Test 2: Extract exe from regular NGINX",
+			cmd:      "nginx: master process /usr/sbin/nginx -g daemon off;",
+			expected: "/usr/sbin/nginx",
+		},
+		{
+			name:     "Test 3: Return empty for worker process",
+			cmd:      "nginx: worker process",
+			expected: "",
+		},
+		{
+			name:     "Test 4: Return empty for non-NGINX process",
+			cmd:      "some other process",
+			expected: "",
+		},
+		{
+			name:     "Test 5: Return empty for empty string",
+			cmd:      "",
+			expected: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := exeFromCmdline(test.cmd)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
 func TestNginxProcessParser_GetExe(t *testing.T) {
 	ctx := context.Background()
 
