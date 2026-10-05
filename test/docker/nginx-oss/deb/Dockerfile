@@ -12,7 +12,7 @@ WORKDIR /agent
 COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
-# Match the snapshot advertised by the Bullseye image digest pinned in Makefile.
+# Match the snapshot advertised by the current debian/eol Bullseye image.
 RUN if grep -q '^VERSION_CODENAME=bullseye' /etc/os-release; then \
         SNAPSHOT=20261003T165950Z; \
         { \
