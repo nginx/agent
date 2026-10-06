@@ -275,11 +275,6 @@ jobs:
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
 
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
-
       - name: Run Integration Tests
         run: |
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
@@ -338,11 +333,6 @@ jobs:
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
-
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
 
       - name: Run Upgrade Tests
         run: |
@@ -407,11 +397,6 @@ jobs:
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
-
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
 
       - name: Run Integration Tests
         run: |
@@ -506,11 +491,6 @@ jobs:
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
 
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
-
       - name: Run Integration Tests
         run: |
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" \
@@ -577,11 +557,6 @@ jobs:
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
-
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
 
       - name: Run Integration Tests
         run: |
@@ -672,11 +647,6 @@ jobs:
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
-
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
 
       - name: Run Integration Tests
         run: |
