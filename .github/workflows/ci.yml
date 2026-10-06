@@ -72,10 +72,6 @@ jobs:
         run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
       - name: Create Directory
         run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-            loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
       - name: Run Unit Tests
         run: make unit-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/raw_logs.log && exit "${PIPESTATUS[0]}"
       - name: Generate Test Results
@@ -189,10 +185,6 @@ jobs:
             run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           - name: Create Directory
             run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
-          - name: Start Promtail
-            uses: ./.github/actions/start-promtail
-            with:
-                loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
@@ -253,10 +245,6 @@ jobs:
         run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
       - name: Create Directory
         run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
-      - name: Start Promtail
-        uses: ./.github/actions/start-promtail
-        with:
-            loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
@@ -348,10 +336,6 @@ jobs:
               run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           -   name: Create Directory
               run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
-          -   name: Start Promtail
-              uses: ./.github/actions/start-promtail
-              with:
-                  loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
           -   name: Run Integration Tests
               run: |
                   go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
