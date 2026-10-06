@@ -233,19 +233,13 @@ github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
 ## explicit
 github.com/nats-io/nuid
-# github.com/nginx/agent/sdk/v2 v2.46.7 => ./sdk
-## explicit; go 1.26.0
 # github.com/nginx/agent/sdk/v2 v2.46.9 => ./sdk
 ## explicit; go 1.26.0
 # github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000 => .
 ## explicit; go 1.26.0
-# github.com/nginx/nginx-plus-go-client/v3 v3.0.1
-## explicit; go 1.25.0
 # github.com/nginx/nginx-plus-go-client/v3 v3.0.2
 ## explicit; go 1.25.0
 github.com/nginx/nginx-plus-go-client/v3/client
-# github.com/nginx/nginx-prometheus-exporter v1.5.1
-## explicit; go 1.25.0
 # github.com/nginx/nginx-prometheus-exporter v1.5.3
 ## explicit; go 1.25.0
 github.com/nginx/nginx-prometheus-exporter/client
@@ -536,10 +530,8 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/time v0.12.0
-## explicit; go 1.25.0
 # golang.org/x/time v0.15.0
-## go 1.25.0
+## explicit; go 1.25.0
 golang.org/x/time/rate
 # golang.org/x/tools v0.48.0
 ## explicit; go 1.25.0
