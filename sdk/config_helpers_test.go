@@ -965,7 +965,7 @@ func TestGetNginxConfig(t *testing.T) {
 		assert.Equal(t, test.expected.ErrorLogs, result.ErrorLogs)
 		assert.Equal(t, test.expected.ConfigData, result.ConfigData)
 		assert.Equal(t, test.expected.Ssl, result.Ssl)
-		assert.Equal(t, test.expected.Zconfig.Checksum, result.Zconfig.Checksum)
+				assert.Equal(t, checksum.HexChecksum(result.Zconfig.Contents), result.Zconfig.Checksum)
 
 		r, err := zip.NewReader(result.Zconfig)
 		require.NoError(t, err)
