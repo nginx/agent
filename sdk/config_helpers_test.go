@@ -965,7 +965,7 @@ func TestGetNginxConfig(t *testing.T) {
 		assert.Equal(t, test.expected.ErrorLogs, result.ErrorLogs)
 		assert.Equal(t, test.expected.ConfigData, result.ConfigData)
 		assert.Equal(t, test.expected.Ssl, result.Ssl)
-				assert.Equal(t, checksum.HexChecksum(result.Zconfig.Contents), result.Zconfig.Checksum)
+		assert.Equal(t, checksum.HexChecksum(result.Zconfig.Contents), result.Zconfig.Checksum)
 
 		r, err := zip.NewReader(result.Zconfig)
 		require.NoError(t, err)
@@ -1750,7 +1750,7 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 			auxProto, err := aux.Proto()
 			require.NoError(t, err)
 
-			assert.Equal(t, test.expected.Zaux.Checksum, auxProto.Checksum)
+			assert.Equal(t, checksum.HexChecksum(auxProto.Contents), auxProto.Checksum)
 			zf, err := zip.NewReader(auxProto)
 			require.NoError(t, err)
 			expectedFiles := make(map[string]struct{})
@@ -1857,7 +1857,7 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		if test.expected.Zaux != nil {
-			assert.Equal(t, test.expected.Zaux.Checksum, nginxConfig.GetZaux().GetChecksum())
+			assert.Equal(t, checksum.HexChecksum(nginxConfig.GetZaux().GetContents()), nginxConfig.GetZaux().GetChecksum())
 			zf, err := zip.NewReader(nginxConfig.Zaux)
 			require.NoError(t, err)
 			files := make(map[string]struct{})
