@@ -7,7 +7,7 @@ toolchain go1.26.4
 require (
 	github.com/docker/docker v28.0.1+incompatible
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/nginx/agent/sdk/v2 v2.46.7
+	github.com/nginx/agent/sdk/v2 v2.46.9
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
@@ -91,6 +91,7 @@ require (
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/protobuf v1.36.11 // indirect

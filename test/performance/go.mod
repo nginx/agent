@@ -10,7 +10,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats-server/v2 v2.10.27
 	github.com/nats-io/nats.go v1.39.1
-	github.com/nginx/agent/sdk/v2 v2.46.7
+	github.com/nginx/agent/sdk/v2 v2.46.9
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.24.1
 	github.com/sanity-io/litter v1.5.5
@@ -42,8 +42,8 @@ require (
 	github.com/nats-io/jwt/v2 v2.7.3 // indirect
 	github.com/nats-io/nkeys v0.4.10 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/nginx/nginx-plus-go-client/v3 v3.0.1 // indirect
-	github.com/nginx/nginx-prometheus-exporter v1.5.1 // indirect
+	github.com/nginx/nginx-plus-go-client/v3 v3.0.2 // indirect
+	github.com/nginx/nginx-prometheus-exporter v1.5.3 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.89 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect
@@ -78,7 +78,7 @@ require (
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
-	golang.org/x/time v0.12.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
