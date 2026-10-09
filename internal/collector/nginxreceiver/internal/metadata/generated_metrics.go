@@ -54,6 +54,32 @@ var MapAttributeNginxConnectionsOutcome = map[string]AttributeNginxConnectionsOu
 	"WAITING":  AttributeNginxConnectionsOutcomeWAITING,
 }
 
+// AttributeNginxRouteKind specifies the value nginx.route.kind attribute.
+type AttributeNginxRouteKind int
+
+const (
+	_ AttributeNginxRouteKind = iota
+	AttributeNginxRouteKindHTTPRoute
+	AttributeNginxRouteKindGRPCRoute
+)
+
+// String returns the string representation of the AttributeNginxRouteKind.
+func (av AttributeNginxRouteKind) String() string {
+	switch av {
+	case AttributeNginxRouteKindHTTPRoute:
+		return "HTTPRoute"
+	case AttributeNginxRouteKindGRPCRoute:
+		return "GRPCRoute"
+	}
+	return ""
+}
+
+// MapAttributeNginxRouteKind is a helper map of string to AttributeNginxRouteKind attribute value.
+var MapAttributeNginxRouteKind = map[string]AttributeNginxRouteKind{
+	"HTTPRoute": AttributeNginxRouteKindHTTPRoute,
+	"GRPCRoute": AttributeNginxRouteKindGRPCRoute,
+}
+
 // AttributeNginxStatusRange specifies the value nginx.status_range attribute.
 type AttributeNginxStatusRange int
 
@@ -166,6 +192,7 @@ func (m *metricNginxHTTPConnectionCount) emit(metrics pmetric.MetricSlice) {
 
 func newMetricNginxHTTPConnectionCount(cfg MetricConfig) metricNginxHTTPConnectionCount {
 	m := metricNginxHTTPConnectionCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -219,6 +246,7 @@ func (m *metricNginxHTTPConnections) emit(metrics pmetric.MetricSlice) {
 
 func newMetricNginxHTTPConnections(cfg MetricConfig) metricNginxHTTPConnections {
 	m := metricNginxHTTPConnections{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -268,6 +296,7 @@ func (m *metricNginxHTTPRequestCount) emit(metrics pmetric.MetricSlice) {
 
 func newMetricNginxHTTPRequestCount(cfg MetricConfig) metricNginxHTTPRequestCount {
 	m := metricNginxHTTPRequestCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -289,9 +318,10 @@ func (m *metricNginxHTTPRequests) init() {
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxHTTPRequests) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+func (m *metricNginxHTTPRequests) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxGatewayClassAttributeValue string, nginxGatewayNameAttributeValue string, nginxGatewayNamespaceAttributeValue string, nginxRouteKindAttributeValue string, nginxRouteNameAttributeValue string, nginxRouteNamespaceAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -299,6 +329,12 @@ func (m *metricNginxHTTPRequests) recordDataPoint(start pcommon.Timestamp, ts pc
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
+	dp.Attributes().PutStr("nginx.gateway.class", nginxGatewayClassAttributeValue)
+	dp.Attributes().PutStr("nginx.gateway.name", nginxGatewayNameAttributeValue)
+	dp.Attributes().PutStr("nginx.gateway.namespace", nginxGatewayNamespaceAttributeValue)
+	dp.Attributes().PutStr("nginx.route.kind", nginxRouteKindAttributeValue)
+	dp.Attributes().PutStr("nginx.route.name", nginxRouteNameAttributeValue)
+	dp.Attributes().PutStr("nginx.route.namespace", nginxRouteNamespaceAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -319,6 +355,7 @@ func (m *metricNginxHTTPRequests) emit(metrics pmetric.MetricSlice) {
 
 func newMetricNginxHTTPRequests(cfg MetricConfig) metricNginxHTTPRequests {
 	m := metricNginxHTTPRequests{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -370,6 +407,7 @@ func (m *metricNginxHTTPResponseCount) emit(metrics pmetric.MetricSlice) {
 
 func newMetricNginxHTTPResponseCount(cfg MetricConfig) metricNginxHTTPResponseCount {
 	m := metricNginxHTTPResponseCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -558,8 +596,8 @@ func (mb *MetricsBuilder) RecordNginxHTTPRequestCountDataPoint(ts pcommon.Timest
 }
 
 // RecordNginxHTTPRequestsDataPoint adds a data point to nginx.http.requests metric.
-func (mb *MetricsBuilder) RecordNginxHTTPRequestsDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricNginxHTTPRequests.recordDataPoint(mb.startTime, ts, val)
+func (mb *MetricsBuilder) RecordNginxHTTPRequestsDataPoint(ts pcommon.Timestamp, val int64, nginxGatewayClassAttributeValue string, nginxGatewayNameAttributeValue string, nginxGatewayNamespaceAttributeValue string, nginxRouteKindAttributeValue AttributeNginxRouteKind, nginxRouteNameAttributeValue string, nginxRouteNamespaceAttributeValue string) {
+	mb.metricNginxHTTPRequests.recordDataPoint(mb.startTime, ts, val, nginxGatewayClassAttributeValue, nginxGatewayNameAttributeValue, nginxGatewayNamespaceAttributeValue, nginxRouteKindAttributeValue.String(), nginxRouteNameAttributeValue, nginxRouteNamespaceAttributeValue)
 }
 
 // RecordNginxHTTPResponseCountDataPoint adds a data point to nginx.http.response.count metric.

@@ -17,3 +17,28 @@ groups:
         stability: development
         brief: "The outcome of a connection"
         examples: ["ACCEPTED","ACTIVE","HANDLED","READING","WRITING","WAITING"]
+      - id: nginx.route.name
+        type: string
+        stability: development
+        brief: "The name of the route associated with the request."
+      - id: nginx.route.namespace
+        type: string
+        stability: development
+        brief: "The namespace of the route associated with the request."
+      - id: nginx.route.kind
+        type: string
+        stability: development
+        brief: "The kind of the route associated with the request."
+        examples: ["HTTPRoute","GRPCRoute"]
+      - id: nginx.gateway.name
+        type: string
+        stability: development
+        brief: "The name of the gateway associated with the request."
+      - id: nginx.gateway.namespace
+        type: string
+        stability: development
+        brief: "The namespace of the gateway associated with the request."
+      - id: nginx.gateway.class
+        type: string
+        stability: development
+        brief: "The class of the gateway associated with the request."

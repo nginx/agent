@@ -22,5 +22,11 @@ type (
 		UpstreamResponseLength string `mapstructure:"upstream_response_length"`
 		UpstreamStatus         string `mapstructure:"upstream_status"`
 		UpstreamCacheStatus    string `mapstructure:"upstream_cache_status"`
+		RouteName              string `mapstructure:"ngf_route_name"`
+		RouteNamespace         string `mapstructure:"ngf_route_namespace"`
+		RouteKind              string `mapstructure:"ngf_route_kind"`
+		GatewayName            string `mapstructure:"ngf_gateway_name"`
+		GatewayNamespace       string `mapstructure:"ngf_gateway_namespace"`
+		GatewayClass           string `mapstructure:"ngf_gateway_class"`
 	}
 )
