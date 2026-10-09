@@ -36,7 +36,13 @@ groups:
     instrument: counter
     note: |
       Source: HTTP GET `/status`
-    attributes: []
+    attributes:
+      - ref: nginx.route.name
+      - ref: nginx.route.namespace
+      - ref: nginx.route.kind
+      - ref: nginx.gateway.name
+      - ref: nginx.gateway.namespace
+      - ref: nginx.gateway.class
 
   - id: metric.nginx.http.request.count
     type: metric

@@ -37,18 +37,28 @@ const Percentage = 100
 
 type (
 	NginxLogScraper struct {
-		mb        *metadata.MetricsBuilder
-		rb        *metadata.ResourceBuilder
-		logger    *zap.Logger
-		cfg       *config.Config
-		wg        *sync.WaitGroup
-		outChan   <-chan []*entry.Entry
-		cancel    context.CancelFunc
-		pipes     []*pipeline.DirectedPipeline
-		entries   []*entry.Entry
-		operators []operator.Config
-		settings  receiver.Settings
-		mut       sync.Mutex
+		mb                 *metadata.MetricsBuilder
+		rb                 *metadata.ResourceBuilder
+		logger             *zap.Logger
+		cfg                *config.Config
+		wg                 *sync.WaitGroup
+		outChan            <-chan []*entry.Entry
+		cancel             context.CancelFunc
+		pipes              []*pipeline.DirectedPipeline
+		entries            []*entry.Entry
+		operators          []operator.Config
+		routeRequestCounts map[routeKey]int64
+		settings           receiver.Settings
+		mut                sync.Mutex
+	}
+
+	routeKey struct {
+		name        string
+		namespace   string
+		kind        string
+		gwName      string
+		gwNamespace string
+		gwClass     string
 	}
 
 	NginxMetrics struct {
@@ -87,14 +97,15 @@ func NewScraper(
 	}
 
 	nls := &NginxLogScraper{
-		cfg:       cfg,
-		logger:    logger,
-		settings:  settings,
-		mb:        mb,
-		rb:        rb,
-		mut:       sync.Mutex{},
-		wg:        &sync.WaitGroup{},
-		operators: operators,
+		cfg:                cfg,
+		logger:             logger,
+		settings:           settings,
+		mb:                 mb,
+		rb:                 rb,
+		mut:                sync.Mutex{},
+		wg:                 &sync.WaitGroup{},
+		operators:          operators,
+		routeRequestCounts: make(map[routeKey]int64),
 	}
 
 	return nls
@@ -147,6 +158,18 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 			continue
 		}
 
+		if item.RouteName != "" {
+			key := routeKey{
+				name:        item.RouteName,
+				namespace:   item.RouteNamespace,
+				kind:        item.RouteKind,
+				gwName:      item.GatewayName,
+				gwNamespace: item.GatewayNamespace,
+				gwClass:     item.GatewayClass,
+			}
+			nls.routeRequestCounts[key]++
+		}
+
 		if v, err := strconv.Atoi(item.Status); err == nil {
 			codeRange := fmt.Sprintf("%dxx", v/Percentage)
 
@@ -170,6 +193,19 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 
 	nls.entries = make([]*entry.Entry, 0)
 	timeNow := pcommon.NewTimestampFromTime(time.Now())
+
+	for key, count := range nls.routeRequestCounts {
+		nls.mb.RecordNginxHTTPRequestsDataPoint(
+			timeNow,
+			count,
+			key.gwClass,
+			key.gwName,
+			key.gwNamespace,
+			metadata.MapAttributeNginxRouteKind[key.kind],
+			key.name,
+			key.namespace,
+		)
+	}
 
 	nls.rb.SetInstanceID(nls.cfg.InstanceID)
 	nls.rb.SetInstanceType("nginx")

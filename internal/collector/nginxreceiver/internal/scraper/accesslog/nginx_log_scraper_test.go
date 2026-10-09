@@ -16,11 +16,15 @@ import (
 	"go.opentelemetry.io/collector/component"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/config"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/model"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
@@ -80,6 +84,261 @@ func TestAccessLogScraper(t *testing.T) {
 		pmetrictest.IgnoreTimestamp(),
 		pmetrictest.IgnoreMetricsOrder(),
 		pmetrictest.IgnoreResourceAttributeValue("instance.id")))
+}
+
+func TestAccessLogScraperRouteRequestCounts(t *testing.T) {
+	testCases := []struct {
+		expectedPoints map[routeKey]int64
+		name           string
+		entries        []model.NginxAccessItem
+	}{
+		{
+			name: "Test 1: single route increments count and handles empty route kind",
+			entries: []model.NginxAccessItem{
+				{
+					RouteName:        "checkout",
+					RouteNamespace:   "default",
+					RouteKind:        "",
+					GatewayName:      "edge",
+					GatewayNamespace: "default",
+					GatewayClass:     "nginx",
+				},
+				{
+					RouteName:        "checkout",
+					RouteNamespace:   "default",
+					RouteKind:        "",
+					GatewayName:      "edge",
+					GatewayNamespace: "default",
+					GatewayClass:     "nginx",
+				},
+			},
+			expectedPoints: map[routeKey]int64{
+				{
+					name:        "checkout",
+					namespace:   "default",
+					kind:        "",
+					gwName:      "edge",
+					gwNamespace: "default",
+					gwClass:     "nginx",
+				}: 2,
+			},
+		},
+		{
+			name: "Test 2: different route names are isolated",
+			entries: []model.NginxAccessItem{
+				{
+					RouteName:        "coffee",
+					RouteNamespace:   "default",
+					RouteKind:        "HTTPRoute",
+					GatewayName:      "gateway",
+					GatewayNamespace: "default",
+					GatewayClass:     "nginx",
+				},
+				{
+					RouteName:        "coffee",
+					RouteNamespace:   "default",
+					RouteKind:        "HTTPRoute",
+					GatewayName:      "gateway",
+					GatewayNamespace: "default",
+					GatewayClass:     "nginx",
+				},
+				{
+					RouteName:        "tea",
+					RouteNamespace:   "default",
+					RouteKind:        "HTTPRoute",
+					GatewayName:      "gateway",
+					GatewayNamespace: "default",
+					GatewayClass:     "nginx",
+				},
+			},
+			expectedPoints: map[routeKey]int64{
+				{
+					name:        "coffee",
+					namespace:   "default",
+					kind:        "HTTPRoute",
+					gwName:      "gateway",
+					gwNamespace: "default",
+					gwClass:     "nginx",
+				}: 2,
+				{
+					name:        "tea",
+					namespace:   "default",
+					kind:        "HTTPRoute",
+					gwName:      "gateway",
+					gwNamespace: "default",
+					gwClass:     "nginx",
+				}: 1,
+			},
+		},
+		{
+			name: "Test 3: same route name in different namespaces is isolated",
+			entries: []model.NginxAccessItem{
+				{
+					RouteName:        "checkout",
+					RouteNamespace:   "default",
+					RouteKind:        "HTTPRoute",
+					GatewayName:      "edge",
+					GatewayNamespace: "default",
+					GatewayClass:     "nginx",
+				},
+				{
+					RouteName:        "checkout",
+					RouteNamespace:   "other",
+					RouteKind:        "HTTPRoute",
+					GatewayName:      "edge",
+					GatewayNamespace: "default",
+					GatewayClass:     "nginx",
+				},
+			},
+			expectedPoints: map[routeKey]int64{
+				{
+					name:        "checkout",
+					namespace:   "default",
+					kind:        "HTTPRoute",
+					gwName:      "edge",
+					gwNamespace: "default",
+					gwClass:     "nginx",
+				}: 1,
+				{
+					name:        "checkout",
+					namespace:   "other",
+					kind:        "HTTPRoute",
+					gwName:      "edge",
+					gwNamespace: "default",
+					gwClass:     "nginx",
+				}: 1,
+			},
+		},
+		{
+			name: "Test 4: entries without route information do not emit route data points",
+			entries: []model.NginxAccessItem{
+				{
+					Status: "200",
+				},
+			},
+			expectedPoints: make(map[routeKey]int64),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			cfg, ok := config.CreateDefaultConfig().(*config.Config)
+			require.True(t, ok)
+
+			scraper := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
+
+			for i := range tc.entries {
+				item := tc.entries[i]
+				scraper.ConsumerCallback(ctx, []*entry.Entry{{Body: &item}})
+			}
+
+			metrics, err := scraper.Scrape(ctx)
+			require.NoError(t, err)
+
+			points := routeDataPoints(t, metrics)
+			require.Len(t, points, len(tc.expectedPoints))
+			for route, expectedCount := range tc.expectedPoints {
+				point, found := points[route]
+				require.True(t, found, "expected metric data point for route %+v", route)
+				assert.Equal(t, expectedCount, point.IntValue())
+			}
+		})
+	}
+}
+
+func TestAccessLogScraperRouteRequestCounts_Cumulative(t *testing.T) {
+	ctx := context.Background()
+	cfg, ok := config.CreateDefaultConfig().(*config.Config)
+	require.True(t, ok)
+
+	scraper := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
+
+	item := model.NginxAccessItem{
+		RouteName:        "coffee",
+		RouteNamespace:   "default",
+		RouteKind:        "HTTPRoute",
+		GatewayName:      "gateway",
+		GatewayNamespace: "default",
+		GatewayClass:     "nginx",
+	}
+
+	expectedKey := routeKey{
+		name:        "coffee",
+		namespace:   "default",
+		kind:        "HTTPRoute",
+		gwName:      "gateway",
+		gwNamespace: "default",
+		gwClass:     "nginx",
+	}
+
+	scraper.ConsumerCallback(ctx, []*entry.Entry{{Body: &item}})
+	firstMetrics, err := scraper.Scrape(ctx)
+	require.NoError(t, err)
+	firstPoints := routeDataPoints(t, firstMetrics)
+	require.Contains(t, firstPoints, expectedKey)
+	assert.Equal(t, int64(1), firstPoints[expectedKey].IntValue())
+
+	scraper.ConsumerCallback(ctx, []*entry.Entry{{Body: &item}, {Body: &item}, {Body: &item}})
+	secondMetrics, err := scraper.Scrape(ctx)
+	require.NoError(t, err)
+	secondPoints := routeDataPoints(t, secondMetrics)
+	require.Contains(t, secondPoints, expectedKey)
+	require.Equal(t, int64(4), secondPoints[expectedKey].IntValue())
+}
+
+// routeDataPoints returns the nginx.http.requests data points keyed by route.
+func routeDataPoints(t *testing.T, metrics pmetric.Metrics) map[routeKey]pmetric.NumberDataPoint {
+	t.Helper()
+
+	require.Equal(t, 1, metrics.ResourceMetrics().Len())
+	rm := metrics.ResourceMetrics().At(0)
+	require.Equal(t, 1, rm.ScopeMetrics().Len())
+
+	requestMetric, found := findMetric(rm.ScopeMetrics().At(0).Metrics(), "nginx.http.requests")
+	if !found {
+		return make(map[routeKey]pmetric.NumberDataPoint)
+	}
+	require.Equal(t, pmetric.MetricTypeSum, requestMetric.Type())
+
+	points := make(map[routeKey]pmetric.NumberDataPoint, requestMetric.Sum().DataPoints().Len())
+	for _, dp := range requestMetric.Sum().DataPoints().All() {
+		var key routeKey
+		dp.Attributes().Range(func(k string, v pcommon.Value) bool {
+			switch k {
+			case "nginx.route.name":
+				key.name = v.Str()
+			case "nginx.route.namespace":
+				key.namespace = v.Str()
+			case "nginx.route.kind":
+				key.kind = v.Str()
+			case "nginx.gateway.name":
+				key.gwName = v.Str()
+			case "nginx.gateway.namespace":
+				key.gwNamespace = v.Str()
+			case "nginx.gateway.class":
+				key.gwClass = v.Str()
+			}
+
+			return true
+		})
+
+		_, duplicate := points[key]
+		require.False(t, duplicate, "unexpected duplicate data point for route %+v", key)
+		points[key] = dp
+	}
+
+	return points
+}
+
+func findMetric(metrics pmetric.MetricSlice, name string) (pmetric.Metric, bool) {
+	for _, metric := range metrics.All() {
+		if metric.Name() == name {
+			return metric, true
+		}
+	}
+
+	return pmetric.Metric{}, false
 }
 
 // Copies the contents of one file to another with the given delay. Used to simulate writing log entries to a log file.

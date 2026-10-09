@@ -60,6 +60,26 @@ func Test_newNginxAccessItem(t *testing.T) {
 	assert.Equal(t, "200", item.Status)
 }
 
+func Test_newNginxAccessItem_routeFields(t *testing.T) {
+	item, err := newNginxAccessItem(map[string]string{
+		"status":                "200",
+		"ngf_route_name":        "coffee",
+		"ngf_route_namespace":   "default",
+		"ngf_route_kind":        "HTTPRoute",
+		"ngf_gateway_name":      "gateway",
+		"ngf_gateway_namespace": "default",
+		"ngf_gateway_class":     "nginx",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "200", item.Status)
+	assert.Equal(t, "coffee", item.RouteName)
+	assert.Equal(t, "default", item.RouteNamespace)
+	assert.Equal(t, "HTTPRoute", item.RouteKind)
+	assert.Equal(t, "gateway", item.GatewayName)
+	assert.Equal(t, "default", item.GatewayNamespace)
+	assert.Equal(t, "nginx", item.GatewayClass)
+}
+
 func Test_grokParseFunction(t *testing.T) {
 	logger := zap.L()
 	grok, err := NewCompiledGrok(accessLogPattern, logger)

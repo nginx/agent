@@ -56,6 +56,25 @@ resourceMetrics:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "31070465"
+                  attributes:
+                    - key: nginx.route.name
+                      value:
+                        stringValue: ""
+                    - key: nginx.route.namespace
+                      value:
+                        stringValue: ""
+                    - key: nginx.route.kind
+                      value:
+                        stringValue: ""
+                    - key: nginx.gateway.name
+                      value:
+                        stringValue: ""
+                    - key: nginx.gateway.namespace
+                      value:
+                        stringValue: ""
+                    - key: nginx.gateway.class
+                      value:
+                        stringValue: ""
                   timeUnixNano: "1000000"
               isMonotonic: true
             unit: requests

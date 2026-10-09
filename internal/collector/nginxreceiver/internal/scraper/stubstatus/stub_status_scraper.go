@@ -145,7 +145,7 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 
 	now := pcommon.NewTimestampFromTime(time.Now())
 
-	s.mb.RecordNginxHTTPRequestsDataPoint(now, stats.Requests)
+	s.mb.RecordNginxHTTPRequestsDataPoint(now, stats.Requests, "", "", "", metadata.AttributeNginxRouteKind(0), "", "")
 
 	s.mb.RecordNginxHTTPRequestCountDataPoint(now, metricsutil.Increase(stats.Requests, s.previousRequests))
 	s.previousRequests = stats.Requests

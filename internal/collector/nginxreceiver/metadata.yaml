@@ -32,6 +32,27 @@ attributes:
       - READING
       - WRITING
       - WAITING
+  nginx.gateway.class:
+    description: The class of the gateway associated with the request.
+    type: string
+  nginx.gateway.name:
+    description: The name of the gateway associated with the request.
+    type: string
+  nginx.gateway.namespace:
+    description: The namespace of the gateway associated with the request.
+    type: string
+  nginx.route.kind:
+    description: The kind of the route associated with the request.
+    type: string
+    enum:
+      - HTTPRoute
+      - GRPCRoute
+  nginx.route.name:
+    description: The name of the route associated with the request.
+    type: string
+  nginx.route.namespace:
+    description: The namespace of the route associated with the request.
+    type: string
   nginx.status_range:
     description: A status code range or bucket for a HTTP response's status code.
     type: string
@@ -45,8 +66,7 @@ metrics:
   nginx.http.connection.count:
     enabled: true
     description: The current number of connections.
-    stability:
-      level: development
+    stability: development
     gauge:
       value_type: int
     unit: connections
@@ -55,8 +75,7 @@ metrics:
   nginx.http.connections:
     enabled: true
     description: The total number of connections, since NGINX was last started or reloaded.
-    stability:
-      level: development
+    stability: development
     sum:
       value_type: int
       monotonic: true
@@ -67,26 +86,30 @@ metrics:
   nginx.http.request.count:
     enabled: true
     description: The total number of client requests received, since the last collection interval.
-    stability:
-      level: development
+    stability: development
     gauge:
       value_type: int
     unit: requests
   nginx.http.requests:
     enabled: true
     description: The total number of client requests received, since NGINX was last started or reloaded.
-    stability:
-      level: development
+    stability: development
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
     unit: requests
+    attributes:  
+      - nginx.gateway.class  
+      - nginx.gateway.name  
+      - nginx.gateway.namespace  
+      - nginx.route.kind  
+      - nginx.route.name  
+      - nginx.route.namespace
   nginx.http.response.count:
     enabled: true
     description: The total number of HTTP responses since the last collection interval, grouped by status code range.
-    stability:
-      level: development
+    stability: development
     gauge:
       value_type: int
     unit: responses
