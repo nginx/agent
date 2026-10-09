@@ -500,7 +500,9 @@ golang.org/x/net/internal/timeseries
 golang.org/x/net/publicsuffix
 golang.org/x/net/trace
 # golang.org/x/sync v0.22.0
-## explicit; go 1.25.0
+## explicit; go 1.26.0
+# golang.org/x/sync v0.24.0
+## explicit; go 1.26.0
 golang.org/x/sync/errgroup
 golang.org/x/sync/singleflight
 # golang.org/x/sys v0.47.0
