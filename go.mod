@@ -18,7 +18,7 @@ require (
 	github.com/leodido/go-syslog/v4 v4.6.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/moby/moby/api v1.56.1
-	github.com/moby/moby/client v0.6.1
+	github.com/moby/moby/client v0.6.2
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.2
 	github.com/nginx/nginx-prometheus-exporter v1.5.3
 	github.com/nxadm/tail v1.4.11
@@ -99,7 +99,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.12.0 // indirect
-	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
+	github.com/Azure/go-ansiterm v0.0.0-20261006220739-8c912ac31dd4 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.6.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.81.0 // indirect
 	github.com/DataDog/datadog-go/v5 v5.9.0 // indirect
@@ -141,7 +141,7 @@ require (
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/go-connections v0.8.1 // indirect
+	github.com/docker/go-connections v0.8.2 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/purego v0.11.1 // indirect
