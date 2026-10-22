@@ -47,6 +47,20 @@ type FakeFileManagerServiceInterface struct {
 	configUploadReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ContentUpdateStub        func(context.Context, *v1.ContentUpdateRequest) (model.WriteStatus, error)
+	contentUpdateMutex       sync.RWMutex
+	contentUpdateArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.ContentUpdateRequest
+	}
+	contentUpdateReturns struct {
+		result1 model.WriteStatus
+		result2 error
+	}
+	contentUpdateReturnsOnCall map[int]struct {
+		result1 model.WriteStatus
+		result2 error
+	}
 	DetermineFileActionsStub        func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, error)
 	determineFileActionsMutex       sync.RWMutex
 	determineFileActionsArgsForCall []struct {
@@ -60,20 +74,6 @@ type FakeFileManagerServiceInterface struct {
 	}
 	determineFileActionsReturnsOnCall map[int]struct {
 		result1 map[string]*model.FileCache
-		result2 error
-	}
-	ContentUpdateStub        func(context.Context, *v1.ContentUpdateRequest) (model.WriteStatus, error)
-	contentUpdateMutex       sync.RWMutex
-	contentUpdateArgsForCall []struct {
-		arg1 context.Context
-		arg2 *v1.ContentUpdateRequest
-	}
-	contentUpdateReturns struct {
-		result1 model.WriteStatus
-		result2 error
-	}
-	contentUpdateReturnsOnCall map[int]struct {
-		result1 model.WriteStatus
 		result2 error
 	}
 	IsConnectedStub        func() bool
@@ -310,6 +310,71 @@ func (fake *FakeFileManagerServiceInterface) ConfigUploadReturnsOnCall(i int, re
 	}{result1}
 }
 
+func (fake *FakeFileManagerServiceInterface) ContentUpdate(arg1 context.Context, arg2 *v1.ContentUpdateRequest) (model.WriteStatus, error) {
+	fake.contentUpdateMutex.Lock()
+	ret, specificReturn := fake.contentUpdateReturnsOnCall[len(fake.contentUpdateArgsForCall)]
+	fake.contentUpdateArgsForCall = append(fake.contentUpdateArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.ContentUpdateRequest
+	}{arg1, arg2})
+	stub := fake.ContentUpdateStub
+	fakeReturns := fake.contentUpdateReturns
+	fake.recordInvocation("ContentUpdate", []interface{}{arg1, arg2})
+	fake.contentUpdateMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeFileManagerServiceInterface) ContentUpdateCallCount() int {
+	fake.contentUpdateMutex.RLock()
+	defer fake.contentUpdateMutex.RUnlock()
+	return len(fake.contentUpdateArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) ContentUpdateCalls(stub func(context.Context, *v1.ContentUpdateRequest) (model.WriteStatus, error)) {
+	fake.contentUpdateMutex.Lock()
+	defer fake.contentUpdateMutex.Unlock()
+	fake.ContentUpdateStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) ContentUpdateArgsForCall(i int) (context.Context, *v1.ContentUpdateRequest) {
+	fake.contentUpdateMutex.RLock()
+	defer fake.contentUpdateMutex.RUnlock()
+	argsForCall := fake.contentUpdateArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeFileManagerServiceInterface) ContentUpdateReturns(result1 model.WriteStatus, result2 error) {
+	fake.contentUpdateMutex.Lock()
+	defer fake.contentUpdateMutex.Unlock()
+	fake.ContentUpdateStub = nil
+	fake.contentUpdateReturns = struct {
+		result1 model.WriteStatus
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileManagerServiceInterface) ContentUpdateReturnsOnCall(i int, result1 model.WriteStatus, result2 error) {
+	fake.contentUpdateMutex.Lock()
+	defer fake.contentUpdateMutex.Unlock()
+	fake.ContentUpdateStub = nil
+	if fake.contentUpdateReturnsOnCall == nil {
+		fake.contentUpdateReturnsOnCall = make(map[int]struct {
+			result1 model.WriteStatus
+			result2 error
+		})
+	}
+	fake.contentUpdateReturnsOnCall[i] = struct {
+		result1 model.WriteStatus
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 context.Context, arg2 map[string]*v1.File, arg3 map[string]*model.FileCache) (map[string]*model.FileCache, error) {
 	fake.determineFileActionsMutex.Lock()
 	ret, specificReturn := fake.determineFileActionsReturnsOnCall[len(fake.determineFileActionsArgsForCall)]
@@ -372,71 +437,6 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i
 	}
 	fake.determineFileActionsReturnsOnCall[i] = struct {
 		result1 map[string]*model.FileCache
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeFileManagerServiceInterface) ContentUpdate(arg1 context.Context, arg2 *v1.ContentUpdateRequest) (model.WriteStatus, error) {
-	fake.contentUpdateMutex.Lock()
-	ret, specificReturn := fake.contentUpdateReturnsOnCall[len(fake.contentUpdateArgsForCall)]
-	fake.contentUpdateArgsForCall = append(fake.contentUpdateArgsForCall, struct {
-		arg1 context.Context
-		arg2 *v1.ContentUpdateRequest
-	}{arg1, arg2})
-	stub := fake.ContentUpdateStub
-	fakeReturns := fake.contentUpdateReturns
-	fake.recordInvocation("ContentUpdate", []interface{}{arg1, arg2})
-	fake.contentUpdateMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fakeReturns.result1, fakeReturns.result2
-}
-
-func (fake *FakeFileManagerServiceInterface) ContentUpdateCallCount() int {
-	fake.contentUpdateMutex.RLock()
-	defer fake.contentUpdateMutex.RUnlock()
-	return len(fake.contentUpdateArgsForCall)
-}
-
-func (fake *FakeFileManagerServiceInterface) ContentUpdateCalls(stub func(context.Context, *v1.ContentUpdateRequest) (model.WriteStatus, error)) {
-	fake.contentUpdateMutex.Lock()
-	defer fake.contentUpdateMutex.Unlock()
-	fake.ContentUpdateStub = stub
-}
-
-func (fake *FakeFileManagerServiceInterface) ContentUpdateArgsForCall(i int) (context.Context, *v1.ContentUpdateRequest) {
-	fake.contentUpdateMutex.RLock()
-	defer fake.contentUpdateMutex.RUnlock()
-	argsForCall := fake.contentUpdateArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *FakeFileManagerServiceInterface) ContentUpdateReturns(result1 model.WriteStatus, result2 error) {
-	fake.contentUpdateMutex.Lock()
-	defer fake.contentUpdateMutex.Unlock()
-	fake.ContentUpdateStub = nil
-	fake.contentUpdateReturns = struct {
-		result1 model.WriteStatus
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeFileManagerServiceInterface) ContentUpdateReturnsOnCall(i int, result1 model.WriteStatus, result2 error) {
-	fake.contentUpdateMutex.Lock()
-	defer fake.contentUpdateMutex.Unlock()
-	fake.ContentUpdateStub = nil
-	if fake.contentUpdateReturnsOnCall == nil {
-		fake.contentUpdateReturnsOnCall = make(map[int]struct {
-			result1 model.WriteStatus
-			result2 error
-		})
-	}
-	fake.contentUpdateReturnsOnCall[i] = struct {
-		result1 model.WriteStatus
 		result2 error
 	}{result1, result2}
 }
@@ -695,10 +695,10 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.configUpdateMutex.RUnlock()
 	fake.configUploadMutex.RLock()
 	defer fake.configUploadMutex.RUnlock()
-	fake.determineFileActionsMutex.RLock()
-	defer fake.determineFileActionsMutex.RUnlock()
 	fake.contentUpdateMutex.RLock()
 	defer fake.contentUpdateMutex.RUnlock()
+	fake.determineFileActionsMutex.RLock()
+	defer fake.determineFileActionsMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
 	fake.resetClientMutex.RLock()
