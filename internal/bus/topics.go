@@ -16,6 +16,7 @@ const (
 	CredentialUpdatedTopic           = "credential-updated"
 	ConnectionResetTopic             = "connection-reset"
 	ConfigApplyRequestTopic          = "config-apply-request"
+	ContentUpdateRequestTopic       = "contents-update-request"
 	WriteConfigSuccessfulTopic       = "write-config-successful"
 	EnableWatchersTopic              = "enable-watchers"
 	DataPlaneHealthRequestTopic      = "data-plane-health-request"

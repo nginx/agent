@@ -149,6 +149,10 @@ func (n *NginxPlugin) Process(ctx context.Context, msg *bus.Message) {
 		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
 			n.handleConfigApplyRequest(ctxWithMetadata, msg)
 		}
+	case bus.ContentUpdateRequestTopic:
+		if logger.ServerType(ctxWithMetadata) == n.serverType.String() {
+			n.handleContentUpdateRequest(ctxWithMetadata, msg)
+		}
 	default:
 		slog.DebugContext(ctx, "NGINX plugin received message with unknown topic", "topic", msg.Topic)
 	}
@@ -166,6 +170,7 @@ func (n *NginxPlugin) Subscriptions() []string {
 
 	if n.serverType == model.Command {
 		subscriptions = append(subscriptions, bus.ConfigApplyRequestTopic)
+		subscriptions = append(subscriptions, bus.ContentUpdateRequestTopic)
 	}
 
 	return subscriptions
@@ -356,7 +361,6 @@ func (n *NginxPlugin) handleNginxPlusActionRequest(ctx context.Context,
 func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Nginx plugin received config apply request message")
 
-	var dataplaneResponse *mpi.DataPlaneResponse
 	correlationID := logger.CorrelationID(ctx)
 
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
@@ -378,6 +382,8 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 	instanceID := configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()
 
 	writeStatus, err := n.fileManagerService.ConfigApply(ctx, configApplyRequest)
+
+	var dataplaneResponse *mpi.DataPlaneResponse
 
 	switch writeStatus {
 	case model.NoChange:
@@ -470,6 +476,148 @@ func (n *NginxPlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		slog.DebugContext(ctx, "Changes required for config apply request")
 		n.applyConfig(ctx, correlationID, instanceID)
 	}
+}
+
+func (n *NginxPlugin) handleContentUpdateRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Nginx plugin received content update request message")
+
+	correlationID := logger.CorrelationID(ctx)
+
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
+
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest", "payload", msg.Data)
+		return
+	}
+
+	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ContentUpdateRequest)
+	if !requestOk {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ContentUpdateRequest",
+			"payload", msg.Data)
+
+		return
+	}
+
+	contentUpdateRequest := request.ContentUpdateRequest
+	instanceID := contentUpdateRequest.GetOverview().GetConfigVersion().GetInstanceId()
+
+	writeStatus, err := n.fileManagerService.ContentUpdate(ctx, contentUpdateRequest)
+
+	var dataplaneResponse *mpi.DataPlaneResponse
+
+	switch writeStatus {
+	case model.NoChange:
+		slog.DebugContext(ctx, "No changes required for content update request")
+		dataplaneResponse = response.CreateDataPlaneResponse(correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Content update successful, no files to change",
+				Error:   "",
+			},
+			mpi.DataPlaneResponse_CONTENT_UPDATE_REQUEST,
+			instanceID,
+		)
+	case model.Error:
+		slog.ErrorContext(
+			ctx,
+			"Failed to update contents",
+			"instance_id", instanceID,
+			"error", err,
+		)
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Content update failed",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONTENT_UPDATE_REQUEST,
+			instanceID,
+		)
+	case model.RollbackRequired:
+		slog.ErrorContext(
+			ctx,
+			"Failed to update contents, rolling back",
+			"instance_id", instanceID,
+			"error", err,
+		)
+
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Content update failed, rolling back files",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONTENT_UPDATE_REQUEST,
+			instanceID,
+		)
+
+		n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dataplaneResponse})
+
+		rollbackErr := n.fileManagerService.Rollback(ctx, instanceID)
+
+		if rollbackErr != nil {
+			updateErr := fmt.Errorf("content update error: %w", err)
+			rbErr := fmt.Errorf("rollback error: %w", rollbackErr)
+			combinedErr := errors.Join(updateErr, rbErr)
+
+			rollbackResponse := response.CreateDataPlaneResponse(
+				correlationID,
+				&mpi.CommandResponse{
+					Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					Message: "Content update failed, rollback failed",
+					Error:   combinedErr.Error(),
+				},
+				mpi.DataPlaneResponse_CONTENT_UPDATE_REQUEST,
+				instanceID,
+			)
+
+			n.fileManagerService.ClearCache()
+			n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
+
+			return
+		}
+
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Content update failed, rollback successful",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONTENT_UPDATE_REQUEST,
+			instanceID,
+		)
+	case model.OK:
+		slog.DebugContext(ctx, "Content update successful")
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Content update successful",
+				Error:   "",
+			},
+			mpi.DataPlaneResponse_CONTENT_UPDATE_REQUEST,
+			instanceID,
+		)
+	default:
+		slog.ErrorContext(ctx, "Unexpected write status for content update request",
+			"instance_id", instanceID, "write_status", writeStatus)
+		dataplaneResponse = response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Content update failed",
+				Error:   fmt.Sprintf("unexpected write status: %v", writeStatus),
+			},
+			mpi.DataPlaneResponse_CONTENT_UPDATE_REQUEST,
+			instanceID,
+		)
+	}
+
+	n.fileManagerService.ClearCache()
+	n.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dataplaneResponse})
 }
 
 func (n *NginxPlugin) applyConfig(ctx context.Context, correlationID, instanceID string) {
