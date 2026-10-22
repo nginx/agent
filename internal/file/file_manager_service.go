@@ -175,7 +175,7 @@ func (fms *FileManagerService) ContentUpdate(ctx context.Context,
 
 // processFileOverview handles the common file processing logic.
 // It validates the file overview, determines file actions, backs up existing files,
-// executes thefile actions, and updates the manifest of current files on disk.
+// executes the file actions, and updates the manifest of current files on disk.
 func (fms *FileManagerService) processFileOverview(ctx context.Context,
 	fileOverview *mpi.FileOverview,
 ) (status model.WriteStatus, err error) {
