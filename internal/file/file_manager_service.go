@@ -91,6 +91,8 @@ type (
 	FileManagerServiceInterface interface {
 		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
 			err error)
+		ContentUpdate(ctx context.Context, contentUpdateRequest *mpi.ContentUpdateRequest) (writeStatus model.WriteStatus,
+			err error)
 		Rollback(ctx context.Context, instanceID string) error
 		ClearCache()
 		ConfigUpload(ctx context.Context, configUploadRequest *mpi.ConfigUploadRequest) error
@@ -162,8 +164,22 @@ func (fms *FileManagerService) SetIsConnected(isConnected bool) {
 func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	configApplyRequest *mpi.ConfigApplyRequest,
 ) (status model.WriteStatus, err error) {
+	return fms.processFileOverview(ctx, configApplyRequest.GetOverview())
+}
+
+func (fms *FileManagerService) ContentUpdate(ctx context.Context,
+	contentUpdateRequest *mpi.ContentUpdateRequest,
+) (status model.WriteStatus, err error) {
+	return fms.processFileOverview(ctx, contentUpdateRequest.GetOverview())
+}
+
+// processFileOverview handles the common file processing logic.
+// It validates the file overview, determines file actions, backs up existing files,
+// executes the file actions, and updates the manifest of current files on disk.
+func (fms *FileManagerService) processFileOverview(ctx context.Context,
+	fileOverview *mpi.FileOverview,
+) (status model.WriteStatus, err error) {
 	fms.rollbackManifest = true
-	fileOverview := configApplyRequest.GetOverview()
 
 	if fileOverview == nil {
 		return model.Error, errors.New("fileOverview is nil")
@@ -196,7 +212,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 
 	fms.fileActions = diffFiles
 
-	slog.DebugContext(ctx, "Executing config apply file actions", "actions", diffFiles)
+	slog.DebugContext(ctx, "Executing file actions", "actions", diffFiles)
 
 	rollbackTempFilesErr := fms.backupFiles(ctx)
 	if rollbackTempFilesErr != nil {
