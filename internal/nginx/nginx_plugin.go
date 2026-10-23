@@ -494,7 +494,6 @@ func (n *NginxPlugin) handleContentUpdateRequest(ctx context.Context, msg *bus.M
 	if !requestOk {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ContentUpdateRequest",
 			"payload", msg.Data)
-
 		return
 	}
 
