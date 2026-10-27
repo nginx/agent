@@ -16,6 +16,12 @@ func CreateConfigApplyRequest(overview *mpi.FileOverview) *mpi.ConfigApplyReques
 	}
 }
 
+func CreateContentUpdateRequest(overview *mpi.FileOverview) *mpi.ContentUpdateRequest {
+	return &mpi.ContentUpdateRequest{
+		Overview: overview,
+	}
+}
+
 func CreateManagementPlaneRequest() *mpi.ManagementPlaneRequest {
 	return &mpi.ManagementPlaneRequest{
 		MessageMeta: CreateMessageMeta(),

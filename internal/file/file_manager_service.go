@@ -89,7 +89,11 @@ type (
 	}
 
 	FileManagerServiceInterface interface {
-		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
+		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (
+			writeStatus model.WriteStatus,
+			err error)
+		ContentUpdate(ctx context.Context, contentUpdateRequest *mpi.ContentUpdateRequest) (
+			writeStatus model.WriteStatus,
 			err error)
 		Rollback(ctx context.Context, instanceID string) error
 		ClearCache()
@@ -162,60 +166,13 @@ func (fms *FileManagerService) SetIsConnected(isConnected bool) {
 func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	configApplyRequest *mpi.ConfigApplyRequest,
 ) (status model.WriteStatus, err error) {
-	fms.rollbackManifest = true
-	fileOverview := configApplyRequest.GetOverview()
+	return fms.processFileOverview(ctx, configApplyRequest.GetOverview())
+}
 
-	if fileOverview == nil {
-		return model.Error, errors.New("fileOverview is nil")
-	}
-
-	// check if any file in request is outside the allowed directories
-	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
-	if allowedErr != nil {
-		return model.Error, allowedErr
-	}
-
-	permissionErr := fms.validateAndUpdateFilePermissions(ctx, fileOverview.GetFiles())
-	if permissionErr != nil {
-		return model.RollbackRequired, permissionErr
-	}
-
-	diffFiles, compareErr := fms.DetermineFileActions(
-		ctx,
-		fms.currentFilesOnDisk,
-		ConvertToMapOfFileCache(fileOverview.GetFiles()),
-	)
-
-	if compareErr != nil {
-		return model.Error, compareErr
-	}
-
-	if len(diffFiles) == 0 {
-		return model.NoChange, nil
-	}
-
-	fms.fileActions = diffFiles
-
-	slog.DebugContext(ctx, "Executing config apply file actions", "actions", diffFiles)
-
-	rollbackTempFilesErr := fms.backupFiles(ctx)
-	if rollbackTempFilesErr != nil {
-		return model.Error, rollbackTempFilesErr
-	}
-
-	fileErr := fms.executeFileActions(ctx)
-	if fileErr != nil {
-		fms.rollbackManifest = false
-		return model.RollbackRequired, fileErr
-	}
-	fileOverviewFiles := files.ConvertToMapOfFiles(fileOverview.GetFiles())
-	// Update map of current files on disk
-	manifestFileErr := fms.UpdateCurrentFilesOnDisk(ctx, fileOverviewFiles, false)
-	if manifestFileErr != nil {
-		return model.RollbackRequired, manifestFileErr
-	}
-
-	return model.OK, nil
+func (fms *FileManagerService) ContentUpdate(ctx context.Context,
+	contentUpdateRequest *mpi.ContentUpdateRequest,
+) (status model.WriteStatus, err error) {
+	return fms.processFileOverview(ctx, contentUpdateRequest.GetOverview())
 }
 
 func (fms *FileManagerService) ClearCache() {
@@ -558,6 +515,67 @@ func (fms *FileManagerService) UpdateManifestFile(ctx context.Context,
 	}
 
 	return fms.fileOperator.WriteManifestFile(ctx, updatedFiles, fms.agentConfig.LibDir, fms.manifestFilePath)
+}
+
+// processFileOverview handles the common file processing logic.
+// It validates the file overview, determines file actions, backs up existing files,
+// executes the file actions, and updates the manifest of current files on disk.
+func (fms *FileManagerService) processFileOverview(ctx context.Context,
+	fileOverview *mpi.FileOverview,
+) (status model.WriteStatus, err error) {
+	fms.rollbackManifest = true
+
+	if fileOverview == nil {
+		return model.Error, errors.New("fileOverview is nil")
+	}
+
+	// check if any file in request is outside the allowed directories
+	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
+	if allowedErr != nil {
+		return model.Error, allowedErr
+	}
+
+	permissionErr := fms.validateAndUpdateFilePermissions(ctx, fileOverview.GetFiles())
+	if permissionErr != nil {
+		return model.RollbackRequired, permissionErr
+	}
+
+	diffFiles, compareErr := fms.DetermineFileActions(
+		ctx,
+		fms.currentFilesOnDisk,
+		ConvertToMapOfFileCache(fileOverview.GetFiles()),
+	)
+
+	if compareErr != nil {
+		return model.Error, compareErr
+	}
+
+	if len(diffFiles) == 0 {
+		return model.NoChange, nil
+	}
+
+	fms.fileActions = diffFiles
+
+	slog.DebugContext(ctx, "Executing file actions", "actions", diffFiles)
+
+	rollbackTempFilesErr := fms.backupFiles(ctx)
+	if rollbackTempFilesErr != nil {
+		return model.Error, rollbackTempFilesErr
+	}
+
+	fileErr := fms.executeFileActions(ctx)
+	if fileErr != nil {
+		fms.rollbackManifest = false
+		return model.RollbackRequired, fileErr
+	}
+	fileOverviewFiles := files.ConvertToMapOfFiles(fileOverview.GetFiles())
+	// Update map of current files on disk
+	manifestFileErr := fms.UpdateCurrentFilesOnDisk(ctx, fileOverviewFiles, false)
+	if manifestFileErr != nil {
+		return model.RollbackRequired, manifestFileErr
+	}
+
+	return model.OK, nil
 }
 
 func (fms *FileManagerService) backupFiles(ctx context.Context) error {

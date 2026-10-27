@@ -2253,6 +2253,47 @@ func (m *ManagementPlaneRequest) validate(all bool) error {
 			}
 		}
 
+	case *ManagementPlaneRequest_ContentUpdateRequest:
+		if v == nil {
+			err := ManagementPlaneRequestValidationError{
+				field:  "Request",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetContentUpdateRequest()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ManagementPlaneRequestValidationError{
+						field:  "ContentUpdateRequest",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ManagementPlaneRequestValidationError{
+						field:  "ContentUpdateRequest",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetContentUpdateRequest()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ManagementPlaneRequestValidationError{
+					field:  "ContentUpdateRequest",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -2798,6 +2839,137 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ConfigUploadRequestValidationError{}
+
+// Validate checks the field values on ContentUpdateRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ContentUpdateRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ContentUpdateRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ContentUpdateRequestMultiError, or nil if none found.
+func (m *ContentUpdateRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ContentUpdateRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetOverview()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ContentUpdateRequestValidationError{
+					field:  "Overview",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ContentUpdateRequestValidationError{
+					field:  "Overview",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetOverview()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ContentUpdateRequestValidationError{
+				field:  "Overview",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ContentUpdateRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ContentUpdateRequestMultiError is an error wrapping multiple validation
+// errors returned by ContentUpdateRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ContentUpdateRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ContentUpdateRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ContentUpdateRequestMultiError) AllErrors() []error { return m }
+
+// ContentUpdateRequestValidationError is the validation error returned by
+// ContentUpdateRequest.Validate if the designated constraints aren't met.
+type ContentUpdateRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ContentUpdateRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ContentUpdateRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ContentUpdateRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ContentUpdateRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ContentUpdateRequestValidationError) ErrorName() string {
+	return "ContentUpdateRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ContentUpdateRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sContentUpdateRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ContentUpdateRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ContentUpdateRequestValidationError{}
 
 // Validate checks the field values on APIActionRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the

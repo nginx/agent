@@ -99,6 +99,7 @@ const (
 	DataPlaneResponse_API_ACTION_REQUEST          DataPlaneResponse_RequestType = 5
 	DataPlaneResponse_COMMAND_STATUS_REQUEST      DataPlaneResponse_RequestType = 6
 	DataPlaneResponse_UPDATE_AGENT_CONFIG_REQUEST DataPlaneResponse_RequestType = 7
+	DataPlaneResponse_CONTENT_UPDATE_REQUEST      DataPlaneResponse_RequestType = 8
 )
 
 // Enum value maps for DataPlaneResponse_RequestType.
@@ -112,6 +113,7 @@ var (
 		5: "API_ACTION_REQUEST",
 		6: "COMMAND_STATUS_REQUEST",
 		7: "UPDATE_AGENT_CONFIG_REQUEST",
+		8: "CONTENT_UPDATE_REQUEST",
 	}
 	DataPlaneResponse_RequestType_value = map[string]int32{
 		"UNSPECIFIED_REQUEST":         0,
@@ -122,6 +124,7 @@ var (
 		"API_ACTION_REQUEST":          5,
 		"COMMAND_STATUS_REQUEST":      6,
 		"UPDATE_AGENT_CONFIG_REQUEST": 7,
+		"CONTENT_UPDATE_REQUEST":      8,
 	}
 )
 
@@ -214,7 +217,7 @@ func (x InstanceMeta_InstanceType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use InstanceMeta_InstanceType.Descriptor instead.
 func (InstanceMeta_InstanceType) EnumDescriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{27, 0}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{28, 0}
 }
 
 type Log_LogLevel int32
@@ -270,7 +273,7 @@ func (x Log_LogLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Log_LogLevel.Descriptor instead.
 func (Log_LogLevel) EnumDescriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{37, 0}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{38, 0}
 }
 
 // The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
@@ -1085,6 +1088,7 @@ type ManagementPlaneRequest struct {
 	//	*ManagementPlaneRequest_ActionRequest
 	//	*ManagementPlaneRequest_CommandStatusRequest
 	//	*ManagementPlaneRequest_UpdateAgentConfigRequest
+	//	*ManagementPlaneRequest_ContentUpdateRequest
 	Request       isManagementPlaneRequest_Request `protobuf_oneof:"request"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1197,6 +1201,15 @@ func (x *ManagementPlaneRequest) GetUpdateAgentConfigRequest() *UpdateAgentConfi
 	return nil
 }
 
+func (x *ManagementPlaneRequest) GetContentUpdateRequest() *ContentUpdateRequest {
+	if x != nil {
+		if x, ok := x.Request.(*ManagementPlaneRequest_ContentUpdateRequest); ok {
+			return x.ContentUpdateRequest
+		}
+	}
+	return nil
+}
+
 type isManagementPlaneRequest_Request interface {
 	isManagementPlaneRequest_Request()
 }
@@ -1237,6 +1250,11 @@ type ManagementPlaneRequest_UpdateAgentConfigRequest struct {
 	UpdateAgentConfigRequest *UpdateAgentConfigRequest `protobuf:"bytes,9,opt,name=update_agent_config_request,json=updateAgentConfigRequest,proto3,oneof"`
 }
 
+type ManagementPlaneRequest_ContentUpdateRequest struct {
+	// triggers a content update for one or more files
+	ContentUpdateRequest *ContentUpdateRequest `protobuf:"bytes,10,opt,name=content_update_request,json=contentUpdateRequest,proto3,oneof"`
+}
+
 func (*ManagementPlaneRequest_StatusRequest) isManagementPlaneRequest_Request() {}
 
 func (*ManagementPlaneRequest_HealthRequest) isManagementPlaneRequest_Request() {}
@@ -1250,6 +1268,8 @@ func (*ManagementPlaneRequest_ActionRequest) isManagementPlaneRequest_Request() 
 func (*ManagementPlaneRequest_CommandStatusRequest) isManagementPlaneRequest_Request() {}
 
 func (*ManagementPlaneRequest_UpdateAgentConfigRequest) isManagementPlaneRequest_Request() {}
+
+func (*ManagementPlaneRequest_ContentUpdateRequest) isManagementPlaneRequest_Request() {}
 
 // Additional information associated with a StatusRequest
 type StatusRequest struct {
@@ -1417,6 +1437,53 @@ func (x *ConfigUploadRequest) GetOverview() *FileOverview {
 	return nil
 }
 
+// Additional information associated with a ContentUpdateRequest
+// Used to update the contents of one or more files
+type ContentUpdateRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// set of files related to the request
+	Overview      *FileOverview `protobuf:"bytes,1,opt,name=overview,proto3" json:"overview,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ContentUpdateRequest) Reset() {
+	*x = ContentUpdateRequest{}
+	mi := &file_mpi_v1_command_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContentUpdateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContentUpdateRequest) ProtoMessage() {}
+
+func (x *ContentUpdateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mpi_v1_command_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContentUpdateRequest.ProtoReflect.Descriptor instead.
+func (*ContentUpdateRequest) Descriptor() ([]byte, []int) {
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ContentUpdateRequest) GetOverview() *FileOverview {
+	if x != nil {
+		return x.Overview
+	}
+	return nil
+}
+
 // Perform an associated API action on an instance
 type APIActionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1434,7 +1501,7 @@ type APIActionRequest struct {
 
 func (x *APIActionRequest) Reset() {
 	*x = APIActionRequest{}
-	mi := &file_mpi_v1_command_proto_msgTypes[18]
+	mi := &file_mpi_v1_command_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1446,7 +1513,7 @@ func (x *APIActionRequest) String() string {
 func (*APIActionRequest) ProtoMessage() {}
 
 func (x *APIActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[18]
+	mi := &file_mpi_v1_command_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1459,7 +1526,7 @@ func (x *APIActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use APIActionRequest.ProtoReflect.Descriptor instead.
 func (*APIActionRequest) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{18}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *APIActionRequest) GetInstanceId() string {
@@ -1514,7 +1581,7 @@ type NGINXPlusAction struct {
 
 func (x *NGINXPlusAction) Reset() {
 	*x = NGINXPlusAction{}
-	mi := &file_mpi_v1_command_proto_msgTypes[19]
+	mi := &file_mpi_v1_command_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1526,7 +1593,7 @@ func (x *NGINXPlusAction) String() string {
 func (*NGINXPlusAction) ProtoMessage() {}
 
 func (x *NGINXPlusAction) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[19]
+	mi := &file_mpi_v1_command_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1539,7 +1606,7 @@ func (x *NGINXPlusAction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NGINXPlusAction.ProtoReflect.Descriptor instead.
 func (*NGINXPlusAction) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{19}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *NGINXPlusAction) GetAction() isNGINXPlusAction_Action {
@@ -1641,7 +1708,7 @@ type UpdateHTTPUpstreamServers struct {
 
 func (x *UpdateHTTPUpstreamServers) Reset() {
 	*x = UpdateHTTPUpstreamServers{}
-	mi := &file_mpi_v1_command_proto_msgTypes[20]
+	mi := &file_mpi_v1_command_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1653,7 +1720,7 @@ func (x *UpdateHTTPUpstreamServers) String() string {
 func (*UpdateHTTPUpstreamServers) ProtoMessage() {}
 
 func (x *UpdateHTTPUpstreamServers) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[20]
+	mi := &file_mpi_v1_command_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1666,7 +1733,7 @@ func (x *UpdateHTTPUpstreamServers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateHTTPUpstreamServers.ProtoReflect.Descriptor instead.
 func (*UpdateHTTPUpstreamServers) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{20}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *UpdateHTTPUpstreamServers) GetHttpUpstreamName() string {
@@ -1694,7 +1761,7 @@ type GetHTTPUpstreamServers struct {
 
 func (x *GetHTTPUpstreamServers) Reset() {
 	*x = GetHTTPUpstreamServers{}
-	mi := &file_mpi_v1_command_proto_msgTypes[21]
+	mi := &file_mpi_v1_command_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1706,7 +1773,7 @@ func (x *GetHTTPUpstreamServers) String() string {
 func (*GetHTTPUpstreamServers) ProtoMessage() {}
 
 func (x *GetHTTPUpstreamServers) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[21]
+	mi := &file_mpi_v1_command_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1719,7 +1786,7 @@ func (x *GetHTTPUpstreamServers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHTTPUpstreamServers.ProtoReflect.Descriptor instead.
 func (*GetHTTPUpstreamServers) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{21}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetHTTPUpstreamServers) GetHttpUpstreamName() string {
@@ -1742,7 +1809,7 @@ type UpdateStreamServers struct {
 
 func (x *UpdateStreamServers) Reset() {
 	*x = UpdateStreamServers{}
-	mi := &file_mpi_v1_command_proto_msgTypes[22]
+	mi := &file_mpi_v1_command_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1754,7 +1821,7 @@ func (x *UpdateStreamServers) String() string {
 func (*UpdateStreamServers) ProtoMessage() {}
 
 func (x *UpdateStreamServers) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[22]
+	mi := &file_mpi_v1_command_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1767,7 +1834,7 @@ func (x *UpdateStreamServers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateStreamServers.ProtoReflect.Descriptor instead.
 func (*UpdateStreamServers) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{22}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *UpdateStreamServers) GetUpstreamStreamName() string {
@@ -1793,7 +1860,7 @@ type GetUpstreams struct {
 
 func (x *GetUpstreams) Reset() {
 	*x = GetUpstreams{}
-	mi := &file_mpi_v1_command_proto_msgTypes[23]
+	mi := &file_mpi_v1_command_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1805,7 +1872,7 @@ func (x *GetUpstreams) String() string {
 func (*GetUpstreams) ProtoMessage() {}
 
 func (x *GetUpstreams) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[23]
+	mi := &file_mpi_v1_command_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1818,7 +1885,7 @@ func (x *GetUpstreams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUpstreams.ProtoReflect.Descriptor instead.
 func (*GetUpstreams) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{23}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{24}
 }
 
 // Get Stream Upstream Servers for an instance
@@ -1830,7 +1897,7 @@ type GetStreamUpstreams struct {
 
 func (x *GetStreamUpstreams) Reset() {
 	*x = GetStreamUpstreams{}
-	mi := &file_mpi_v1_command_proto_msgTypes[24]
+	mi := &file_mpi_v1_command_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1842,7 +1909,7 @@ func (x *GetStreamUpstreams) String() string {
 func (*GetStreamUpstreams) ProtoMessage() {}
 
 func (x *GetStreamUpstreams) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[24]
+	mi := &file_mpi_v1_command_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1855,7 +1922,7 @@ func (x *GetStreamUpstreams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStreamUpstreams.ProtoReflect.Descriptor instead.
 func (*GetStreamUpstreams) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{24}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{25}
 }
 
 // Request an update on a particular command
@@ -1867,7 +1934,7 @@ type CommandStatusRequest struct {
 
 func (x *CommandStatusRequest) Reset() {
 	*x = CommandStatusRequest{}
-	mi := &file_mpi_v1_command_proto_msgTypes[25]
+	mi := &file_mpi_v1_command_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1879,7 +1946,7 @@ func (x *CommandStatusRequest) String() string {
 func (*CommandStatusRequest) ProtoMessage() {}
 
 func (x *CommandStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[25]
+	mi := &file_mpi_v1_command_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1892,7 +1959,7 @@ func (x *CommandStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandStatusRequest.ProtoReflect.Descriptor instead.
 func (*CommandStatusRequest) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{25}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{26}
 }
 
 // This represents an instance being reported on
@@ -1910,7 +1977,7 @@ type Instance struct {
 
 func (x *Instance) Reset() {
 	*x = Instance{}
-	mi := &file_mpi_v1_command_proto_msgTypes[26]
+	mi := &file_mpi_v1_command_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1922,7 +1989,7 @@ func (x *Instance) String() string {
 func (*Instance) ProtoMessage() {}
 
 func (x *Instance) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[26]
+	mi := &file_mpi_v1_command_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1935,7 +2002,7 @@ func (x *Instance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Instance.ProtoReflect.Descriptor instead.
 func (*Instance) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{26}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *Instance) GetInstanceMeta() *InstanceMeta {
@@ -1974,7 +2041,7 @@ type InstanceMeta struct {
 
 func (x *InstanceMeta) Reset() {
 	*x = InstanceMeta{}
-	mi := &file_mpi_v1_command_proto_msgTypes[27]
+	mi := &file_mpi_v1_command_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1986,7 +2053,7 @@ func (x *InstanceMeta) String() string {
 func (*InstanceMeta) ProtoMessage() {}
 
 func (x *InstanceMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[27]
+	mi := &file_mpi_v1_command_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1999,7 +2066,7 @@ func (x *InstanceMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceMeta.ProtoReflect.Descriptor instead.
 func (*InstanceMeta) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{27}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *InstanceMeta) GetInstanceId() string {
@@ -2038,7 +2105,7 @@ type InstanceConfig struct {
 
 func (x *InstanceConfig) Reset() {
 	*x = InstanceConfig{}
-	mi := &file_mpi_v1_command_proto_msgTypes[28]
+	mi := &file_mpi_v1_command_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2050,7 +2117,7 @@ func (x *InstanceConfig) String() string {
 func (*InstanceConfig) ProtoMessage() {}
 
 func (x *InstanceConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[28]
+	mi := &file_mpi_v1_command_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2063,7 +2130,7 @@ func (x *InstanceConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceConfig.ProtoReflect.Descriptor instead.
 func (*InstanceConfig) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{28}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *InstanceConfig) GetActions() []*InstanceAction {
@@ -2124,7 +2191,7 @@ type InstanceRuntime struct {
 
 func (x *InstanceRuntime) Reset() {
 	*x = InstanceRuntime{}
-	mi := &file_mpi_v1_command_proto_msgTypes[29]
+	mi := &file_mpi_v1_command_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2136,7 +2203,7 @@ func (x *InstanceRuntime) String() string {
 func (*InstanceRuntime) ProtoMessage() {}
 
 func (x *InstanceRuntime) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[29]
+	mi := &file_mpi_v1_command_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2149,7 +2216,7 @@ func (x *InstanceRuntime) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceRuntime.ProtoReflect.Descriptor instead.
 func (*InstanceRuntime) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{29}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *InstanceRuntime) GetProcessId() int32 {
@@ -2249,7 +2316,7 @@ type InstanceChild struct {
 
 func (x *InstanceChild) Reset() {
 	*x = InstanceChild{}
-	mi := &file_mpi_v1_command_proto_msgTypes[30]
+	mi := &file_mpi_v1_command_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2261,7 +2328,7 @@ func (x *InstanceChild) String() string {
 func (*InstanceChild) ProtoMessage() {}
 
 func (x *InstanceChild) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[30]
+	mi := &file_mpi_v1_command_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2274,7 +2341,7 @@ func (x *InstanceChild) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceChild.ProtoReflect.Descriptor instead.
 func (*InstanceChild) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{30}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *InstanceChild) GetProcessId() int32 {
@@ -2303,7 +2370,7 @@ type NGINXRuntimeInfo struct {
 
 func (x *NGINXRuntimeInfo) Reset() {
 	*x = NGINXRuntimeInfo{}
-	mi := &file_mpi_v1_command_proto_msgTypes[31]
+	mi := &file_mpi_v1_command_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2315,7 +2382,7 @@ func (x *NGINXRuntimeInfo) String() string {
 func (*NGINXRuntimeInfo) ProtoMessage() {}
 
 func (x *NGINXRuntimeInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[31]
+	mi := &file_mpi_v1_command_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2328,7 +2395,7 @@ func (x *NGINXRuntimeInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NGINXRuntimeInfo.ProtoReflect.Descriptor instead.
 func (*NGINXRuntimeInfo) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{31}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *NGINXRuntimeInfo) GetStubStatus() *APIDetails {
@@ -2387,7 +2454,7 @@ type NGINXPlusRuntimeInfo struct {
 
 func (x *NGINXPlusRuntimeInfo) Reset() {
 	*x = NGINXPlusRuntimeInfo{}
-	mi := &file_mpi_v1_command_proto_msgTypes[32]
+	mi := &file_mpi_v1_command_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2399,7 +2466,7 @@ func (x *NGINXPlusRuntimeInfo) String() string {
 func (*NGINXPlusRuntimeInfo) ProtoMessage() {}
 
 func (x *NGINXPlusRuntimeInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[32]
+	mi := &file_mpi_v1_command_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2412,7 +2479,7 @@ func (x *NGINXPlusRuntimeInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NGINXPlusRuntimeInfo.ProtoReflect.Descriptor instead.
 func (*NGINXPlusRuntimeInfo) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{32}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *NGINXPlusRuntimeInfo) GetStubStatus() *APIDetails {
@@ -2471,7 +2538,7 @@ type APIDetails struct {
 
 func (x *APIDetails) Reset() {
 	*x = APIDetails{}
-	mi := &file_mpi_v1_command_proto_msgTypes[33]
+	mi := &file_mpi_v1_command_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2483,7 +2550,7 @@ func (x *APIDetails) String() string {
 func (*APIDetails) ProtoMessage() {}
 
 func (x *APIDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[33]
+	mi := &file_mpi_v1_command_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2496,7 +2563,7 @@ func (x *APIDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use APIDetails.ProtoReflect.Descriptor instead.
 func (*APIDetails) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{33}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *APIDetails) GetLocation() string {
@@ -2537,7 +2604,7 @@ type NGINXAppProtectRuntimeInfo struct {
 
 func (x *NGINXAppProtectRuntimeInfo) Reset() {
 	*x = NGINXAppProtectRuntimeInfo{}
-	mi := &file_mpi_v1_command_proto_msgTypes[34]
+	mi := &file_mpi_v1_command_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2549,7 +2616,7 @@ func (x *NGINXAppProtectRuntimeInfo) String() string {
 func (*NGINXAppProtectRuntimeInfo) ProtoMessage() {}
 
 func (x *NGINXAppProtectRuntimeInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[34]
+	mi := &file_mpi_v1_command_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2562,7 +2629,7 @@ func (x *NGINXAppProtectRuntimeInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NGINXAppProtectRuntimeInfo.ProtoReflect.Descriptor instead.
 func (*NGINXAppProtectRuntimeInfo) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{34}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *NGINXAppProtectRuntimeInfo) GetRelease() string {
@@ -2602,7 +2669,7 @@ type InstanceAction struct {
 
 func (x *InstanceAction) Reset() {
 	*x = InstanceAction{}
-	mi := &file_mpi_v1_command_proto_msgTypes[35]
+	mi := &file_mpi_v1_command_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2614,7 +2681,7 @@ func (x *InstanceAction) String() string {
 func (*InstanceAction) ProtoMessage() {}
 
 func (x *InstanceAction) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[35]
+	mi := &file_mpi_v1_command_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2627,7 +2694,7 @@ func (x *InstanceAction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceAction.ProtoReflect.Descriptor instead.
 func (*InstanceAction) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{35}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{36}
 }
 
 // This contains a series of NGINX Agent configurations
@@ -2655,7 +2722,7 @@ type AgentConfig struct {
 
 func (x *AgentConfig) Reset() {
 	*x = AgentConfig{}
-	mi := &file_mpi_v1_command_proto_msgTypes[36]
+	mi := &file_mpi_v1_command_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2667,7 +2734,7 @@ func (x *AgentConfig) String() string {
 func (*AgentConfig) ProtoMessage() {}
 
 func (x *AgentConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[36]
+	mi := &file_mpi_v1_command_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2680,7 +2747,7 @@ func (x *AgentConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentConfig.ProtoReflect.Descriptor instead.
 func (*AgentConfig) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{36}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *AgentConfig) GetCommand() *CommandServer {
@@ -2750,7 +2817,7 @@ type Log struct {
 
 func (x *Log) Reset() {
 	*x = Log{}
-	mi := &file_mpi_v1_command_proto_msgTypes[37]
+	mi := &file_mpi_v1_command_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2762,7 +2829,7 @@ func (x *Log) String() string {
 func (*Log) ProtoMessage() {}
 
 func (x *Log) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[37]
+	mi := &file_mpi_v1_command_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2775,7 +2842,7 @@ func (x *Log) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log.ProtoReflect.Descriptor instead.
 func (*Log) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{37}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *Log) GetLogLevel() Log_LogLevel {
@@ -2807,7 +2874,7 @@ type CommandServer struct {
 
 func (x *CommandServer) Reset() {
 	*x = CommandServer{}
-	mi := &file_mpi_v1_command_proto_msgTypes[38]
+	mi := &file_mpi_v1_command_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2819,7 +2886,7 @@ func (x *CommandServer) String() string {
 func (*CommandServer) ProtoMessage() {}
 
 func (x *CommandServer) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[38]
+	mi := &file_mpi_v1_command_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2832,7 +2899,7 @@ func (x *CommandServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandServer.ProtoReflect.Descriptor instead.
 func (*CommandServer) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{38}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *CommandServer) GetServer() *ServerSettings {
@@ -2871,7 +2938,7 @@ type AuxiliaryCommandServer struct {
 
 func (x *AuxiliaryCommandServer) Reset() {
 	*x = AuxiliaryCommandServer{}
-	mi := &file_mpi_v1_command_proto_msgTypes[39]
+	mi := &file_mpi_v1_command_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2883,7 +2950,7 @@ func (x *AuxiliaryCommandServer) String() string {
 func (*AuxiliaryCommandServer) ProtoMessage() {}
 
 func (x *AuxiliaryCommandServer) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[39]
+	mi := &file_mpi_v1_command_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2896,7 +2963,7 @@ func (x *AuxiliaryCommandServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuxiliaryCommandServer.ProtoReflect.Descriptor instead.
 func (*AuxiliaryCommandServer) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{39}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *AuxiliaryCommandServer) GetServer() *ServerSettings {
@@ -2929,7 +2996,7 @@ type MetricsServer struct {
 
 func (x *MetricsServer) Reset() {
 	*x = MetricsServer{}
-	mi := &file_mpi_v1_command_proto_msgTypes[40]
+	mi := &file_mpi_v1_command_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2941,7 +3008,7 @@ func (x *MetricsServer) String() string {
 func (*MetricsServer) ProtoMessage() {}
 
 func (x *MetricsServer) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[40]
+	mi := &file_mpi_v1_command_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2954,7 +3021,7 @@ func (x *MetricsServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricsServer.ProtoReflect.Descriptor instead.
 func (*MetricsServer) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{40}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{41}
 }
 
 // The file settings associated with file server for configurations
@@ -2966,7 +3033,7 @@ type FileServer struct {
 
 func (x *FileServer) Reset() {
 	*x = FileServer{}
-	mi := &file_mpi_v1_command_proto_msgTypes[41]
+	mi := &file_mpi_v1_command_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2978,7 +3045,7 @@ func (x *FileServer) String() string {
 func (*FileServer) ProtoMessage() {}
 
 func (x *FileServer) ProtoReflect() protoreflect.Message {
-	mi := &file_mpi_v1_command_proto_msgTypes[41]
+	mi := &file_mpi_v1_command_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2991,7 +3058,7 @@ func (x *FileServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileServer.ProtoReflect.Descriptor instead.
 func (*FileServer) Descriptor() ([]byte, []int) {
-	return file_mpi_v1_command_proto_rawDescGZIP(), []int{41}
+	return file_mpi_v1_command_proto_rawDescGZIP(), []int{42}
 }
 
 var File_mpi_v1_command_proto protoreflect.FileDescriptor
@@ -3047,13 +3114,13 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"\x1cUpdateDataPlaneHealthRequest\x126\n" +
 	"\fmessage_meta\x18\x01 \x01(\v2\x13.mpi.v1.MessageMetaR\vmessageMeta\x12A\n" +
 	"\x10instance_healths\x18\x02 \x03(\v2\x16.mpi.v1.InstanceHealthR\x0finstanceHealths\"\x1f\n" +
-	"\x1dUpdateDataPlaneHealthResponse\"\xd5\x03\n" +
+	"\x1dUpdateDataPlaneHealthResponse\"\xf1\x03\n" +
 	"\x11DataPlaneResponse\x126\n" +
 	"\fmessage_meta\x18\x01 \x01(\v2\x13.mpi.v1.MessageMetaR\vmessageMeta\x12B\n" +
 	"\x10command_response\x18\x02 \x01(\v2\x17.mpi.v1.CommandResponseR\x0fcommandResponse\x12\x1f\n" +
 	"\vinstance_id\x18\x03 \x01(\tR\n" +
 	"instanceId\x12H\n" +
-	"\frequest_type\x18\x04 \x01(\x0e2%.mpi.v1.DataPlaneResponse.RequestTypeR\vrequestType\"\xd8\x01\n" +
+	"\frequest_type\x18\x04 \x01(\x0e2%.mpi.v1.DataPlaneResponse.RequestTypeR\vrequestType\"\xf4\x01\n" +
 	"\vRequestType\x12\x17\n" +
 	"\x13UNSPECIFIED_REQUEST\x10\x00\x12\x18\n" +
 	"\x14CONFIG_APPLY_REQUEST\x10\x01\x12\x19\n" +
@@ -3062,7 +3129,8 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"\x0eSTATUS_REQUEST\x10\x04\x12\x16\n" +
 	"\x12API_ACTION_REQUEST\x10\x05\x12\x1a\n" +
 	"\x16COMMAND_STATUS_REQUEST\x10\x06\x12\x1f\n" +
-	"\x1bUPDATE_AGENT_CONFIG_REQUEST\x10\a\"\xfa\x04\n" +
+	"\x1bUPDATE_AGENT_CONFIG_REQUEST\x10\a\x12\x1a\n" +
+	"\x16CONTENT_UPDATE_REQUEST\x10\b\"\xd0\x05\n" +
 	"\x16ManagementPlaneRequest\x126\n" +
 	"\fmessage_meta\x18\x01 \x01(\v2\x13.mpi.v1.MessageMetaR\vmessageMeta\x12>\n" +
 	"\x0estatus_request\x18\x02 \x01(\v2\x15.mpi.v1.StatusRequestH\x00R\rstatusRequest\x12>\n" +
@@ -3071,13 +3139,17 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"\x15config_upload_request\x18\x06 \x01(\v2\x1b.mpi.v1.ConfigUploadRequestH\x00R\x13configUploadRequest\x12A\n" +
 	"\x0eaction_request\x18\a \x01(\v2\x18.mpi.v1.APIActionRequestH\x00R\ractionRequest\x12T\n" +
 	"\x16command_status_request\x18\b \x01(\v2\x1c.mpi.v1.CommandStatusRequestH\x00R\x14commandStatusRequest\x12a\n" +
-	"\x1bupdate_agent_config_request\x18\t \x01(\v2 .mpi.v1.UpdateAgentConfigRequestH\x00R\x18updateAgentConfigRequestB\t\n" +
+	"\x1bupdate_agent_config_request\x18\t \x01(\v2 .mpi.v1.UpdateAgentConfigRequestH\x00R\x18updateAgentConfigRequest\x12T\n" +
+	"\x16content_update_request\x18\n" +
+	" \x01(\v2\x1c.mpi.v1.ContentUpdateRequestH\x00R\x14contentUpdateRequestB\t\n" +
 	"\arequest\"\x0f\n" +
 	"\rStatusRequest\"\x0f\n" +
 	"\rHealthRequest\"F\n" +
 	"\x12ConfigApplyRequest\x120\n" +
 	"\boverview\x18\x01 \x01(\v2\x14.mpi.v1.FileOverviewR\boverview\"G\n" +
 	"\x13ConfigUploadRequest\x120\n" +
+	"\boverview\x18\x01 \x01(\v2\x14.mpi.v1.FileOverviewR\boverview\"H\n" +
+	"\x14ContentUpdateRequest\x120\n" +
 	"\boverview\x18\x01 \x01(\v2\x14.mpi.v1.FileOverviewR\boverview\"\x84\x01\n" +
 	"\x10APIActionRequest\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\tR\n" +
@@ -3216,7 +3288,7 @@ func file_mpi_v1_command_proto_rawDescGZIP() []byte {
 }
 
 var file_mpi_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_mpi_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_mpi_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_mpi_v1_command_proto_goTypes = []any{
 	(InstanceHealth_InstanceHealthStatus)(0), // 0: mpi.v1.InstanceHealth.InstanceHealthStatus
 	(DataPlaneResponse_RequestType)(0),       // 1: mpi.v1.DataPlaneResponse.RequestType
@@ -3240,115 +3312,118 @@ var file_mpi_v1_command_proto_goTypes = []any{
 	(*HealthRequest)(nil),                    // 19: mpi.v1.HealthRequest
 	(*ConfigApplyRequest)(nil),               // 20: mpi.v1.ConfigApplyRequest
 	(*ConfigUploadRequest)(nil),              // 21: mpi.v1.ConfigUploadRequest
-	(*APIActionRequest)(nil),                 // 22: mpi.v1.APIActionRequest
-	(*NGINXPlusAction)(nil),                  // 23: mpi.v1.NGINXPlusAction
-	(*UpdateHTTPUpstreamServers)(nil),        // 24: mpi.v1.UpdateHTTPUpstreamServers
-	(*GetHTTPUpstreamServers)(nil),           // 25: mpi.v1.GetHTTPUpstreamServers
-	(*UpdateStreamServers)(nil),              // 26: mpi.v1.UpdateStreamServers
-	(*GetUpstreams)(nil),                     // 27: mpi.v1.GetUpstreams
-	(*GetStreamUpstreams)(nil),               // 28: mpi.v1.GetStreamUpstreams
-	(*CommandStatusRequest)(nil),             // 29: mpi.v1.CommandStatusRequest
-	(*Instance)(nil),                         // 30: mpi.v1.Instance
-	(*InstanceMeta)(nil),                     // 31: mpi.v1.InstanceMeta
-	(*InstanceConfig)(nil),                   // 32: mpi.v1.InstanceConfig
-	(*InstanceRuntime)(nil),                  // 33: mpi.v1.InstanceRuntime
-	(*InstanceChild)(nil),                    // 34: mpi.v1.InstanceChild
-	(*NGINXRuntimeInfo)(nil),                 // 35: mpi.v1.NGINXRuntimeInfo
-	(*NGINXPlusRuntimeInfo)(nil),             // 36: mpi.v1.NGINXPlusRuntimeInfo
-	(*APIDetails)(nil),                       // 37: mpi.v1.APIDetails
-	(*NGINXAppProtectRuntimeInfo)(nil),       // 38: mpi.v1.NGINXAppProtectRuntimeInfo
-	(*InstanceAction)(nil),                   // 39: mpi.v1.InstanceAction
-	(*AgentConfig)(nil),                      // 40: mpi.v1.AgentConfig
-	(*Log)(nil),                              // 41: mpi.v1.Log
-	(*CommandServer)(nil),                    // 42: mpi.v1.CommandServer
-	(*AuxiliaryCommandServer)(nil),           // 43: mpi.v1.AuxiliaryCommandServer
-	(*MetricsServer)(nil),                    // 44: mpi.v1.MetricsServer
-	(*FileServer)(nil),                       // 45: mpi.v1.FileServer
-	(*MessageMeta)(nil),                      // 46: mpi.v1.MessageMeta
-	(*CommandResponse)(nil),                  // 47: mpi.v1.CommandResponse
-	(*FileOverview)(nil),                     // 48: mpi.v1.FileOverview
-	(*structpb.Struct)(nil),                  // 49: google.protobuf.Struct
-	(*ServerSettings)(nil),                   // 50: mpi.v1.ServerSettings
-	(*AuthSettings)(nil),                     // 51: mpi.v1.AuthSettings
-	(*TLSSettings)(nil),                      // 52: mpi.v1.TLSSettings
+	(*ContentUpdateRequest)(nil),             // 22: mpi.v1.ContentUpdateRequest
+	(*APIActionRequest)(nil),                 // 23: mpi.v1.APIActionRequest
+	(*NGINXPlusAction)(nil),                  // 24: mpi.v1.NGINXPlusAction
+	(*UpdateHTTPUpstreamServers)(nil),        // 25: mpi.v1.UpdateHTTPUpstreamServers
+	(*GetHTTPUpstreamServers)(nil),           // 26: mpi.v1.GetHTTPUpstreamServers
+	(*UpdateStreamServers)(nil),              // 27: mpi.v1.UpdateStreamServers
+	(*GetUpstreams)(nil),                     // 28: mpi.v1.GetUpstreams
+	(*GetStreamUpstreams)(nil),               // 29: mpi.v1.GetStreamUpstreams
+	(*CommandStatusRequest)(nil),             // 30: mpi.v1.CommandStatusRequest
+	(*Instance)(nil),                         // 31: mpi.v1.Instance
+	(*InstanceMeta)(nil),                     // 32: mpi.v1.InstanceMeta
+	(*InstanceConfig)(nil),                   // 33: mpi.v1.InstanceConfig
+	(*InstanceRuntime)(nil),                  // 34: mpi.v1.InstanceRuntime
+	(*InstanceChild)(nil),                    // 35: mpi.v1.InstanceChild
+	(*NGINXRuntimeInfo)(nil),                 // 36: mpi.v1.NGINXRuntimeInfo
+	(*NGINXPlusRuntimeInfo)(nil),             // 37: mpi.v1.NGINXPlusRuntimeInfo
+	(*APIDetails)(nil),                       // 38: mpi.v1.APIDetails
+	(*NGINXAppProtectRuntimeInfo)(nil),       // 39: mpi.v1.NGINXAppProtectRuntimeInfo
+	(*InstanceAction)(nil),                   // 40: mpi.v1.InstanceAction
+	(*AgentConfig)(nil),                      // 41: mpi.v1.AgentConfig
+	(*Log)(nil),                              // 42: mpi.v1.Log
+	(*CommandServer)(nil),                    // 43: mpi.v1.CommandServer
+	(*AuxiliaryCommandServer)(nil),           // 44: mpi.v1.AuxiliaryCommandServer
+	(*MetricsServer)(nil),                    // 45: mpi.v1.MetricsServer
+	(*FileServer)(nil),                       // 46: mpi.v1.FileServer
+	(*MessageMeta)(nil),                      // 47: mpi.v1.MessageMeta
+	(*CommandResponse)(nil),                  // 48: mpi.v1.CommandResponse
+	(*FileOverview)(nil),                     // 49: mpi.v1.FileOverview
+	(*structpb.Struct)(nil),                  // 50: google.protobuf.Struct
+	(*ServerSettings)(nil),                   // 51: mpi.v1.ServerSettings
+	(*AuthSettings)(nil),                     // 52: mpi.v1.AuthSettings
+	(*TLSSettings)(nil),                      // 53: mpi.v1.TLSSettings
 }
 var file_mpi_v1_command_proto_depIdxs = []int32{
-	46, // 0: mpi.v1.CreateConnectionRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	47, // 0: mpi.v1.CreateConnectionRequest.message_meta:type_name -> mpi.v1.MessageMeta
 	5,  // 1: mpi.v1.CreateConnectionRequest.resource:type_name -> mpi.v1.Resource
-	30, // 2: mpi.v1.Resource.instances:type_name -> mpi.v1.Instance
+	31, // 2: mpi.v1.Resource.instances:type_name -> mpi.v1.Instance
 	6,  // 3: mpi.v1.Resource.host_info:type_name -> mpi.v1.HostInfo
 	8,  // 4: mpi.v1.Resource.container_info:type_name -> mpi.v1.ContainerInfo
 	7,  // 5: mpi.v1.HostInfo.release_info:type_name -> mpi.v1.ReleaseInfo
 	7,  // 6: mpi.v1.ContainerInfo.release_info:type_name -> mpi.v1.ReleaseInfo
-	47, // 7: mpi.v1.CreateConnectionResponse.response:type_name -> mpi.v1.CommandResponse
-	40, // 8: mpi.v1.CreateConnectionResponse.agent_config:type_name -> mpi.v1.AgentConfig
-	46, // 9: mpi.v1.UpdateDataPlaneStatusRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	48, // 7: mpi.v1.CreateConnectionResponse.response:type_name -> mpi.v1.CommandResponse
+	41, // 8: mpi.v1.CreateConnectionResponse.agent_config:type_name -> mpi.v1.AgentConfig
+	47, // 9: mpi.v1.UpdateDataPlaneStatusRequest.message_meta:type_name -> mpi.v1.MessageMeta
 	5,  // 10: mpi.v1.UpdateDataPlaneStatusRequest.resource:type_name -> mpi.v1.Resource
-	46, // 11: mpi.v1.UpdateAgentConfigRequest.message_meta:type_name -> mpi.v1.MessageMeta
-	40, // 12: mpi.v1.UpdateAgentConfigRequest.agent_config:type_name -> mpi.v1.AgentConfig
+	47, // 11: mpi.v1.UpdateAgentConfigRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	41, // 12: mpi.v1.UpdateAgentConfigRequest.agent_config:type_name -> mpi.v1.AgentConfig
 	0,  // 13: mpi.v1.InstanceHealth.instance_health_status:type_name -> mpi.v1.InstanceHealth.InstanceHealthStatus
-	46, // 14: mpi.v1.UpdateDataPlaneHealthRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	47, // 14: mpi.v1.UpdateDataPlaneHealthRequest.message_meta:type_name -> mpi.v1.MessageMeta
 	13, // 15: mpi.v1.UpdateDataPlaneHealthRequest.instance_healths:type_name -> mpi.v1.InstanceHealth
-	46, // 16: mpi.v1.DataPlaneResponse.message_meta:type_name -> mpi.v1.MessageMeta
-	47, // 17: mpi.v1.DataPlaneResponse.command_response:type_name -> mpi.v1.CommandResponse
+	47, // 16: mpi.v1.DataPlaneResponse.message_meta:type_name -> mpi.v1.MessageMeta
+	48, // 17: mpi.v1.DataPlaneResponse.command_response:type_name -> mpi.v1.CommandResponse
 	1,  // 18: mpi.v1.DataPlaneResponse.request_type:type_name -> mpi.v1.DataPlaneResponse.RequestType
-	46, // 19: mpi.v1.ManagementPlaneRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	47, // 19: mpi.v1.ManagementPlaneRequest.message_meta:type_name -> mpi.v1.MessageMeta
 	18, // 20: mpi.v1.ManagementPlaneRequest.status_request:type_name -> mpi.v1.StatusRequest
 	19, // 21: mpi.v1.ManagementPlaneRequest.health_request:type_name -> mpi.v1.HealthRequest
 	20, // 22: mpi.v1.ManagementPlaneRequest.config_apply_request:type_name -> mpi.v1.ConfigApplyRequest
 	21, // 23: mpi.v1.ManagementPlaneRequest.config_upload_request:type_name -> mpi.v1.ConfigUploadRequest
-	22, // 24: mpi.v1.ManagementPlaneRequest.action_request:type_name -> mpi.v1.APIActionRequest
-	29, // 25: mpi.v1.ManagementPlaneRequest.command_status_request:type_name -> mpi.v1.CommandStatusRequest
+	23, // 24: mpi.v1.ManagementPlaneRequest.action_request:type_name -> mpi.v1.APIActionRequest
+	30, // 25: mpi.v1.ManagementPlaneRequest.command_status_request:type_name -> mpi.v1.CommandStatusRequest
 	12, // 26: mpi.v1.ManagementPlaneRequest.update_agent_config_request:type_name -> mpi.v1.UpdateAgentConfigRequest
-	48, // 27: mpi.v1.ConfigApplyRequest.overview:type_name -> mpi.v1.FileOverview
-	48, // 28: mpi.v1.ConfigUploadRequest.overview:type_name -> mpi.v1.FileOverview
-	23, // 29: mpi.v1.APIActionRequest.nginx_plus_action:type_name -> mpi.v1.NGINXPlusAction
-	24, // 30: mpi.v1.NGINXPlusAction.update_http_upstream_servers:type_name -> mpi.v1.UpdateHTTPUpstreamServers
-	25, // 31: mpi.v1.NGINXPlusAction.get_http_upstream_servers:type_name -> mpi.v1.GetHTTPUpstreamServers
-	26, // 32: mpi.v1.NGINXPlusAction.update_stream_servers:type_name -> mpi.v1.UpdateStreamServers
-	27, // 33: mpi.v1.NGINXPlusAction.get_upstreams:type_name -> mpi.v1.GetUpstreams
-	28, // 34: mpi.v1.NGINXPlusAction.get_stream_upstreams:type_name -> mpi.v1.GetStreamUpstreams
-	49, // 35: mpi.v1.UpdateHTTPUpstreamServers.servers:type_name -> google.protobuf.Struct
-	49, // 36: mpi.v1.UpdateStreamServers.servers:type_name -> google.protobuf.Struct
-	31, // 37: mpi.v1.Instance.instance_meta:type_name -> mpi.v1.InstanceMeta
-	32, // 38: mpi.v1.Instance.instance_config:type_name -> mpi.v1.InstanceConfig
-	33, // 39: mpi.v1.Instance.instance_runtime:type_name -> mpi.v1.InstanceRuntime
-	2,  // 40: mpi.v1.InstanceMeta.instance_type:type_name -> mpi.v1.InstanceMeta.InstanceType
-	39, // 41: mpi.v1.InstanceConfig.actions:type_name -> mpi.v1.InstanceAction
-	40, // 42: mpi.v1.InstanceConfig.agent_config:type_name -> mpi.v1.AgentConfig
-	35, // 43: mpi.v1.InstanceRuntime.nginx_runtime_info:type_name -> mpi.v1.NGINXRuntimeInfo
-	36, // 44: mpi.v1.InstanceRuntime.nginx_plus_runtime_info:type_name -> mpi.v1.NGINXPlusRuntimeInfo
-	38, // 45: mpi.v1.InstanceRuntime.nginx_app_protect_runtime_info:type_name -> mpi.v1.NGINXAppProtectRuntimeInfo
-	34, // 46: mpi.v1.InstanceRuntime.instance_children:type_name -> mpi.v1.InstanceChild
-	37, // 47: mpi.v1.NGINXRuntimeInfo.stub_status:type_name -> mpi.v1.APIDetails
-	37, // 48: mpi.v1.NGINXPlusRuntimeInfo.stub_status:type_name -> mpi.v1.APIDetails
-	37, // 49: mpi.v1.NGINXPlusRuntimeInfo.plus_api:type_name -> mpi.v1.APIDetails
-	42, // 50: mpi.v1.AgentConfig.command:type_name -> mpi.v1.CommandServer
-	44, // 51: mpi.v1.AgentConfig.metrics:type_name -> mpi.v1.MetricsServer
-	45, // 52: mpi.v1.AgentConfig.file:type_name -> mpi.v1.FileServer
-	49, // 53: mpi.v1.AgentConfig.labels:type_name -> google.protobuf.Struct
-	43, // 54: mpi.v1.AgentConfig.auxiliary_command:type_name -> mpi.v1.AuxiliaryCommandServer
-	41, // 55: mpi.v1.AgentConfig.log:type_name -> mpi.v1.Log
-	3,  // 56: mpi.v1.Log.log_level:type_name -> mpi.v1.Log.LogLevel
-	50, // 57: mpi.v1.CommandServer.server:type_name -> mpi.v1.ServerSettings
-	51, // 58: mpi.v1.CommandServer.auth:type_name -> mpi.v1.AuthSettings
-	52, // 59: mpi.v1.CommandServer.tls:type_name -> mpi.v1.TLSSettings
-	50, // 60: mpi.v1.AuxiliaryCommandServer.server:type_name -> mpi.v1.ServerSettings
-	51, // 61: mpi.v1.AuxiliaryCommandServer.auth:type_name -> mpi.v1.AuthSettings
-	52, // 62: mpi.v1.AuxiliaryCommandServer.tls:type_name -> mpi.v1.TLSSettings
-	4,  // 63: mpi.v1.CommandService.CreateConnection:input_type -> mpi.v1.CreateConnectionRequest
-	10, // 64: mpi.v1.CommandService.UpdateDataPlaneStatus:input_type -> mpi.v1.UpdateDataPlaneStatusRequest
-	14, // 65: mpi.v1.CommandService.UpdateDataPlaneHealth:input_type -> mpi.v1.UpdateDataPlaneHealthRequest
-	16, // 66: mpi.v1.CommandService.Subscribe:input_type -> mpi.v1.DataPlaneResponse
-	9,  // 67: mpi.v1.CommandService.CreateConnection:output_type -> mpi.v1.CreateConnectionResponse
-	11, // 68: mpi.v1.CommandService.UpdateDataPlaneStatus:output_type -> mpi.v1.UpdateDataPlaneStatusResponse
-	15, // 69: mpi.v1.CommandService.UpdateDataPlaneHealth:output_type -> mpi.v1.UpdateDataPlaneHealthResponse
-	17, // 70: mpi.v1.CommandService.Subscribe:output_type -> mpi.v1.ManagementPlaneRequest
-	67, // [67:71] is the sub-list for method output_type
-	63, // [63:67] is the sub-list for method input_type
-	63, // [63:63] is the sub-list for extension type_name
-	63, // [63:63] is the sub-list for extension extendee
-	0,  // [0:63] is the sub-list for field type_name
+	22, // 27: mpi.v1.ManagementPlaneRequest.content_update_request:type_name -> mpi.v1.ContentUpdateRequest
+	49, // 28: mpi.v1.ConfigApplyRequest.overview:type_name -> mpi.v1.FileOverview
+	49, // 29: mpi.v1.ConfigUploadRequest.overview:type_name -> mpi.v1.FileOverview
+	49, // 30: mpi.v1.ContentUpdateRequest.overview:type_name -> mpi.v1.FileOverview
+	24, // 31: mpi.v1.APIActionRequest.nginx_plus_action:type_name -> mpi.v1.NGINXPlusAction
+	25, // 32: mpi.v1.NGINXPlusAction.update_http_upstream_servers:type_name -> mpi.v1.UpdateHTTPUpstreamServers
+	26, // 33: mpi.v1.NGINXPlusAction.get_http_upstream_servers:type_name -> mpi.v1.GetHTTPUpstreamServers
+	27, // 34: mpi.v1.NGINXPlusAction.update_stream_servers:type_name -> mpi.v1.UpdateStreamServers
+	28, // 35: mpi.v1.NGINXPlusAction.get_upstreams:type_name -> mpi.v1.GetUpstreams
+	29, // 36: mpi.v1.NGINXPlusAction.get_stream_upstreams:type_name -> mpi.v1.GetStreamUpstreams
+	50, // 37: mpi.v1.UpdateHTTPUpstreamServers.servers:type_name -> google.protobuf.Struct
+	50, // 38: mpi.v1.UpdateStreamServers.servers:type_name -> google.protobuf.Struct
+	32, // 39: mpi.v1.Instance.instance_meta:type_name -> mpi.v1.InstanceMeta
+	33, // 40: mpi.v1.Instance.instance_config:type_name -> mpi.v1.InstanceConfig
+	34, // 41: mpi.v1.Instance.instance_runtime:type_name -> mpi.v1.InstanceRuntime
+	2,  // 42: mpi.v1.InstanceMeta.instance_type:type_name -> mpi.v1.InstanceMeta.InstanceType
+	40, // 43: mpi.v1.InstanceConfig.actions:type_name -> mpi.v1.InstanceAction
+	41, // 44: mpi.v1.InstanceConfig.agent_config:type_name -> mpi.v1.AgentConfig
+	36, // 45: mpi.v1.InstanceRuntime.nginx_runtime_info:type_name -> mpi.v1.NGINXRuntimeInfo
+	37, // 46: mpi.v1.InstanceRuntime.nginx_plus_runtime_info:type_name -> mpi.v1.NGINXPlusRuntimeInfo
+	39, // 47: mpi.v1.InstanceRuntime.nginx_app_protect_runtime_info:type_name -> mpi.v1.NGINXAppProtectRuntimeInfo
+	35, // 48: mpi.v1.InstanceRuntime.instance_children:type_name -> mpi.v1.InstanceChild
+	38, // 49: mpi.v1.NGINXRuntimeInfo.stub_status:type_name -> mpi.v1.APIDetails
+	38, // 50: mpi.v1.NGINXPlusRuntimeInfo.stub_status:type_name -> mpi.v1.APIDetails
+	38, // 51: mpi.v1.NGINXPlusRuntimeInfo.plus_api:type_name -> mpi.v1.APIDetails
+	43, // 52: mpi.v1.AgentConfig.command:type_name -> mpi.v1.CommandServer
+	45, // 53: mpi.v1.AgentConfig.metrics:type_name -> mpi.v1.MetricsServer
+	46, // 54: mpi.v1.AgentConfig.file:type_name -> mpi.v1.FileServer
+	50, // 55: mpi.v1.AgentConfig.labels:type_name -> google.protobuf.Struct
+	44, // 56: mpi.v1.AgentConfig.auxiliary_command:type_name -> mpi.v1.AuxiliaryCommandServer
+	42, // 57: mpi.v1.AgentConfig.log:type_name -> mpi.v1.Log
+	3,  // 58: mpi.v1.Log.log_level:type_name -> mpi.v1.Log.LogLevel
+	51, // 59: mpi.v1.CommandServer.server:type_name -> mpi.v1.ServerSettings
+	52, // 60: mpi.v1.CommandServer.auth:type_name -> mpi.v1.AuthSettings
+	53, // 61: mpi.v1.CommandServer.tls:type_name -> mpi.v1.TLSSettings
+	51, // 62: mpi.v1.AuxiliaryCommandServer.server:type_name -> mpi.v1.ServerSettings
+	52, // 63: mpi.v1.AuxiliaryCommandServer.auth:type_name -> mpi.v1.AuthSettings
+	53, // 64: mpi.v1.AuxiliaryCommandServer.tls:type_name -> mpi.v1.TLSSettings
+	4,  // 65: mpi.v1.CommandService.CreateConnection:input_type -> mpi.v1.CreateConnectionRequest
+	10, // 66: mpi.v1.CommandService.UpdateDataPlaneStatus:input_type -> mpi.v1.UpdateDataPlaneStatusRequest
+	14, // 67: mpi.v1.CommandService.UpdateDataPlaneHealth:input_type -> mpi.v1.UpdateDataPlaneHealthRequest
+	16, // 68: mpi.v1.CommandService.Subscribe:input_type -> mpi.v1.DataPlaneResponse
+	9,  // 69: mpi.v1.CommandService.CreateConnection:output_type -> mpi.v1.CreateConnectionResponse
+	11, // 70: mpi.v1.CommandService.UpdateDataPlaneStatus:output_type -> mpi.v1.UpdateDataPlaneStatusResponse
+	15, // 71: mpi.v1.CommandService.UpdateDataPlaneHealth:output_type -> mpi.v1.UpdateDataPlaneHealthResponse
+	17, // 72: mpi.v1.CommandService.Subscribe:output_type -> mpi.v1.ManagementPlaneRequest
+	69, // [69:73] is the sub-list for method output_type
+	65, // [65:69] is the sub-list for method input_type
+	65, // [65:65] is the sub-list for extension type_name
+	65, // [65:65] is the sub-list for extension extendee
+	0,  // [0:65] is the sub-list for field type_name
 }
 
 func init() { file_mpi_v1_command_proto_init() }
@@ -3370,21 +3445,22 @@ func file_mpi_v1_command_proto_init() {
 		(*ManagementPlaneRequest_ActionRequest)(nil),
 		(*ManagementPlaneRequest_CommandStatusRequest)(nil),
 		(*ManagementPlaneRequest_UpdateAgentConfigRequest)(nil),
-	}
-	file_mpi_v1_command_proto_msgTypes[18].OneofWrappers = []any{
-		(*APIActionRequest_NginxPlusAction)(nil),
+		(*ManagementPlaneRequest_ContentUpdateRequest)(nil),
 	}
 	file_mpi_v1_command_proto_msgTypes[19].OneofWrappers = []any{
+		(*APIActionRequest_NginxPlusAction)(nil),
+	}
+	file_mpi_v1_command_proto_msgTypes[20].OneofWrappers = []any{
 		(*NGINXPlusAction_UpdateHttpUpstreamServers)(nil),
 		(*NGINXPlusAction_GetHttpUpstreamServers)(nil),
 		(*NGINXPlusAction_UpdateStreamServers)(nil),
 		(*NGINXPlusAction_GetUpstreams)(nil),
 		(*NGINXPlusAction_GetStreamUpstreams)(nil),
 	}
-	file_mpi_v1_command_proto_msgTypes[28].OneofWrappers = []any{
+	file_mpi_v1_command_proto_msgTypes[29].OneofWrappers = []any{
 		(*InstanceConfig_AgentConfig)(nil),
 	}
-	file_mpi_v1_command_proto_msgTypes[29].OneofWrappers = []any{
+	file_mpi_v1_command_proto_msgTypes[30].OneofWrappers = []any{
 		(*InstanceRuntime_NginxRuntimeInfo)(nil),
 		(*InstanceRuntime_NginxPlusRuntimeInfo)(nil),
 		(*InstanceRuntime_NginxAppProtectRuntimeInfo)(nil),
@@ -3395,7 +3471,7 @@ func file_mpi_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mpi_v1_command_proto_rawDesc), len(file_mpi_v1_command_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   42,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
