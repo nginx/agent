@@ -29,6 +29,7 @@ const (
 	contentUpdateFailedMsg   = "Content update failed"
 	configUploadFailedMsg    = "Config upload failed"
 	configFeatureDisabledMsg = "Configuration feature is disabled"
+	apiActionDisabledMsg     = "API action feature is disabled"
 )
 
 var _ bus.Plugin = (*CommandPlugin)(nil)
@@ -437,7 +438,7 @@ func (cp *CommandPlugin) handleAPIActionRequest(newCtx context.Context, message 
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				Message: apiActionFieldMsg,
-				Error:   "API action feature is disabled",
+				Error:   apiActionDisabledMsg,
 			},
 			InstanceId: message.GetActionRequest().GetInstanceId(),
 		})
