@@ -23,6 +23,14 @@ import (
 	"github.com/nginx/agent/v3/pkg/id"
 )
 
+const (
+	apiActionFieldMsg        = "API action failed"
+	configApplyFailedMsg     = "Config apply failed"
+	contentUpdateFailedMsg   = "Content update failed"
+	configUploadFailedMsg    = "Config upload failed"
+	configFeatureDisabledMsg = "Configuration feature is disabled"
+)
+
 var _ bus.Plugin = (*CommandPlugin)(nil)
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
@@ -340,7 +348,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	}
 }
 
-//nolint:revive,cyclop // cognitive complexity is 14
+//nolint:revive,cyclop,gocognit // cognitive complexity is 22
 func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 	for {
 		select {
@@ -362,7 +370,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform config apply",
 						"command_server_type", cp.commandServerType.String())
-					cp.handleInvalidRequest(newCtx, message, "Config apply failed",
+					cp.handleInvalidRequest(newCtx, message, configApplyFailedMsg,
 						message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId())
 
 					continue
@@ -377,7 +385,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform api action",
 						"command_server_type", cp.commandServerType.String())
-					cp.handleInvalidRequest(newCtx, message, "API action failed",
+					cp.handleInvalidRequest(newCtx, message, apiActionFieldMsg,
 						message.GetActionRequest().GetInstanceId())
 
 					continue
@@ -399,7 +407,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform content update",
 						"command_server_type", cp.commandServerType.String())
-					cp.handleInvalidRequest(newCtx, message, "Content update failed",
+					cp.handleInvalidRequest(newCtx, message, contentUpdateFailedMsg,
 						message.GetContentUpdateRequest().GetOverview().GetConfigVersion().GetInstanceId())
 
 					continue
@@ -428,7 +436,7 @@ func (cp *CommandPlugin) handleAPIActionRequest(newCtx context.Context, message 
 			MessageMeta: message.GetMessageMeta(),
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "API action failed",
+				Message: apiActionFieldMsg,
 				Error:   "API action feature is disabled",
 			},
 			InstanceId: message.GetActionRequest().GetInstanceId(),
@@ -454,8 +462,8 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 			MessageMeta: message.GetMessageMeta(),
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "Config apply failed",
-				Error:   "Configuration feature is disabled",
+				Message: configApplyFailedMsg,
+				Error:   configFeatureDisabledMsg,
 			},
 			InstanceId: message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
@@ -480,8 +488,8 @@ func (cp *CommandPlugin) handleContentUpdateRequest(newCtx context.Context, mess
 			MessageMeta: message.GetMessageMeta(),
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "Content update failed",
-				Error:   "Configuration feature is disabled",
+				Message: contentUpdateFailedMsg,
+				Error:   configFeatureDisabledMsg,
 			},
 			InstanceId: message.GetContentUpdateRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
@@ -506,8 +514,8 @@ func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, messa
 			MessageMeta: message.GetMessageMeta(),
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "Config upload failed",
-				Error:   "Configuration feature is disabled",
+				Message: configUploadFailedMsg,
+				Error:   configFeatureDisabledMsg,
 			},
 			InstanceId: message.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
