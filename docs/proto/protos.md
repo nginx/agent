@@ -51,6 +51,7 @@
     - [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest)
     - [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest)
     - [ContainerInfo](#mpi-v1-ContainerInfo)
+    - [ContentUpdateRequest](#mpi-v1-ContentUpdateRequest)
     - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
     - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
@@ -820,6 +821,22 @@ Container information
 
 
 
+<a name="mpi-v1-ContentUpdateRequest"></a>
+
+### ContentUpdateRequest
+Additional information associated with a ContentUpdateRequest
+Used to update the contents of one or more files
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | set of files related to the request |
+
+
+
+
+
+
 <a name="mpi-v1-CreateConnectionRequest"></a>
 
 ### CreateConnectionRequest
@@ -1087,6 +1104,7 @@ A Management Plane request for information, triggers an associated rpc on the Da
 | action_request | [APIActionRequest](#mpi-v1-APIActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
 | command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
 | update_agent_config_request | [UpdateAgentConfigRequest](#mpi-v1-UpdateAgentConfigRequest) |  | triggers an update to the NGINX Agent configuration |
+| content_update_request | [ContentUpdateRequest](#mpi-v1-ContentUpdateRequest) |  | triggers a content update for one or more files |
 
 
 
@@ -1343,6 +1361,7 @@ Update Upstream Stream Servers for an instance
 | API_ACTION_REQUEST | 5 |  |
 | COMMAND_STATUS_REQUEST | 6 |  |
 | UPDATE_AGENT_CONFIG_REQUEST | 7 |  |
+| CONTENT_UPDATE_REQUEST | 8 |  |
 
 
 

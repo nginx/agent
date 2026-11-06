@@ -542,6 +542,9 @@ func (cs *CommandService) isValidRequest(ctx context.Context, request *mpi.Manag
 	case *mpi.ManagementPlaneRequest_ActionRequest:
 		requestInstanceID := request.GetActionRequest().GetInstanceId()
 		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
+	case *mpi.ManagementPlaneRequest_ContentUpdateRequest:
+		requestInstanceID := request.GetContentUpdateRequest().GetOverview().GetConfigVersion().GetInstanceId()
+		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
 	default:
 		validRequest = true
 	}
