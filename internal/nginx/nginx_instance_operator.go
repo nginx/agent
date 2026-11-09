@@ -92,7 +92,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 	err := i.executer.KillProcess(pid)
 	if err != nil {
 		for range errorLogs {
-			_ = <-logErrorChannel
+			<-logErrorChannel //nolint:errcheck
 		}
 		close(logErrorChannel)
 
