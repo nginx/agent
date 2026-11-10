@@ -238,10 +238,12 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
 			if !json.Valid(r.Body()) {
 				return true
 			}
+
 			var response []*mpi.DataPlaneResponse
 			if json.Unmarshal(r.Body(), &response) != nil {
 				return true
 			}
+
 			return len(response) != numberOfExpectedResponses || r.StatusCode() == http.StatusNotFound
 		},
 	)
