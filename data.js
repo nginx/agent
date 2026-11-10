@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794311656422,
+  "lastUpdate": 1794323628250,
   "repoUrl": "https://github.com/nginx/agent",
   "entries": {
     "Compare Benchmark Results": [
@@ -2164694,6 +2164694,4110 @@ window.BENCHMARK_DATA = {
             "value": 5,
             "unit": "allocs/op",
             "extra": "4443026 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "s.odonovan@f5.com",
+            "name": "Shaun",
+            "username": "shaun-nx"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fae71a8a84979ef8bb9a347f3d6541deb0a44e35",
+          "message": "Add ContentUpdateRequest action to MPI",
+          "timestamp": "2026-11-10T15:00:18Z",
+          "tree_id": "d062a0d823d5dcd7630d78fd34d8b69080fcf341",
+          "url": "https://github.com/nginx/agent/commit/fae71a8a84979ef8bb9a347f3d6541deb0a44e35"
+        },
+        "date": 1794323525230,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 918344,
+            "unit": "ns/op\t   65943 B/op\t     907 allocs/op",
+            "extra": "1220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 918344,
+            "unit": "ns/op",
+            "extra": "1220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 65943,
+            "unit": "B/op",
+            "extra": "1220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "1220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 996182,
+            "unit": "ns/op\t   63534 B/op\t     907 allocs/op",
+            "extra": "1159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 996182,
+            "unit": "ns/op",
+            "extra": "1159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 63534,
+            "unit": "B/op",
+            "extra": "1159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "1159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 421895,
+            "unit": "ns/op\t   60130 B/op\t     907 allocs/op",
+            "extra": "2638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 421895,
+            "unit": "ns/op",
+            "extra": "2638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 60130,
+            "unit": "B/op",
+            "extra": "2638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 423876,
+            "unit": "ns/op\t   60065 B/op\t     907 allocs/op",
+            "extra": "2770 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 423876,
+            "unit": "ns/op",
+            "extra": "2770 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 60065,
+            "unit": "B/op",
+            "extra": "2770 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2770 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 426379,
+            "unit": "ns/op\t   60077 B/op\t     907 allocs/op",
+            "extra": "2746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 426379,
+            "unit": "ns/op",
+            "extra": "2746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 60077,
+            "unit": "B/op",
+            "extra": "2746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 421380,
+            "unit": "ns/op\t   59661 B/op\t     907 allocs/op",
+            "extra": "2820 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 421380,
+            "unit": "ns/op",
+            "extra": "2820 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 59661,
+            "unit": "B/op",
+            "extra": "2820 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2820 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 426086,
+            "unit": "ns/op\t   60497 B/op\t     907 allocs/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 426086,
+            "unit": "ns/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 60497,
+            "unit": "B/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 429144,
+            "unit": "ns/op\t   61665 B/op\t     907 allocs/op",
+            "extra": "2726 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 429144,
+            "unit": "ns/op",
+            "extra": "2726 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 61665,
+            "unit": "B/op",
+            "extra": "2726 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2726 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 424631,
+            "unit": "ns/op\t   60934 B/op\t     907 allocs/op",
+            "extra": "2652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 424631,
+            "unit": "ns/op",
+            "extra": "2652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 60934,
+            "unit": "B/op",
+            "extra": "2652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 425193,
+            "unit": "ns/op\t   61261 B/op\t     907 allocs/op",
+            "extra": "2737 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 425193,
+            "unit": "ns/op",
+            "extra": "2737 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 61261,
+            "unit": "B/op",
+            "extra": "2737 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/SmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "2737 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 348857,
+            "unit": "ns/op\t  199566 B/op\t     907 allocs/op",
+            "extra": "3711 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 348857,
+            "unit": "ns/op",
+            "extra": "3711 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 199566,
+            "unit": "B/op",
+            "extra": "3711 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3711 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 334517,
+            "unit": "ns/op\t  200527 B/op\t     907 allocs/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 334517,
+            "unit": "ns/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 200527,
+            "unit": "B/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 343190,
+            "unit": "ns/op\t  199916 B/op\t     907 allocs/op",
+            "extra": "3594 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 343190,
+            "unit": "ns/op",
+            "extra": "3594 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 199916,
+            "unit": "B/op",
+            "extra": "3594 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3594 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 335982,
+            "unit": "ns/op\t  199312 B/op\t     907 allocs/op",
+            "extra": "3610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 335982,
+            "unit": "ns/op",
+            "extra": "3610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 199312,
+            "unit": "B/op",
+            "extra": "3610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 338439,
+            "unit": "ns/op\t  200402 B/op\t     907 allocs/op",
+            "extra": "3762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 338439,
+            "unit": "ns/op",
+            "extra": "3762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 200402,
+            "unit": "B/op",
+            "extra": "3762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 338644,
+            "unit": "ns/op\t  199099 B/op\t     907 allocs/op",
+            "extra": "3184 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 338644,
+            "unit": "ns/op",
+            "extra": "3184 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 199099,
+            "unit": "B/op",
+            "extra": "3184 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3184 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 339163,
+            "unit": "ns/op\t  200799 B/op\t     907 allocs/op",
+            "extra": "3614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 339163,
+            "unit": "ns/op",
+            "extra": "3614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 200799,
+            "unit": "B/op",
+            "extra": "3614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 338387,
+            "unit": "ns/op\t  199973 B/op\t     907 allocs/op",
+            "extra": "3409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 338387,
+            "unit": "ns/op",
+            "extra": "3409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 199973,
+            "unit": "B/op",
+            "extra": "3409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 339879,
+            "unit": "ns/op\t  200527 B/op\t     907 allocs/op",
+            "extra": "3513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 339879,
+            "unit": "ns/op",
+            "extra": "3513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 200527,
+            "unit": "B/op",
+            "extra": "3513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 347676,
+            "unit": "ns/op\t  199914 B/op\t     907 allocs/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 347676,
+            "unit": "ns/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 199914,
+            "unit": "B/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/MediumRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1136039,
+            "unit": "ns/op\t 1653755 B/op\t     915 allocs/op",
+            "extra": "1125 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1136039,
+            "unit": "ns/op",
+            "extra": "1125 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1653755,
+            "unit": "B/op",
+            "extra": "1125 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 915,
+            "unit": "allocs/op",
+            "extra": "1125 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1025933,
+            "unit": "ns/op\t 1650902 B/op\t     907 allocs/op",
+            "extra": "1506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1025933,
+            "unit": "ns/op",
+            "extra": "1506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1650902,
+            "unit": "B/op",
+            "extra": "1506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "1506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1016737,
+            "unit": "ns/op\t 1653133 B/op\t     911 allocs/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1016737,
+            "unit": "ns/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1653133,
+            "unit": "B/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 911,
+            "unit": "allocs/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1041908,
+            "unit": "ns/op\t 1654103 B/op\t     907 allocs/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1041908,
+            "unit": "ns/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1654103,
+            "unit": "B/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1001373,
+            "unit": "ns/op\t 1649826 B/op\t     907 allocs/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1001373,
+            "unit": "ns/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1649826,
+            "unit": "B/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1028118,
+            "unit": "ns/op\t 1651228 B/op\t     907 allocs/op",
+            "extra": "1434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1028118,
+            "unit": "ns/op",
+            "extra": "1434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1651228,
+            "unit": "B/op",
+            "extra": "1434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 907,
+            "unit": "allocs/op",
+            "extra": "1434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1052875,
+            "unit": "ns/op\t 1649719 B/op\t     911 allocs/op",
+            "extra": "1359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1052875,
+            "unit": "ns/op",
+            "extra": "1359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1649719,
+            "unit": "B/op",
+            "extra": "1359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 911,
+            "unit": "allocs/op",
+            "extra": "1359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1036724,
+            "unit": "ns/op\t 1655097 B/op\t     911 allocs/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1036724,
+            "unit": "ns/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1655097,
+            "unit": "B/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 911,
+            "unit": "allocs/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1020148,
+            "unit": "ns/op\t 1655727 B/op\t     911 allocs/op",
+            "extra": "1510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1020148,
+            "unit": "ns/op",
+            "extra": "1510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1655727,
+            "unit": "B/op",
+            "extra": "1510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 911,
+            "unit": "allocs/op",
+            "extra": "1510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 1047787,
+            "unit": "ns/op\t 1654382 B/op\t     911 allocs/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 1047787,
+            "unit": "ns/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 1654382,
+            "unit": "B/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/LargeRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 911,
+            "unit": "allocs/op",
+            "extra": "1314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 44264034,
+            "unit": "ns/op\t 5925269 B/op\t   90009 allocs/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 44264034,
+            "unit": "ns/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5925269,
+            "unit": "B/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90009,
+            "unit": "allocs/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 45155763,
+            "unit": "ns/op\t 6014679 B/op\t   90010 allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 45155763,
+            "unit": "ns/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 6014679,
+            "unit": "B/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90010,
+            "unit": "allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 48252908,
+            "unit": "ns/op\t 5971620 B/op\t   90009 allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 48252908,
+            "unit": "ns/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5971620,
+            "unit": "B/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90009,
+            "unit": "allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 45505280,
+            "unit": "ns/op\t 6008050 B/op\t   90010 allocs/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 45505280,
+            "unit": "ns/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 6008050,
+            "unit": "B/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90010,
+            "unit": "allocs/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 45834062,
+            "unit": "ns/op\t 5971640 B/op\t   90010 allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 45834062,
+            "unit": "ns/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5971640,
+            "unit": "B/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90010,
+            "unit": "allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 45694728,
+            "unit": "ns/op\t 5885559 B/op\t   90008 allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 45694728,
+            "unit": "ns/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5885559,
+            "unit": "B/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90008,
+            "unit": "allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 45717121,
+            "unit": "ns/op\t 5971618 B/op\t   90009 allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 45717121,
+            "unit": "ns/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5971618,
+            "unit": "B/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90009,
+            "unit": "allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 45563228,
+            "unit": "ns/op\t 5971625 B/op\t   90010 allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 45563228,
+            "unit": "ns/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5971625,
+            "unit": "B/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90010,
+            "unit": "allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 46420742,
+            "unit": "ns/op\t 6132195 B/op\t   90012 allocs/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 46420742,
+            "unit": "ns/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 6132195,
+            "unit": "B/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90012,
+            "unit": "allocs/op",
+            "extra": "26 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 45608244,
+            "unit": "ns/op\t 5971606 B/op\t   90009 allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 45608244,
+            "unit": "ns/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5971606,
+            "unit": "B/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor/ManySmallRecords (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 90009,
+            "unit": "allocs/op",
+            "extra": "25 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2550381,
+            "unit": "ns/op\t 5604162 B/op\t   10009 allocs/op",
+            "extra": "466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2550381,
+            "unit": "ns/op",
+            "extra": "466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5604162,
+            "unit": "B/op",
+            "extra": "466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10009,
+            "unit": "allocs/op",
+            "extra": "466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2563838,
+            "unit": "ns/op\t 5582695 B/op\t   10015 allocs/op",
+            "extra": "514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2563838,
+            "unit": "ns/op",
+            "extra": "514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5582695,
+            "unit": "B/op",
+            "extra": "514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10015,
+            "unit": "allocs/op",
+            "extra": "514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2563947,
+            "unit": "ns/op\t 5594113 B/op\t   10012 allocs/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2563947,
+            "unit": "ns/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5594113,
+            "unit": "B/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10012,
+            "unit": "allocs/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2545731,
+            "unit": "ns/op\t 5581781 B/op\t   10011 allocs/op",
+            "extra": "516 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2545731,
+            "unit": "ns/op",
+            "extra": "516 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5581781,
+            "unit": "B/op",
+            "extra": "516 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10011,
+            "unit": "allocs/op",
+            "extra": "516 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2514775,
+            "unit": "ns/op\t 5583697 B/op\t   10011 allocs/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2514775,
+            "unit": "ns/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5583697,
+            "unit": "B/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10011,
+            "unit": "allocs/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2565548,
+            "unit": "ns/op\t 5589373 B/op\t   10011 allocs/op",
+            "extra": "534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2565548,
+            "unit": "ns/op",
+            "extra": "534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5589373,
+            "unit": "B/op",
+            "extra": "534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10011,
+            "unit": "allocs/op",
+            "extra": "534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2536207,
+            "unit": "ns/op\t 5582948 B/op\t   10012 allocs/op",
+            "extra": "513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2536207,
+            "unit": "ns/op",
+            "extra": "513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5582948,
+            "unit": "B/op",
+            "extra": "513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10012,
+            "unit": "allocs/op",
+            "extra": "513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2597001,
+            "unit": "ns/op\t 5588390 B/op\t   10016 allocs/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2597001,
+            "unit": "ns/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5588390,
+            "unit": "B/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10016,
+            "unit": "allocs/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2497019,
+            "unit": "ns/op\t 5585120 B/op\t   10010 allocs/op",
+            "extra": "517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2497019,
+            "unit": "ns/op",
+            "extra": "517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5585120,
+            "unit": "B/op",
+            "extra": "517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10010,
+            "unit": "allocs/op",
+            "extra": "517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor)",
+            "value": 2502640,
+            "unit": "ns/op\t 5594065 B/op\t   10011 allocs/op",
+            "extra": "519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - ns/op",
+            "value": 2502640,
+            "unit": "ns/op",
+            "extra": "519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - B/op",
+            "value": 5594065,
+            "unit": "B/op",
+            "extra": "519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGzipProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/logsgzipprocessor) - allocs/op",
+            "value": 10011,
+            "unit": "allocs/op",
+            "extra": "519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 65663,
+            "unit": "ns/op\t  202456 B/op\t     410 allocs/op",
+            "extra": "18007 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 65663,
+            "unit": "ns/op",
+            "extra": "18007 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202456,
+            "unit": "B/op",
+            "extra": "18007 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "18007 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 68048,
+            "unit": "ns/op\t  202416 B/op\t     410 allocs/op",
+            "extra": "18110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 68048,
+            "unit": "ns/op",
+            "extra": "18110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202416,
+            "unit": "B/op",
+            "extra": "18110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "18110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 70458,
+            "unit": "ns/op\t  202437 B/op\t     410 allocs/op",
+            "extra": "17907 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 70458,
+            "unit": "ns/op",
+            "extra": "17907 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202437,
+            "unit": "B/op",
+            "extra": "17907 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "17907 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 65621,
+            "unit": "ns/op\t  202432 B/op\t     410 allocs/op",
+            "extra": "18276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 65621,
+            "unit": "ns/op",
+            "extra": "18276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202432,
+            "unit": "B/op",
+            "extra": "18276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "18276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 66283,
+            "unit": "ns/op\t  202453 B/op\t     410 allocs/op",
+            "extra": "17958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 66283,
+            "unit": "ns/op",
+            "extra": "17958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202453,
+            "unit": "B/op",
+            "extra": "17958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "17958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 67513,
+            "unit": "ns/op\t  202452 B/op\t     410 allocs/op",
+            "extra": "17922 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 67513,
+            "unit": "ns/op",
+            "extra": "17922 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202452,
+            "unit": "B/op",
+            "extra": "17922 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "17922 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 74266,
+            "unit": "ns/op\t  202512 B/op\t     410 allocs/op",
+            "extra": "17859 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 74266,
+            "unit": "ns/op",
+            "extra": "17859 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202512,
+            "unit": "B/op",
+            "extra": "17859 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "17859 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 76766,
+            "unit": "ns/op\t  202560 B/op\t     410 allocs/op",
+            "extra": "15944 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 76766,
+            "unit": "ns/op",
+            "extra": "15944 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202560,
+            "unit": "B/op",
+            "extra": "15944 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "15944 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 77001,
+            "unit": "ns/op\t  202544 B/op\t     410 allocs/op",
+            "extra": "15994 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 77001,
+            "unit": "ns/op",
+            "extra": "15994 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202544,
+            "unit": "B/op",
+            "extra": "15994 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "15994 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 67770,
+            "unit": "ns/op\t  202354 B/op\t     410 allocs/op",
+            "extra": "16606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 67770,
+            "unit": "ns/op",
+            "extra": "16606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 202354,
+            "unit": "B/op",
+            "extra": "16606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_100 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 410,
+            "unit": "allocs/op",
+            "extra": "16606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 674870,
+            "unit": "ns/op\t 2303404 B/op\t    4099 allocs/op",
+            "extra": "1723 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 674870,
+            "unit": "ns/op",
+            "extra": "1723 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2303404,
+            "unit": "B/op",
+            "extra": "1723 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4099,
+            "unit": "allocs/op",
+            "extra": "1723 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 670137,
+            "unit": "ns/op\t 2303462 B/op\t    4100 allocs/op",
+            "extra": "1698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 670137,
+            "unit": "ns/op",
+            "extra": "1698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2303462,
+            "unit": "B/op",
+            "extra": "1698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4100,
+            "unit": "allocs/op",
+            "extra": "1698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 665376,
+            "unit": "ns/op\t 2303474 B/op\t    4100 allocs/op",
+            "extra": "1701 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 665376,
+            "unit": "ns/op",
+            "extra": "1701 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2303474,
+            "unit": "B/op",
+            "extra": "1701 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4100,
+            "unit": "allocs/op",
+            "extra": "1701 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 655890,
+            "unit": "ns/op\t 2303240 B/op\t    4099 allocs/op",
+            "extra": "1722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 655890,
+            "unit": "ns/op",
+            "extra": "1722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2303240,
+            "unit": "B/op",
+            "extra": "1722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4099,
+            "unit": "allocs/op",
+            "extra": "1722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 662736,
+            "unit": "ns/op\t 2302999 B/op\t    4098 allocs/op",
+            "extra": "1759 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 662736,
+            "unit": "ns/op",
+            "extra": "1759 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2302999,
+            "unit": "B/op",
+            "extra": "1759 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4098,
+            "unit": "allocs/op",
+            "extra": "1759 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 725691,
+            "unit": "ns/op\t 2303067 B/op\t    4098 allocs/op",
+            "extra": "1744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 725691,
+            "unit": "ns/op",
+            "extra": "1744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2303067,
+            "unit": "B/op",
+            "extra": "1744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4098,
+            "unit": "allocs/op",
+            "extra": "1744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 644587,
+            "unit": "ns/op\t 2302985 B/op\t    4098 allocs/op",
+            "extra": "1765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 644587,
+            "unit": "ns/op",
+            "extra": "1765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2302985,
+            "unit": "B/op",
+            "extra": "1765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4098,
+            "unit": "allocs/op",
+            "extra": "1765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 656245,
+            "unit": "ns/op\t 2304958 B/op\t    4107 allocs/op",
+            "extra": "1534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 656245,
+            "unit": "ns/op",
+            "extra": "1534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2304958,
+            "unit": "B/op",
+            "extra": "1534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4107,
+            "unit": "allocs/op",
+            "extra": "1534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 667601,
+            "unit": "ns/op\t 2303251 B/op\t    4099 allocs/op",
+            "extra": "1734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 667601,
+            "unit": "ns/op",
+            "extra": "1734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2303251,
+            "unit": "B/op",
+            "extra": "1734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4099,
+            "unit": "allocs/op",
+            "extra": "1734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 644540,
+            "unit": "ns/op\t 2303076 B/op\t    4098 allocs/op",
+            "extra": "1762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 644540,
+            "unit": "ns/op",
+            "extra": "1762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 2303076,
+            "unit": "B/op",
+            "extra": "1762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor/AppProtect_1000 (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 4098,
+            "unit": "allocs/op",
+            "extra": "1762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6100314,
+            "unit": "ns/op\t 4856349 B/op\t   24240 allocs/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6100314,
+            "unit": "ns/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4856349,
+            "unit": "B/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24240,
+            "unit": "allocs/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6115124,
+            "unit": "ns/op\t 4860187 B/op\t   24241 allocs/op",
+            "extra": "188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6115124,
+            "unit": "ns/op",
+            "extra": "188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4860187,
+            "unit": "B/op",
+            "extra": "188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24241,
+            "unit": "allocs/op",
+            "extra": "188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 5963546,
+            "unit": "ns/op\t 4850024 B/op\t   24238 allocs/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 5963546,
+            "unit": "ns/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4850024,
+            "unit": "B/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24238,
+            "unit": "allocs/op",
+            "extra": "195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6090392,
+            "unit": "ns/op\t 4852536 B/op\t   24237 allocs/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6090392,
+            "unit": "ns/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4852536,
+            "unit": "B/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24237,
+            "unit": "allocs/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6059569,
+            "unit": "ns/op\t 4850826 B/op\t   24238 allocs/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6059569,
+            "unit": "ns/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4850826,
+            "unit": "B/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24238,
+            "unit": "allocs/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6119674,
+            "unit": "ns/op\t 4853401 B/op\t   24242 allocs/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6119674,
+            "unit": "ns/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4853401,
+            "unit": "B/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24242,
+            "unit": "allocs/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6070732,
+            "unit": "ns/op\t 4851211 B/op\t   24238 allocs/op",
+            "extra": "198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6070732,
+            "unit": "ns/op",
+            "extra": "198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4851211,
+            "unit": "B/op",
+            "extra": "198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24238,
+            "unit": "allocs/op",
+            "extra": "198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 5976939,
+            "unit": "ns/op\t 4854718 B/op\t   24238 allocs/op",
+            "extra": "194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 5976939,
+            "unit": "ns/op",
+            "extra": "194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4854718,
+            "unit": "B/op",
+            "extra": "194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24238,
+            "unit": "allocs/op",
+            "extra": "194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6030694,
+            "unit": "ns/op\t 4850883 B/op\t   24240 allocs/op",
+            "extra": "204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6030694,
+            "unit": "ns/op",
+            "extra": "204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4850883,
+            "unit": "B/op",
+            "extra": "204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24240,
+            "unit": "allocs/op",
+            "extra": "204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor)",
+            "value": 6091984,
+            "unit": "ns/op\t 4854926 B/op\t   24240 allocs/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - ns/op",
+            "value": 6091984,
+            "unit": "ns/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - B/op",
+            "value": 4854926,
+            "unit": "B/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSecurityViolationsProcessor_Concurrent (github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor) - allocs/op",
+            "value": 24240,
+            "unit": "allocs/op",
+            "extra": "196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 882867,
+            "unit": "ns/op\t  279552 B/op\t    1359 allocs/op",
+            "extra": "1350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 882867,
+            "unit": "ns/op",
+            "extra": "1350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 279552,
+            "unit": "B/op",
+            "extra": "1350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 883952,
+            "unit": "ns/op\t  279157 B/op\t    1359 allocs/op",
+            "extra": "1396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 883952,
+            "unit": "ns/op",
+            "extra": "1396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 279157,
+            "unit": "B/op",
+            "extra": "1396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 882927,
+            "unit": "ns/op\t  279686 B/op\t    1360 allocs/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 882927,
+            "unit": "ns/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 279686,
+            "unit": "B/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1360,
+            "unit": "allocs/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 884578,
+            "unit": "ns/op\t  278420 B/op\t    1359 allocs/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 884578,
+            "unit": "ns/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 278420,
+            "unit": "B/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 878304,
+            "unit": "ns/op\t  278836 B/op\t    1359 allocs/op",
+            "extra": "1335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 878304,
+            "unit": "ns/op",
+            "extra": "1335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 278836,
+            "unit": "B/op",
+            "extra": "1335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 879511,
+            "unit": "ns/op\t  279044 B/op\t    1359 allocs/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 879511,
+            "unit": "ns/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 279044,
+            "unit": "B/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 890619,
+            "unit": "ns/op\t  278940 B/op\t    1359 allocs/op",
+            "extra": "1365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 890619,
+            "unit": "ns/op",
+            "extra": "1365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 278940,
+            "unit": "B/op",
+            "extra": "1365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 939886,
+            "unit": "ns/op\t  278187 B/op\t    1359 allocs/op",
+            "extra": "1242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 939886,
+            "unit": "ns/op",
+            "extra": "1242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 278187,
+            "unit": "B/op",
+            "extra": "1242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 891929,
+            "unit": "ns/op\t  278980 B/op\t    1359 allocs/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 891929,
+            "unit": "ns/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 278980,
+            "unit": "B/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 898022,
+            "unit": "ns/op\t  278713 B/op\t    1359 allocs/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 898022,
+            "unit": "ns/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 278713,
+            "unit": "B/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 1359,
+            "unit": "allocs/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1903064,
+            "unit": "ns/op\t  516209 B/op\t    8139 allocs/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1903064,
+            "unit": "ns/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 516209,
+            "unit": "B/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1899729,
+            "unit": "ns/op\t  515996 B/op\t    8139 allocs/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1899729,
+            "unit": "ns/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 515996,
+            "unit": "B/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1889190,
+            "unit": "ns/op\t  514215 B/op\t    8139 allocs/op",
+            "extra": "634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1889190,
+            "unit": "ns/op",
+            "extra": "634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 514215,
+            "unit": "B/op",
+            "extra": "634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1916701,
+            "unit": "ns/op\t  515743 B/op\t    8139 allocs/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1916701,
+            "unit": "ns/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 515743,
+            "unit": "B/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1886255,
+            "unit": "ns/op\t  516285 B/op\t    8139 allocs/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1886255,
+            "unit": "ns/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 516285,
+            "unit": "B/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1886514,
+            "unit": "ns/op\t  516524 B/op\t    8140 allocs/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1886514,
+            "unit": "ns/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 516524,
+            "unit": "B/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8140,
+            "unit": "allocs/op",
+            "extra": "631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1890298,
+            "unit": "ns/op\t  515904 B/op\t    8139 allocs/op",
+            "extra": "640 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1890298,
+            "unit": "ns/op",
+            "extra": "640 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 515904,
+            "unit": "B/op",
+            "extra": "640 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "640 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1869010,
+            "unit": "ns/op\t  516175 B/op\t    8139 allocs/op",
+            "extra": "630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1869010,
+            "unit": "ns/op",
+            "extra": "630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 516175,
+            "unit": "B/op",
+            "extra": "630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1897464,
+            "unit": "ns/op\t  516387 B/op\t    8139 allocs/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1897464,
+            "unit": "ns/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 516387,
+            "unit": "B/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 1903239,
+            "unit": "ns/op\t  516255 B/op\t    8139 allocs/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 1903239,
+            "unit": "ns/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 516255,
+            "unit": "B/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 8139,
+            "unit": "allocs/op",
+            "extra": "632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3407660,
+            "unit": "ns/op\t  784680 B/op\t   15459 allocs/op",
+            "extra": "333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3407660,
+            "unit": "ns/op",
+            "extra": "333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 784680,
+            "unit": "B/op",
+            "extra": "333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3423209,
+            "unit": "ns/op\t  783537 B/op\t   15459 allocs/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3423209,
+            "unit": "ns/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 783537,
+            "unit": "B/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3381995,
+            "unit": "ns/op\t  783945 B/op\t   15459 allocs/op",
+            "extra": "350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3381995,
+            "unit": "ns/op",
+            "extra": "350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 783945,
+            "unit": "B/op",
+            "extra": "350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3393944,
+            "unit": "ns/op\t  784942 B/op\t   15459 allocs/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3393944,
+            "unit": "ns/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 784942,
+            "unit": "B/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3989511,
+            "unit": "ns/op\t  783991 B/op\t   15459 allocs/op",
+            "extra": "286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3989511,
+            "unit": "ns/op",
+            "extra": "286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 783991,
+            "unit": "B/op",
+            "extra": "286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3417420,
+            "unit": "ns/op\t  783755 B/op\t   15459 allocs/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3417420,
+            "unit": "ns/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 783755,
+            "unit": "B/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3419932,
+            "unit": "ns/op\t  784720 B/op\t   15459 allocs/op",
+            "extra": "352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3419932,
+            "unit": "ns/op",
+            "extra": "352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 784720,
+            "unit": "B/op",
+            "extra": "352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3401930,
+            "unit": "ns/op\t  784506 B/op\t   15459 allocs/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3401930,
+            "unit": "ns/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 784506,
+            "unit": "B/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3474989,
+            "unit": "ns/op\t  786434 B/op\t   15459 allocs/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3474989,
+            "unit": "ns/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 786434,
+            "unit": "B/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 3460994,
+            "unit": "ns/op\t  784397 B/op\t   15459 allocs/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 3460994,
+            "unit": "ns/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 784397,
+            "unit": "B/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 15459,
+            "unit": "allocs/op",
+            "extra": "349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4981475,
+            "unit": "ns/op\t 1048219 B/op\t   22732 allocs/op",
+            "extra": "243 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4981475,
+            "unit": "ns/op",
+            "extra": "243 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1048219,
+            "unit": "B/op",
+            "extra": "243 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "243 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4898204,
+            "unit": "ns/op\t 1044938 B/op\t   22732 allocs/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4898204,
+            "unit": "ns/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1044938,
+            "unit": "B/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4831280,
+            "unit": "ns/op\t 1046026 B/op\t   22732 allocs/op",
+            "extra": "238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4831280,
+            "unit": "ns/op",
+            "extra": "238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1046026,
+            "unit": "B/op",
+            "extra": "238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 5031681,
+            "unit": "ns/op\t 1049882 B/op\t   22732 allocs/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 5031681,
+            "unit": "ns/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1049882,
+            "unit": "B/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4802508,
+            "unit": "ns/op\t 1045771 B/op\t   22732 allocs/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4802508,
+            "unit": "ns/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1045771,
+            "unit": "B/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4846497,
+            "unit": "ns/op\t 1047340 B/op\t   22732 allocs/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4846497,
+            "unit": "ns/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1047340,
+            "unit": "B/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4885517,
+            "unit": "ns/op\t 1047425 B/op\t   22732 allocs/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4885517,
+            "unit": "ns/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1047425,
+            "unit": "B/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4911657,
+            "unit": "ns/op\t 1044992 B/op\t   22732 allocs/op",
+            "extra": "253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4911657,
+            "unit": "ns/op",
+            "extra": "253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1044992,
+            "unit": "B/op",
+            "extra": "253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4996668,
+            "unit": "ns/op\t 1045868 B/op\t   22732 allocs/op",
+            "extra": "249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4996668,
+            "unit": "ns/op",
+            "extra": "249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1045868,
+            "unit": "B/op",
+            "extra": "249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 4896266,
+            "unit": "ns/op\t 1047172 B/op\t   22732 allocs/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 4896266,
+            "unit": "ns/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 1047172,
+            "unit": "B/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 22732,
+            "unit": "allocs/op",
+            "extra": "244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 14110490,
+            "unit": "ns/op\t 2687180 B/op\t   67433 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 14110490,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2687180,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67433,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 14188920,
+            "unit": "ns/op\t 2684233 B/op\t   67433 allocs/op",
+            "extra": "94 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 14188920,
+            "unit": "ns/op",
+            "extra": "94 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2684233,
+            "unit": "B/op",
+            "extra": "94 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67433,
+            "unit": "allocs/op",
+            "extra": "94 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 14139949,
+            "unit": "ns/op\t 2686690 B/op\t   67433 allocs/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 14139949,
+            "unit": "ns/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2686690,
+            "unit": "B/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67433,
+            "unit": "allocs/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 14038999,
+            "unit": "ns/op\t 2691950 B/op\t   67434 allocs/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 14038999,
+            "unit": "ns/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2691950,
+            "unit": "B/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67434,
+            "unit": "allocs/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 13777497,
+            "unit": "ns/op\t 2689101 B/op\t   67433 allocs/op",
+            "extra": "86 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 13777497,
+            "unit": "ns/op",
+            "extra": "86 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2689101,
+            "unit": "B/op",
+            "extra": "86 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67433,
+            "unit": "allocs/op",
+            "extra": "86 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 13943860,
+            "unit": "ns/op\t 2691525 B/op\t   67434 allocs/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 13943860,
+            "unit": "ns/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2691525,
+            "unit": "B/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67434,
+            "unit": "allocs/op",
+            "extra": "90 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 14080137,
+            "unit": "ns/op\t 2687445 B/op\t   67433 allocs/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 14080137,
+            "unit": "ns/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2687445,
+            "unit": "B/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67433,
+            "unit": "allocs/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 14070788,
+            "unit": "ns/op\t 2688468 B/op\t   67433 allocs/op",
+            "extra": "93 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 14070788,
+            "unit": "ns/op",
+            "extra": "93 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2688468,
+            "unit": "B/op",
+            "extra": "93 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67433,
+            "unit": "allocs/op",
+            "extra": "93 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 14102508,
+            "unit": "ns/op\t 2694115 B/op\t   67434 allocs/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 14102508,
+            "unit": "ns/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2694115,
+            "unit": "B/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67434,
+            "unit": "allocs/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 13971318,
+            "unit": "ns/op\t 2694264 B/op\t   67434 allocs/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 13971318,
+            "unit": "ns/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 2694264,
+            "unit": "B/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 67434,
+            "unit": "allocs/op",
+            "extra": "84 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56786,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56786,
+            "unit": "ns/op",
+            "extra": "21012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56916,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21010 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56916,
+            "unit": "ns/op",
+            "extra": "21010 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21010 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21010 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56221,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21331 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56221,
+            "unit": "ns/op",
+            "extra": "21331 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21331 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21331 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56915,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56915,
+            "unit": "ns/op",
+            "extra": "20746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56979,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56979,
+            "unit": "ns/op",
+            "extra": "20997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57022,
+            "unit": "ns/op\t  112705 B/op\t      50 allocs/op",
+            "extra": "20779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57022,
+            "unit": "ns/op",
+            "extra": "20779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112705,
+            "unit": "B/op",
+            "extra": "20779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56993,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21241 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56993,
+            "unit": "ns/op",
+            "extra": "21241 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21241 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21241 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56854,
+            "unit": "ns/op\t  112705 B/op\t      50 allocs/op",
+            "extra": "21136 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56854,
+            "unit": "ns/op",
+            "extra": "21136 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112705,
+            "unit": "B/op",
+            "extra": "21136 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21136 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57444,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57444,
+            "unit": "ns/op",
+            "extra": "21078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57186,
+            "unit": "ns/op\t  112705 B/op\t      50 allocs/op",
+            "extra": "20772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57186,
+            "unit": "ns/op",
+            "extra": "20772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112705,
+            "unit": "B/op",
+            "extra": "20772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57560,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57560,
+            "unit": "ns/op",
+            "extra": "20698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20698 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57238,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57238,
+            "unit": "ns/op",
+            "extra": "20688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 63462,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "18247 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 63462,
+            "unit": "ns/op",
+            "extra": "18247 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "18247 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "18247 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57862,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20727 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57862,
+            "unit": "ns/op",
+            "extra": "20727 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20727 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20727 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 58121,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 58121,
+            "unit": "ns/op",
+            "extra": "21070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57632,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57632,
+            "unit": "ns/op",
+            "extra": "20253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57348,
+            "unit": "ns/op\t  112705 B/op\t      50 allocs/op",
+            "extra": "20913 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57348,
+            "unit": "ns/op",
+            "extra": "20913 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112705,
+            "unit": "B/op",
+            "extra": "20913 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20913 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57443,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57443,
+            "unit": "ns/op",
+            "extra": "20731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57525,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57525,
+            "unit": "ns/op",
+            "extra": "21046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57569,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20599 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57569,
+            "unit": "ns/op",
+            "extra": "20599 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20599 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20599 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57398,
+            "unit": "ns/op\t  112705 B/op\t      50 allocs/op",
+            "extra": "20335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57398,
+            "unit": "ns/op",
+            "extra": "20335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112705,
+            "unit": "B/op",
+            "extra": "20335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 58166,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 58166,
+            "unit": "ns/op",
+            "extra": "20870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57111,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57111,
+            "unit": "ns/op",
+            "extra": "20634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57195,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57195,
+            "unit": "ns/op",
+            "extra": "20667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56810,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20961 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56810,
+            "unit": "ns/op",
+            "extra": "20961 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20961 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20961 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57398,
+            "unit": "ns/op\t  112705 B/op\t      50 allocs/op",
+            "extra": "20858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57398,
+            "unit": "ns/op",
+            "extra": "20858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112705,
+            "unit": "B/op",
+            "extra": "20858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57337,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "21042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57337,
+            "unit": "ns/op",
+            "extra": "21042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "21042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "21042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57978,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57978,
+            "unit": "ns/op",
+            "extra": "20902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 57849,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20401 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 57849,
+            "unit": "ns/op",
+            "extra": "20401 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20401 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20401 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config)",
+            "value": 56799,
+            "unit": "ns/op\t  112704 B/op\t      50 allocs/op",
+            "extra": "20584 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - ns/op",
+            "value": 56799,
+            "unit": "ns/op",
+            "extra": "20584 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - B/op",
+            "value": 112704,
+            "unit": "B/op",
+            "extra": "20584 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB (github.com/nginx/agent/v3/internal/datasource/config) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "20584 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 271.1,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4442564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 271.1,
+            "unit": "ns/op",
+            "extra": "4442564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4442564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4442564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 270.4,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4445320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 270.4,
+            "unit": "ns/op",
+            "extra": "4445320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4445320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4445320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 271.5,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4435266 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 271.5,
+            "unit": "ns/op",
+            "extra": "4435266 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4435266 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4435266 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 282.4,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4426036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 282.4,
+            "unit": "ns/op",
+            "extra": "4426036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4426036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4426036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 270.7,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "3783507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 270.7,
+            "unit": "ns/op",
+            "extra": "3783507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "3783507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "3783507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 282.3,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4461094 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 282.3,
+            "unit": "ns/op",
+            "extra": "4461094 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4461094 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4461094 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 299,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "3559202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 299,
+            "unit": "ns/op",
+            "extra": "3559202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "3559202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "3559202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 271,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4379112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 271,
+            "unit": "ns/op",
+            "extra": "4379112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4379112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4379112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 271.8,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4452706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 271.8,
+            "unit": "ns/op",
+            "extra": "4452706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4452706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4452706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files)",
+            "value": 270.6,
+            "unit": "ns/op\t     176 B/op\t       5 allocs/op",
+            "extra": "4426035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - ns/op",
+            "value": 270.6,
+            "unit": "ns/op",
+            "extra": "4426035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - B/op",
+            "value": 176,
+            "unit": "B/op",
+            "extra": "4426035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion (github.com/nginx/agent/v3/pkg/files) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "4426035 times\n4 procs"
           }
         ]
       }
