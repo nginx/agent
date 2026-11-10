@@ -94,8 +94,9 @@ func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error 
 		httpClient = socketClient(ctx, strings.TrimPrefix(nps.cfg.APIDetails.Listen, "unix:"))
 	}
 
+	// WithHTTPClient must be applied before WithMaxAPIVersion.
 	plusClient, err := plusapi.NewNginxClient(endpoint,
-		plusapi.WithMaxAPIVersion(), plusapi.WithHTTPClient(httpClient),
+		plusapi.WithHTTPClient(httpClient), plusapi.WithMaxAPIVersion(),
 	)
 	nps.plusClient = plusClient
 	if err != nil {

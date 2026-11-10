@@ -435,8 +435,9 @@ func (n *NginxService) createPlusClient(ctx context.Context, instance *mpi.Insta
 			strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
 	}
 
+	// WithHTTPClient must be applied before WithMaxAPIVersion.
 	return client.NewNginxClient(endpoint,
-		client.WithMaxAPIVersion(), client.WithHTTPClient(httpClient),
+		client.WithHTTPClient(httpClient), client.WithMaxAPIVersion(),
 	)
 }
 
