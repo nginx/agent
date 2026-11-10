@@ -283,6 +283,19 @@ func ClearManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress s
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
+// WaitAndClearManagementPlaneResponses waits for numberOfExpectedResponses to arrive (allowing
+// pending file-watcher-triggered upload/apply cycles to settle), then clears the buffer.
+// Use this before triggering a deliberate config apply when agent container files have just
+// been modified, to avoid the deliberate apply's response being confused with watcher responses.
+func WaitAndClearManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
+	mockManagementPlaneAPIAddress string,
+) {
+	t.Helper()
+
+	ManagementPlaneResponses(t, numberOfExpectedResponses, mockManagementPlaneAPIAddress)
+	ClearManagementPlaneResponses(t, mockManagementPlaneAPIAddress)
+}
+
 func VerifyConnection(t *testing.T, instancesLength int, mockManagementPlaneAPIAddress string) string {
 	t.Helper()
 
