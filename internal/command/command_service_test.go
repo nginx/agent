@@ -526,6 +526,42 @@ func TestCommandService_isValidRequest(t *testing.T) {
 			},
 			result: false,
 		},
+		{
+			name: "Test 8: valid content update request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ContentUpdateRequest{
+					ContentUpdateRequest: &mpi.ContentUpdateRequest{
+						Overview: &mpi.FileOverview{
+							Files: make([]*mpi.File, 0),
+							ConfigVersion: &mpi.ConfigVersion{
+								InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
+								Version:    "e23brbei3u2bru93",
+							},
+						},
+					},
+				},
+			},
+			result: true,
+		},
+		{
+			name: "Test 9: invalid content update request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ContentUpdateRequest{
+					ContentUpdateRequest: &mpi.ContentUpdateRequest{
+						Overview: &mpi.FileOverview{
+							Files: make([]*mpi.File, 0),
+							ConfigVersion: &mpi.ConfigVersion{
+								InstanceId: "unknown-id",
+								Version:    "e23brbei3u2bru93",
+							},
+						},
+					},
+				},
+			},
+			result: false,
+		},
 	}
 
 	for _, testCase := range testCases {

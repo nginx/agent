@@ -655,6 +655,7 @@ func TestNginx_Subscriptions(t *testing.T) {
 			bus.ConfigUploadRequestTopic,
 			bus.ResourceUpdateTopic,
 			bus.ConfigApplyRequestTopic,
+			bus.ContentUpdateRequestTopic,
 		},
 		nginxPlugin.Subscriptions())
 

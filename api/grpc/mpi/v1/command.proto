@@ -161,6 +161,7 @@ message DataPlaneResponse {
         API_ACTION_REQUEST = 5; 
         COMMAND_STATUS_REQUEST = 6; 
         UPDATE_AGENT_CONFIG_REQUEST = 7;
+        CONTENT_UPDATE_REQUEST = 8;
     }
 
     // Meta-information associated with a message
@@ -193,6 +194,8 @@ message ManagementPlaneRequest {
         CommandStatusRequest command_status_request = 8;
         // triggers an update to the NGINX Agent configuration
         UpdateAgentConfigRequest update_agent_config_request = 9;
+        // triggers a content update for one or more files
+        ContentUpdateRequest content_update_request = 10;
     }
 }
 
@@ -210,6 +213,13 @@ message ConfigApplyRequest {
 
 // Additional information associated with a ConfigUploadRequest
 message ConfigUploadRequest {
+    // set of files related to the request
+    mpi.v1.FileOverview overview = 1;
+}
+
+// Additional information associated with a ContentUpdateRequest
+// Used to update the contents of one or more files
+message ContentUpdateRequest {
     // set of files related to the request
     mpi.v1.FileOverview overview = 1;
 }
