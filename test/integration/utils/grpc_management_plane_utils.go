@@ -235,13 +235,13 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
 	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
-			responseData := r.Body()
-			assert.True(t, json.Valid(responseData))
-
-			response := []*mpi.DataPlaneResponse{}
-			unmarshalErr := json.Unmarshal(responseData, &response)
-			require.NoError(t, unmarshalErr)
-
+			if !json.Valid(r.Body()) {
+				return true
+			}
+			var response []*mpi.DataPlaneResponse
+			if json.Unmarshal(r.Body(), &response) != nil {
+				return true
+			}
 			return len(response) != numberOfExpectedResponses || r.StatusCode() == http.StatusNotFound
 		},
 	)

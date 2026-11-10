@@ -51,6 +51,10 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) SetupSuite() {
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
+	if s.T().Failed() {
+		s.T().FailNow()
+	}
 }
 
 func (s *ConfigApplyUnreferencedFilesTestSuite) TearDownSuite() {
