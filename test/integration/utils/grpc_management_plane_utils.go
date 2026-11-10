@@ -123,13 +123,8 @@ func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless, au
 func CreateContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.DockerNetwork {
 	tb.Helper()
 	containerNetwork, err := network.New(ctx, network.WithAttachable())
+	testcontainers.CleanupNetwork(tb, containerNetwork)
 	require.NoError(tb, err)
-	tb.Cleanup(func() {
-		networkErr := containerNetwork.Remove(ctx)
-		if networkErr != nil {
-			tb.Logf("Error removing container network: %v", networkErr)
-		}
-	})
 
 	return containerNetwork
 }
