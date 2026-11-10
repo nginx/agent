@@ -223,6 +223,9 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test3_DataPlaneUpdate() {
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 	slog.Info("starting config apply invalid config test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
+
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/invalid-nginx.conf",
@@ -268,6 +271,9 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test5_TestFileNotInAllowedDirectory() {
 	slog.Info("starting config apply file not in allowed directory test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
+
 	utils.PerformInvalidConfigApply(s.T(), s.nginxInstanceID)
 
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
