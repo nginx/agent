@@ -65,7 +65,9 @@ func BenchmarkGzipProcessor(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				_ = p.ConsumeLogs(context.Background(), logs)
+				logsCopy := plog.NewLogs()
+				logs.CopyTo(logsCopy)
+				_ = p.ConsumeLogs(context.Background(), logsCopy)
 			}
 		})
 	}
