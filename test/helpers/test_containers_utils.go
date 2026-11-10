@@ -319,7 +319,7 @@ func StartMockManagementPlaneGrpcContainer(
 		},
 		WaitingFor: wait.ForAll(
 			wait.ForLog("Starting mock management plane gRPC server"),
-			wait.ForListeningPort("9092/tcp"),
+			wait.ForMappedPort("9092/tcp"),
 		),
 	}
 
@@ -355,7 +355,7 @@ func StartAuxiliaryMockManagementPlaneGrpcContainer(ctx context.Context, tb test
 		},
 		WaitingFor: wait.ForAll(
 			wait.ForLog("Starting mock management plane gRPC server"),
-			wait.ForListeningPort("9095/tcp"),
+			wait.ForMappedPort("9095/tcp"),
 		),
 	}
 
@@ -398,8 +398,8 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 			},
 			WaitingFor: wait.ForAll(
 				wait.ForLog("Everything is ready. Begin running and processing data."),
-				wait.ForListeningPort("4317/tcp"),
-				wait.ForListeningPort("9775/tcp"),
+				wait.ForMappedPort("4317/tcp"),
+				wait.ForMappedPort("9775/tcp"),
 			),
 		},
 		Started: true,
