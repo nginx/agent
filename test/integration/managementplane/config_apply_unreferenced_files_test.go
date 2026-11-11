@@ -121,8 +121,6 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdateUnreferencedInDataPlane() {
 	slog.Info("starting update unreferenced file in data plane test")
 
-	baseline := utils.CountManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
-
 	code, _, updateErr := utils.Container.Exec(s.ctx, []string{
 		"sh", "-c", "echo '# Updated unreferenced file' >> /etc/nginx/test/unreferenced_file.conf",
 	})
@@ -130,11 +128,15 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	s.Require().NoError(updateErr)
 	s.Equal(0, code)
 
-	// Wait for the file-watcher response from the append above, then clear before the deliberate apply.
-	utils.WaitAndClearManagementPlaneResponses(s.T(), baseline+1, utils.MockManagementPlaneAPIAddress)
-
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
+
+	// Read the response immediately before any cascade applies can accumulate in the buffer.
+	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	s.T().Logf("Config apply responses: %v", responses)
+
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 
 	dataPlaneCode, dataPlaneFileContent, dataPlaneOutputErr := utils.Container.Exec(s.ctx, []string{
 		"cat", "/etc/nginx/test/unreferenced_file.conf",
@@ -148,9 +150,6 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	})
 	s.Require().NoError(mockOutputErr)
 	s.Equal(0, mockCode)
-
-	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
-	s.T().Logf("Config apply responses: %v", responses)
 
 	manifestFiles := utils.ManifestFiles()
 
@@ -167,8 +166,6 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	s.Require().NoError(err)
 	s.Equal(0, code)
 
-	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	s.NotEqual(dataPlaneFileContent, mockFileContent)
 	slog.Info("finished update unreferenced file in data plane test")
 }
