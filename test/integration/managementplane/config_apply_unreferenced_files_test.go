@@ -131,13 +131,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
 
-	// Read the response immediately before any cascade applies can accumulate in the buffer.
-	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
-	s.T().Logf("Config apply responses: %v", responses)
-
-	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
-
+	// Capture file contents while the apply is completing so we see the agent's
+	// locally-modified version before any potential overwrite.
 	dataPlaneCode, dataPlaneFileContent, dataPlaneOutputErr := utils.Container.Exec(s.ctx, []string{
 		"cat", "/etc/nginx/test/unreferenced_file.conf",
 	})
@@ -150,6 +145,9 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	})
 	s.Require().NoError(mockOutputErr)
 	s.Equal(0, mockCode)
+
+	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	s.T().Logf("Config apply responses: %v", responses)
 
 	manifestFiles := utils.ManifestFiles()
 
@@ -166,6 +164,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	s.Require().NoError(err)
 	s.Equal(0, code)
 
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	s.NotEqual(dataPlaneFileContent, mockFileContent)
 	slog.Info("finished update unreferenced file in data plane test")
 }
