@@ -23,6 +23,15 @@ import (
 	"github.com/nginx/agent/v3/pkg/id"
 )
 
+const (
+	apiActionFieldMsg        = "API action failed"
+	configApplyFailedMsg     = "Config apply failed"
+	contentUpdateFailedMsg   = "Content update failed"
+	configUploadFailedMsg    = "Config upload failed"
+	configFeatureDisabledMsg = "Configuration feature is disabled"
+	apiActionDisabledMsg     = "API action feature is disabled"
+)
+
 var _ bus.Plugin = (*CommandPlugin)(nil)
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.11.2 -generate
@@ -340,7 +349,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	}
 }
 
-//nolint:revive,cyclop // cognitive complexity is 14
+//nolint:revive,cyclop,gocognit // cognitive complexity is 22
 func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 	for {
 		select {
@@ -362,7 +371,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform config apply",
 						"command_server_type", cp.commandServerType.String())
-					cp.handleInvalidRequest(newCtx, message, "Config apply failed",
+					cp.handleInvalidRequest(newCtx, message, configApplyFailedMsg,
 						message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId())
 
 					continue
@@ -377,7 +386,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform api action",
 						"command_server_type", cp.commandServerType.String())
-					cp.handleInvalidRequest(newCtx, message, "API action failed",
+					cp.handleInvalidRequest(newCtx, message, apiActionFieldMsg,
 						message.GetActionRequest().GetInstanceId())
 
 					continue
@@ -395,6 +404,17 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				}
 
 				cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: message})
+			case *mpi.ManagementPlaneRequest_ContentUpdateRequest:
+				if cp.commandServerType != model.Command {
+					slog.WarnContext(newCtx, "Auxiliary command server can not perform content update",
+						"command_server_type", cp.commandServerType.String())
+					cp.handleInvalidRequest(newCtx, message, contentUpdateFailedMsg,
+						message.GetContentUpdateRequest().GetOverview().GetConfigVersion().GetInstanceId())
+
+					continue
+				}
+				slog.InfoContext(ctx, "Received management plane content update request")
+				cp.handleContentUpdateRequest(newCtx, message)
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}
@@ -402,28 +422,28 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 	}
 }
 
-func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mpi.ManagementPlaneRequest) {
+func (cp *CommandPlugin) handleAPIActionRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
 	cfg := cp.config()
 	if cfg.IsFeatureEnabled(pkgConfig.FeatureAPIAction) {
-		cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.APIActionRequestTopic, Data: message})
+		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.APIActionRequestTopic, Data: message})
 	} else {
 		slog.WarnContext(
-			ctx,
+			newCtx,
 			"API action feature disabled. Unable to process API action request",
 			"request", message, "enabled_features", cfg.Features,
 		)
 
-		err := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
+		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
 			MessageMeta: message.GetMessageMeta(),
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "API action failed",
-				Error:   "API action feature is disabled",
+				Message: apiActionFieldMsg,
+				Error:   apiActionDisabledMsg,
 			},
 			InstanceId: message.GetActionRequest().GetInstanceId(),
 		})
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
+			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
 		}
 	}
 }
@@ -443,10 +463,36 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 			MessageMeta: message.GetMessageMeta(),
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "Config apply failed",
-				Error:   "Configuration feature is disabled",
+				Message: configApplyFailedMsg,
+				Error:   configFeatureDisabledMsg,
 			},
 			InstanceId: message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId(),
+		})
+		if err != nil {
+			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
+		}
+	}
+}
+
+func (cp *CommandPlugin) handleContentUpdateRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
+	cfg := cp.config()
+	if cfg.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
+		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ContentUpdateRequestTopic, Data: message})
+	} else {
+		slog.WarnContext(
+			newCtx,
+			"Configuration feature disabled. Unable to process content update request",
+			"request", message, "enabled_features", cfg.Features,
+		)
+
+		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
+			MessageMeta: message.GetMessageMeta(),
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: contentUpdateFailedMsg,
+				Error:   configFeatureDisabledMsg,
+			},
+			InstanceId: message.GetContentUpdateRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
 		if err != nil {
 			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
@@ -469,8 +515,8 @@ func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, messa
 			MessageMeta: message.GetMessageMeta(),
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "Config upload failed",
-				Error:   "Configuration feature is disabled",
+				Message: configUploadFailedMsg,
+				Error:   configFeatureDisabledMsg,
 			},
 			InstanceId: message.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
