@@ -271,6 +271,23 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
 	return response
 }
 
+// CountManagementPlaneResponses returns the current number of responses in the mock's buffer.
+// Use this before modifying agent files to establish a baseline, then pass baseline+expected
+// into WaitAndClearManagementPlaneResponses.
+func CountManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress string) int {
+	t.Helper()
+
+	client := resty.New()
+	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().Get(url)
+	require.NoError(t, err)
+
+	var responses []*mpi.DataPlaneResponse
+	require.NoError(t, json.Unmarshal(resp.Body(), &responses))
+
+	return len(responses)
+}
+
 func ClearManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 

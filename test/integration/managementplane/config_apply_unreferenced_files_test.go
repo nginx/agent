@@ -121,6 +121,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdateUnreferencedInDataPlane() {
 	slog.Info("starting update unreferenced file in data plane test")
 
+	baseline := utils.CountManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
+
 	code, _, updateErr := utils.Container.Exec(s.ctx, []string{
 		"sh", "-c", "echo '# Updated unreferenced file' >> /etc/nginx/test/unreferenced_file.conf",
 	})
@@ -128,8 +130,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	s.Require().NoError(updateErr)
 	s.Equal(0, code)
 
-	// Wait for any file-watcher-triggered upload cycles from the append above to settle,
-	utils.WaitAndClearManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
+	// Wait for the file-watcher response from the append above, then clear before the deliberate apply.
+	utils.WaitAndClearManagementPlaneResponses(s.T(), baseline+1, utils.MockManagementPlaneAPIAddress)
 
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
