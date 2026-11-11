@@ -131,8 +131,6 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
 
-	// Capture file contents while the apply is completing so we see the agent's
-	// locally-modified version before any potential overwrite.
 	dataPlaneCode, dataPlaneFileContent, dataPlaneOutputErr := utils.Container.Exec(s.ctx, []string{
 		"cat", "/etc/nginx/test/unreferenced_file.conf",
 	})

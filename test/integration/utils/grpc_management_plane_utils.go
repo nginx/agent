@@ -271,23 +271,6 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
 	return response
 }
 
-// CountManagementPlaneResponses returns the current number of responses in the mock's buffer.
-// Use this before modifying agent files to establish a baseline, then pass baseline+expected
-// into WaitAndClearManagementPlaneResponses.
-func CountManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress string) int {
-	t.Helper()
-
-	client := resty.New()
-	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().Get(url)
-	require.NoError(t, err)
-
-	var responses []*mpi.DataPlaneResponse
-	require.NoError(t, json.Unmarshal(resp.Body(), &responses))
-
-	return len(responses)
-}
-
 func ClearManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
@@ -298,19 +281,6 @@ func ClearManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress s
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
-}
-
-// WaitAndClearManagementPlaneResponses waits for numberOfExpectedResponses to arrive (allowing
-// pending file-watcher-triggered upload/apply cycles to settle), then clears the buffer.
-// Use this before triggering a deliberate config apply when agent container files have just
-// been modified, to avoid the deliberate apply's response being confused with watcher responses.
-func WaitAndClearManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
-	mockManagementPlaneAPIAddress string,
-) {
-	t.Helper()
-
-	ManagementPlaneResponses(t, numberOfExpectedResponses, mockManagementPlaneAPIAddress)
-	ClearManagementPlaneResponses(t, mockManagementPlaneAPIAddress)
 }
 
 func VerifyConnection(t *testing.T, instancesLength int, mockManagementPlaneAPIAddress string) string {
