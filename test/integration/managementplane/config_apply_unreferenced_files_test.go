@@ -164,7 +164,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
-	s.NotEqual(dataPlaneFileContent, mockFileContent)
+	s.Equal(dataPlaneFileContent, mockFileContent)
 	slog.Info("finished update unreferenced file in data plane test")
 }
 
