@@ -45,7 +45,9 @@ func (s *MPITestSuite) SetupSuite() {
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
-	s.False(s.T().Failed())
+	if s.T().Failed() {
+		s.T().FailNow()
+	}
 }
 
 func (s *MPITestSuite) TestConfigUpload() {
