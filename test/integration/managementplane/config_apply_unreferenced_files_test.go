@@ -8,6 +8,7 @@ package managementplane
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"sort"
@@ -15,9 +16,11 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/integration/utils"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const unrefConfigApplyRequestBody = `{
@@ -131,21 +134,13 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
 
-	dataPlaneCode, dataPlaneFileContent, dataPlaneOutputErr := utils.Container.Exec(s.ctx, []string{
-		"cat", "/etc/nginx/test/unreferenced_file.conf",
-	})
-	s.Require().NoError(dataPlaneOutputErr)
-	s.Equal(0, dataPlaneCode)
-
-	mockCode, mockFileContent, mockOutputErr := utils.MockManagementPlaneGrpcContainer.Exec(s.ctx, []string{
-		"cat",
-		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/test/unreferenced_file.conf", s.nginxInstanceID),
-	})
-	s.Require().NoError(mockOutputErr)
-	s.Equal(0, mockCode)
-
+	// Config apply is asynchronous. Wait for the data plane response before inspecting any files,
+	// otherwise the reads below race the agent's file writes and the assertions are non-deterministic.
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
+
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 
 	manifestFiles := utils.ManifestFiles()
 
@@ -162,9 +157,13 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	s.Require().NoError(err)
 	s.Equal(0, code)
 
-	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
-	s.Equal(dataPlaneFileContent, mockFileContent)
+	dataPlaneFileContent := s.readContainerFile(utils.Container,
+		"/etc/nginx/test/unreferenced_file.conf")
+	mockFileContent := s.readContainerFile(utils.MockManagementPlaneGrpcContainer,
+		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/test/unreferenced_file.conf", s.nginxInstanceID))
+
+	s.NotContains(dataPlaneFileContent, "# Updated unreferenced file")
+	s.Equal(mockFileContent, dataPlaneFileContent)
 	slog.Info("finished update unreferenced file in data plane test")
 }
 
@@ -276,17 +275,17 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
 
-	code, _, err := utils.Container.Exec(s.ctx, []string{
-		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
-	})
-	s.Require().NoError(err)
-	s.Equal(0, code)
-
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
+
+	code, _, err := utils.Container.Exec(s.ctx, []string{
+		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
+	})
+	s.Require().NoError(err)
+	s.Equal(0, code)
 
 	manifestFiles := utils.ManifestFiles()
 	manifestFiles["/etc/nginx/test/unreferenced_file.conf"] = &model.ManifestFile{
@@ -417,4 +416,20 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test7_TestRollba
 	s.Equal("Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
 	s.Equal(configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
 	slog.Info("finished invalid config apply with unreferenced file test")
+}
+
+// readContainerFile cats a file inside the given container and returns its decoded contents.
+func (s *ConfigApplyUnreferencedFilesTestSuite) readContainerFile(
+	container testcontainers.Container, path string,
+) string {
+	s.T().Helper()
+
+	exitCode, reader, err := container.Exec(s.ctx, []string{"cat", path})
+	s.Require().NoError(err)
+	s.Require().Equal(0, exitCode)
+
+	content, readErr := io.ReadAll(reader)
+	s.Require().NoError(readErr)
+
+	return helpers.RemoveASCIIControlSignals(s.T(), string(content))
 }

@@ -21,4 +21,9 @@ allow-dependencies-licenses:
   - 'pkg:githubactions/opentofu/setup-opentofu'
   - 'pkg:golang/github.com/shoenig/go-m1cpu'
   - 'pkg:pypi/pytest-metadata'
+  # Dual Apache-2.0 + BSD-3-Clause; ScanCode reports a non-standard combined
+  # LicenseRef-bad-apache-2.0-bsd-3-clause id that is not SPDX-mappable.
+  - 'pkg:golang/go.opentelemetry.io/contrib/detectors/aws/ec2/v2'
+  - 'pkg:golang/go.opentelemetry.io/contrib/detectors/aws/eks'
+  - 'pkg:golang/go.opentelemetry.io/contrib/detectors/azure/azurevm'
 comment-summary-in-pr: on-failure
