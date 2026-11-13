@@ -36,14 +36,11 @@ var (
 )
 
 func Test_UpgradeFromV3(t *testing.T) {
+	testcontainers.SkipIfProviderIsNotHealthy(t)
 	ctx := context.Background()
 
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
 	utils.SetupMockManagementPlaneGrpc(ctx, t, containerNetwork)
-	defer func(ctx context.Context) {
-		err := utils.MockManagementPlaneGrpcContainer.Terminate(ctx)
-		require.NoError(t, err)
-	}(ctx)
 
 	// Prepare upgrade
 	testContainer, teardownTest := upgradeSetup(t, true, "default", containerNetwork)
@@ -100,14 +97,11 @@ func Test_UpgradeFromV3(t *testing.T) {
 }
 
 func Test_UpgradeWithCustomOTELConfig(t *testing.T) {
+	testcontainers.SkipIfProviderIsNotHealthy(t)
 	ctx := context.Background()
 
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
 	utils.SetupMockManagementPlaneGrpc(ctx, t, containerNetwork)
-	defer func(ctx context.Context) {
-		err := utils.MockManagementPlaneGrpcContainer.Terminate(ctx)
-		require.NoError(t, err)
-	}(ctx)
 
 	testContainer, teardownTest := upgradeSetup(t, true, "custom_otel", containerNetwork)
 	defer teardownTest(t)
@@ -276,15 +270,12 @@ func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testco
 func agentVersion(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) string {
 	tb.Helper()
 
-	cmd := []string{"nginx-agent", "--version"}
-	exitCode, cmdOut, err := testContainer.Exec(ctx, cmd)
+	exitCode, cmdOut, err := testContainer.Exec(ctx, []string{"nginx-agent", "--version"})
 	require.NoError(tb, err)
 	assert.Equal(tb, 0, exitCode)
 
 	stdoutStderr, err := io.ReadAll(cmdOut)
 	require.NoError(tb, err)
 
-	output := strings.TrimSpace(string(stdoutStderr))
-
-	return output
+	return strings.TrimSpace(string(stdoutStderr))
 }

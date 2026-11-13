@@ -52,6 +52,10 @@ func (s *ConfigApplyTestSuite) SetupSuite() {
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
+	if s.T().Failed() {
+		s.T().FailNow()
+	}
 }
 
 func (s *ConfigApplyTestSuite) TearDownSuite() {
@@ -219,6 +223,9 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test3_DataPlaneUpdate() {
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 	slog.Info("starting config apply invalid config test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
+
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/invalid-nginx.conf",
@@ -264,6 +271,9 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test5_TestFileNotInAllowedDirectory() {
 	slog.Info("starting config apply file not in allowed directory test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
+
 	utils.PerformInvalidConfigApply(s.T(), s.nginxInstanceID)
 
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
@@ -307,11 +317,19 @@ func (s *ConfigApplyChunkingTestSuite) SetupSuite() {
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
+	if s.T().Failed() {
+		s.T().FailNow()
+	}
 }
 
 func (s *ConfigApplyChunkingTestSuite) TearDownSuite() {
 	slog.Info("finished config apply chunking tests")
 	s.teardownTest(s.T())
+}
+
+func (s *ConfigApplyChunkingTestSuite) TearDownTest() {
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
 func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking() {
@@ -365,6 +383,12 @@ func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking() {
 
 func TestConfigApplyTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigApplyTestSuite))
+}
+
+func TestConfigApplyChunkingTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigApplyChunkingTestSuite))
+}
+
+func TestConfigApplyUnreferencedFilesTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigApplyUnreferencedFilesTestSuite))
 }

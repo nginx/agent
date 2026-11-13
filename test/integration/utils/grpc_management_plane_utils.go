@@ -123,13 +123,8 @@ func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless, au
 func CreateContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.DockerNetwork {
 	tb.Helper()
 	containerNetwork, err := network.New(ctx, network.WithAttachable())
+	testcontainers.CleanupNetwork(tb, containerNetwork)
 	require.NoError(tb, err)
-	tb.Cleanup(func() {
-		networkErr := containerNetwork.Remove(ctx)
-		if networkErr != nil {
-			tb.Logf("Error removing container network: %v", networkErr)
-		}
-	})
 
 	return containerNetwork
 }
@@ -240,12 +235,14 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
 	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
-			responseData := r.Body()
-			assert.True(t, json.Valid(responseData))
+			if !json.Valid(r.Body()) {
+				return true
+			}
 
-			response := []*mpi.DataPlaneResponse{}
-			unmarshalErr := json.Unmarshal(responseData, &response)
-			require.NoError(t, unmarshalErr)
+			var response []*mpi.DataPlaneResponse
+			if json.Unmarshal(r.Body(), &response) != nil {
+				return true
+			}
 
 			return len(response) != numberOfExpectedResponses || r.StatusCode() == http.StatusNotFound
 		},

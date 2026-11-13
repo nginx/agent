@@ -54,6 +54,10 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) SetupSuite() {
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
+	if s.T().Failed() {
+		s.T().FailNow()
+	}
 }
 
 func (s *ConfigApplyUnreferencedFilesTestSuite) TearDownSuite() {
@@ -166,6 +170,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 // Config apply to delete unreferenced file from DataPlane
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test3_TestDeleteUnreferencedInDataPlane() {
 	slog.Info("starting delete unreferenced file from data plane test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 
 	code, _, removeErr := utils.Container.Exec(context.Background(), []string{
 		"rm",
@@ -209,6 +215,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test3_TestDelete
 // Config apply to delete unreferenced file from Mock
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test4_TestDeleteUnreferencedFromMock() {
 	slog.Info("starting delete unreferenced file from mock test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 
 	code, _, removeErr := utils.MockManagementPlaneGrpcContainer.Exec(context.Background(), []string{
 		"rm",
@@ -324,6 +332,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 // Config apply to change referenced file to unreferenced file
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestReferencedToUnreferenced() {
 	slog.Info("starting referenced file to unreferenced file test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 
 	manifestFiles := utils.ManifestFiles()
 
@@ -355,6 +365,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestRefere
 // Config apply with invalid config and unreferenced file to test rollback
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test7_TestRollbackWithUnreferencedFile() {
 	slog.Info("starting invalid config apply with unreferenced file test")
+	// Clear responses before test
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 		s.ctx,

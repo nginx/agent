@@ -20,6 +20,19 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+// logContainer collects and prints all logs from a container to the test output.
+func logContainer(ctx context.Context, tb testing.TB, name string, container testcontainers.Container) {
+	tb.Helper()
+
+	tb.Logf("======================== Logging %s Container Logs ========================", name)
+	logReader, err := container.Logs(ctx)
+	require.NoError(tb, err)
+
+	buf, err := io.ReadAll(logReader)
+	require.NoError(tb, err)
+	tb.Log(string(buf))
+}
+
 const (
 	configFilePermissions = 0o600
 	dockerContextPath     = "../../../"
@@ -147,7 +160,7 @@ func StartContainer(
 		ContainerRequest: req,
 		Started:          true,
 	})
-
+	testcontainers.CleanupContainer(tb, container)
 	require.NoError(tb, err)
 
 	return container
@@ -206,7 +219,7 @@ func StartAgentlessContainer(
 		ContainerRequest: req,
 		Started:          true,
 	})
-
+	testcontainers.CleanupContainer(tb, container)
 	require.NoError(tb, err)
 
 	return container
@@ -275,7 +288,7 @@ func StartNginxLessContainer(
 		ContainerRequest: req,
 		Started:          true,
 	})
-
+	testcontainers.CleanupContainer(tb, container)
 	require.NoError(tb, err)
 
 	return container
@@ -304,14 +317,17 @@ func StartMockManagementPlaneGrpcContainer(
 				"managementPlane",
 			},
 		},
-		WaitingFor: wait.ForLog("Starting mock management plane gRPC server"),
+		WaitingFor: wait.ForAll(
+			wait.ForLog("Starting mock management plane gRPC server"),
+			wait.ForMappedPort("9092/tcp"),
+		),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
 	})
-
+	testcontainers.CleanupContainer(tb, container)
 	require.NoError(tb, err)
 
 	return container
@@ -337,14 +353,17 @@ func StartAuxiliaryMockManagementPlaneGrpcContainer(ctx context.Context, tb test
 				"managementPlaneAuxiliary",
 			},
 		},
-		WaitingFor: wait.ForLog("Starting mock management plane gRPC server"),
+		WaitingFor: wait.ForAll(
+			wait.ForLog("Starting mock management plane gRPC server"),
+			wait.ForMappedPort("9095/tcp"),
+		),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
 	})
-
+	testcontainers.CleanupContainer(tb, container)
 	require.NoError(tb, err)
 
 	return container
@@ -377,10 +396,15 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 					FileMode:          configFilePermissions,
 				},
 			},
-			WaitingFor: wait.ForLog("Everything is ready. Begin running and processing data."),
+			WaitingFor: wait.ForAll(
+				wait.ForLog("Everything is ready. Begin running and processing data."),
+				wait.ForMappedPort("4317/tcp"),
+				wait.ForMappedPort("9775/tcp"),
+			),
 		},
 		Started: true,
 	})
+	testcontainers.CleanupContainer(tb, otel)
 	require.NoError(tb, err)
 
 	prometheus, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -401,10 +425,11 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 				},
 			},
 			Cmd:        []string{"--config.file=/etc/prometheus/prometheus.yml"},
-			WaitingFor: wait.ForLog("Server is ready to receive web requests."),
+			WaitingFor: wait.ForHTTP("/-/ready").WithPort("9090/tcp"),
 		},
 		Started: true,
 	})
+	testcontainers.CleanupContainer(tb, prometheus)
 	require.NoError(tb, err)
 
 	return &MockCollectorContainers{
@@ -417,6 +442,9 @@ func ToPtr[T any](value T) *T {
 	return &value
 }
 
+// LogAndTerminateContainers logs container output and asserts log invariants.
+// Termination is handled by [testcontainers.CleanupContainer] registered at container startup.
+//
 //nolint:revive // expectNoErrorsInLogs flag is required
 func LogAndTerminateContainers(
 	ctx context.Context,
@@ -428,7 +456,6 @@ func LogAndTerminateContainers(
 ) {
 	tb.Helper()
 
-	tb.Log("======================== Logging Agent Container Logs ========================")
 	logReader, err := agentContainer.Logs(ctx)
 	require.NoError(tb, err)
 
@@ -436,75 +463,41 @@ func LogAndTerminateContainers(
 	require.NoError(tb, err)
 	logs := string(buf)
 
+	tb.Log("======================== Logging Agent Container Logs ========================")
+	tb.Log(logs)
 	assert.NotContains(tb, logs, "manifest file is empty",
 		"Error reading manifest file found in agent log")
-	tb.Log(logs)
 	if expectNoErrorsInLogs {
 		assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
 	}
 
-	err = agentContainer.Terminate(ctx)
-	require.NoError(tb, err)
-
 	if mockManagementPlaneContainer != nil {
-		tb.Log("======================== Logging Mock Management Container Logs ========================")
-		logReader, err = mockManagementPlaneContainer.Logs(ctx)
-		require.NoError(tb, err)
-
-		buf, err = io.ReadAll(logReader)
-		require.NoError(tb, err)
-		logs = string(buf)
-
-		tb.Log(logs)
-
-		err = mockManagementPlaneContainer.Terminate(ctx)
-		require.NoError(tb, err)
+		logContainer(ctx, tb, "Mock Management", mockManagementPlaneContainer)
 	}
 
 	if auxiliaryMockManagementPlaneContainer != nil {
-		tb.Log("======================== Logging Auxiliary Mock Management Container Logs ========================")
-		logReader, err = auxiliaryMockManagementPlaneContainer.Logs(ctx)
-		require.NoError(tb, err)
-
-		buf, err = io.ReadAll(logReader)
-		require.NoError(tb, err)
-		logs = string(buf)
-
-		tb.Log(logs)
-
-		err = auxiliaryMockManagementPlaneContainer.Terminate(ctx)
-		require.NoError(tb, err)
+		logContainer(ctx, tb, "Auxiliary Mock Management", auxiliaryMockManagementPlaneContainer)
 	}
 }
 
+// LogAndTerminateStack logs container output for the full collector stack.
+// Termination is handled by [testcontainers.CleanupContainer] registered at container startup.
 func LogAndTerminateStack(ctx context.Context, tb testing.TB,
 	containers *MockCollectorContainers,
 ) {
 	tb.Helper()
 
-	logAndTerminate := func(name string, container testcontainers.Container) {
-		if container == nil {
+	for name, container := range map[string]testcontainers.Container{
+		"Agent":          containers.Agent,
+		"Otel Collector": containers.Otel,
+		"Prometheus":     containers.Prometheus,
+	} {
+		if container != nil {
+			logContainer(ctx, tb, name, container)
+		} else {
 			tb.Logf("Skipping log collection for %s: container is nil", name)
-			return
 		}
-
-		tb.Logf("======================== Logging %s Container Logs ========================", name)
-		logReader, err := container.Logs(ctx)
-		require.NoError(tb, err)
-
-		buf, err := io.ReadAll(logReader)
-		require.NoError(tb, err)
-		logs := string(buf)
-
-		tb.Log(logs)
-
-		err = container.Terminate(ctx)
-		require.NoError(tb, err)
 	}
-
-	logAndTerminate("Agent", containers.Agent)
-	logAndTerminate("Otel Collector", containers.Otel)
-	logAndTerminate("Prometheus", containers.Prometheus)
 }
 
 // ExtractFileFromContainer copies a file from the container at the given path and returns its contents as a string.
