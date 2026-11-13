@@ -6,7 +6,7 @@
 FROM otel/weaver:v0.28.0@sha256:5857bb81d8cc7ed608cdcae37c4b459eb020f21dd4acade35f7933cd6762fbcc AS weaver
 
 # OPA is used to test policies enforced by weaver.
-FROM openpolicyagent/opa:1.22.3@sha256:c1632ced2b6726a257a075523ce4d86258b721b5512e05ee3344ae26148e9031 AS opa
+FROM openpolicyagent/opa:1.22.4@sha256:ff50f50332ff9e722ffafe2658c195ced1f9b6d4f3064000c2ecfa8cdf7acccf AS opa
 
 # Semconv gen is used for backwards compatibility checks.
 # TODO(jsuereth): Remove this when no longer used.
