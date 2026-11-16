@@ -3,6 +3,7 @@
   "extends": [
       "schedule:daily",
       "config:recommended",
+      "group:allNonMajor",
       "docker:enableMajor",
       ":gitSignOff"
   ], 
