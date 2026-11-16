@@ -28,7 +28,7 @@ const (
 
 	csvSeparator = "|"
 
-	// expectedCSVFields is the number of pipe-separated fields in the
+	// expectedCSVFields is the number of pipe-separated fields in the HTTP
 	// secops-dashboard-log profile format:
 	// support_id|ip_client|src_port|dest_ip|dest_port|vs_name|policy_name|
 	// method|uri|protocol|request_status|response_code|outcome|outcome_reason|
@@ -37,6 +37,18 @@ const (
 	// x_forwarded_for_header_value|violations|violation_details|request|geo_location
 	expectedCSVFields = 28
 
+	// expectedGRPCFields is the number of pipe-separated fields in the gRPC
+	// secops-dashboard-log profile format. It is the HTTP layout
+	// (expectedCSVFields) plus eight gRPC-specific fields appended:
+	// grpc_method|grpc_service|compression_method|headers|request_body_base64|
+	// json_log.stream.id|json_log.stream.index|json_log.stream.controlState
+	// The profile uses the same pipe delimiter and %7C escaping as the HTTP
+	// profile, so the embedded json_log JSON (which never contains a raw pipe)
+	// adds no extra fields. Both counts share the same csv.schema.name; the
+	// downstream Console waf-processor distinguishes HTTP from gRPC per record
+	// by field count, not by the schema name.
+	expectedGRPCFields = 36
+
 	gatePending int32 = 0
 	gateOpen    int32 = 1
 	gateClosed  int32 = -1
@@ -44,8 +56,9 @@ const (
 
 // securityViolationsFilterProcessor passes log record bodies through untouched and sets
 // resource-level schema attributes. It validates the first string body to confirm the
-// NAP logging profile is producing pipe-separated CSV output. If validation fails, all
-// subsequent messages are dropped until the OTel collector is restarted.
+// NAP logging profile is producing pipe-separated CSV output in either the HTTP or
+// gRPC secops-dashboard-log layout. If validation fails, all subsequent messages are
+// dropped until the OTel collector is restarted.
 type securityViolationsFilterProcessor struct {
 	nextConsumer consumer.Logs
 	settings     processor.Settings
@@ -121,8 +134,12 @@ func (p *securityViolationsFilterProcessor) evaluateGate(lr plog.LogRecord) {
 		return
 	}
 
+	// Both the HTTP and gRPC secops profiles are pipe-separated and share the %7C
+	// escaping convention, so either field count is a valid security-violation log.
+	// The two layouts share one csv.schema.name; the downstream Console
+	// waf-processor tells HTTP from gRPC per record by field count.
 	fieldCount := strings.Count(lr.Body().Str(), csvSeparator) + 1
-	if fieldCount != expectedCSVFields {
+	if fieldCount != expectedCSVFields && fieldCount != expectedGRPCFields {
 		p.logInvalidCSVBody(fieldCount)
 		p.gateState.Store(gateClosed)
 
@@ -143,9 +160,11 @@ func (p *securityViolationsFilterProcessor) logNonStringBody(lr plog.LogRecord) 
 func (p *securityViolationsFilterProcessor) logInvalidCSVBody(fieldCount int) {
 	p.settings.Logger.Error(
 		"Security violation log does not appear to be CSV format. "+
-			"Ensure the NAP logging profile uses the secops-dashboard-log format. "+
+			"Ensure the NAP logging profile uses the secops-dashboard-log format "+
+			"(HTTP or gRPC layout). "+
 			"All security violation logs will be dropped until the collector is restarted.",
-		zap.Int("expected_fields", expectedCSVFields),
+		zap.Int("expected_http_fields", expectedCSVFields),
+		zap.Int("expected_grpc_fields", expectedGRPCFields),
 		zap.Int("actual_fields", fieldCount),
 	)
 }
