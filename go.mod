@@ -17,7 +17,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4
 	github.com/leodido/go-syslog/v4 v4.6.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
-	github.com/moby/moby/api v1.56.1
+	github.com/moby/moby/api v1.57.0
 	github.com/moby/moby/client v0.6.2
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.2
 	github.com/nginx/nginx-prometheus-exporter v1.5.3
@@ -372,7 +372,6 @@ require (
 	github.com/samber/slog-gin v1.21.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	github.com/vardius/message-bus/v2 v2.0.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.47.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.47.0
 	golang.org/x/crypto v0.58.0 // indirect
