@@ -19,6 +19,7 @@ require (
 require (
 	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
+	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
