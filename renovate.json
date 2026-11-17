@@ -1,54 +1,55 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-      "schedule:daily",
-      "config:recommended",
-      "group:allNonMajor",
-      "docker:enableMajor",
-      ":gitSignOff"
-  ], 
-  "postUpdateOptions": [
-      "gomodTidy"
+    "schedule:daily",
+    "config:recommended",
+    "group:allNonMajor",
+    "docker:enableMajor",
+    ":gitSignOff"
   ],
-    "packageRules": [
-        {
-            "groupName": "GitHub Actions",
-            "matchManagers": [
-                "github-actions"
-            ],
-            "matchUpdateTypes": [
-                "minor",
-                "patch"
-            ]
-        },
-        {
-            "groupName": "OpenTelemetry Collector",
-            "schedule": [
-                "before 3am on Tuesday"
-            ],
-            "matchPackageNames": [
-                "/opentelemetry.*collector/",
-                "/opentelemetry-collector/"
-            ]
-        },
-        {
-            "groupName": "CodeQL",
-            "matchPackageNames": [
-                "github/codeql-action"
-            ],
-            "schedule": [
-                "before 3am on Tuesday"
-            ]
-        },
-        {
-            "matchBaseBranches": ["main"],
-            "addLabels": ["v3.x"]
-        },
-        {
-            "matchBaseBranches": ["dev-v2"],
-            "addLabels": ["v2.x"]
-        }
-    ],
-    "rebaseWhen": "behind-base-branch",
-    "baseBranchPatterns": ["main", "dev-v2"]
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "packageRules": [
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    },
+    {
+      "groupName": "OpenTelemetry Collector",
+      "schedule": [
+        "before 3am on Tuesday"
+      ],
+      "matchPackageNames": [
+        "/opentelemetry.*collector/",
+        "/opentelemetry-collector/"
+      ]
+    },
+    {
+      "groupName": "CodeQL",
+      "matchPackageNames": [
+        "github/codeql-action"
+      ],
+      "schedule": [
+        "before 3am on Tuesday"
+      ]
+    },
+    {
+      "matchBaseBranches": ["main"],
+      "addLabels": ["v3.x"]
+    },
+    {
+      "matchBaseBranches": ["dev-v2"],
+      "addLabels": ["v2.x"]
+    }
+  ],
+  "minimumReleaseAge": "3 days",
+  "rebaseWhen": "behind-base-branch",
+  "baseBranchPatterns": ["main", "dev-v2"]
 }
