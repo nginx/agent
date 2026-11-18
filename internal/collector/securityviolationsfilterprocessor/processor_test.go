@@ -27,13 +27,9 @@ func validNAPBody() string {
 	return `<130>Mar 11 18:12:45 ip-172-16-0-53 ASM:5377540117854870581|127.0.0.1|56064|10.0.0.1|80|1-localhost:1-/|nms_app_protect_default_policy|GET|/<><script>|HTTP|blocked|0|REJECTED|SECURITY_WAF_VIOLATION|5|N/A|false|200000099,200000093|sig1,sig2|N/A|{High Accuracy Signatures}|N/A|N/A|N/A|Illegal meta character in URL|<?xml version='1.0'?><BAD_MSG/>|GET /<><script> HTTP/1.1\r\nHost: localhost\r\n\r\n|US`
 }
 
-// validGRPCBody returns a pipe-separated syslog body with exactly 36 fields
-// matching the secops-dashboard-log-grpc profile format: the 28 HTTP fields
-// plus eight gRPC-specific fields appended (grpc_method, grpc_service,
-// compression_method, headers, request_body_base64, json_log.stream.id,
-// json_log.stream.index, json_log.stream.controlState). The headers field
-// carries an embedded JSON object to confirm JSON (which contains no raw pipe)
-// survives the pipe-delimited layout without special escaping.
+// validGRPCBody returns a 36-field gRPC secops-dashboard-log body: the 28 HTTP
+// fields plus eight appended gRPC fields. One field carries an embedded JSON
+// object to confirm JSON (no raw pipe) survives the pipe-delimited layout.
 //
 //nolint:lll // long test string kept for readability
 func validGRPCBody() string {
@@ -88,9 +84,10 @@ func TestSecurityViolationsFilterProcessor(t *testing.T) {
 			bodyType:      pcommon.ValueTypeStr,
 		},
 		{
-			name:          "Test 7: Body with a field count between HTTP and gRPC triggers gate closure",
-			expectRecords: 0,
-			stringBody:    validNAPBody() + "|ProcessPayment|payments.PaymentService",
+			name:          "Test 7: Body with extra fields beyond the HTTP layout passes through",
+			expectRecords: 1,
+			expectBody:    validNAPBody() + "|extra1|extra2",
+			stringBody:    validNAPBody() + "|extra1|extra2",
 			bodyType:      pcommon.ValueTypeStr,
 		},
 	}
@@ -219,8 +216,7 @@ func TestSecurityViolationsFilterProcessor_GateOpensOnGRPC(t *testing.T) {
 	require.NoError(t, p.ConsumeLogs(ctx, logs1))
 	require.Equal(t, 1, sink.LogRecordCount(), "first valid gRPC record should pass through")
 
-	// The forwarded batch is stamped with the shared secops-dashboard-log schema;
-	// HTTP and gRPC are not distinguished by schema name.
+	// gRPC uses the same schema name as HTTP; it is not distinguished here.
 	resAttrs := sink.AllLogs()[0].ResourceLogs().At(0).Resource().Attributes()
 	schemaName, ok := resAttrs.Get(csvSchemaNameKey)
 	assert.True(t, ok, "csv.schema.name should be set")
@@ -230,6 +226,35 @@ func TestSecurityViolationsFilterProcessor_GateOpensOnGRPC(t *testing.T) {
 	logs2 := newLogsWithStringBody(validGRPCBody())
 	require.NoError(t, p.ConsumeLogs(ctx, logs2))
 	assert.Equal(t, 2, sink.LogRecordCount(), "subsequent gRPC records should pass through")
+
+	require.NoError(t, p.Shutdown(ctx))
+}
+
+// TestSecurityViolationsFilterProcessor_MixedTrafficSharesSchemaName covers the
+// mixed HTTP+gRPC case: the first record sets the schema name once, and a later
+// gRPC record is forwarded under that same secops-dashboard-log name. HTTP and
+// gRPC are told apart downstream by field count, not by schema name.
+func TestSecurityViolationsFilterProcessor_MixedTrafficSharesSchemaName(t *testing.T) {
+	ctx := context.Background()
+	settings := processortest.NewNopSettings(processortest.NopType)
+	settings.Logger = zap.NewNop()
+
+	sink := &consumertest.LogsSink{}
+	p := newSecurityViolationsFilterProcessor(sink, settings)
+	require.NoError(t, p.Start(ctx, nil))
+
+	// HTTP record first, then a gRPC record.
+	require.NoError(t, p.ConsumeLogs(ctx, newLogsWithStringBody(validNAPBody())))
+	require.NoError(t, p.ConsumeLogs(ctx, newLogsWithStringBody(validGRPCBody())))
+	require.Equal(t, 2, sink.LogRecordCount(), "both HTTP and gRPC records should pass through")
+
+	// Both batches carry the same secops-dashboard-log schema name.
+	for _, l := range sink.AllLogs() {
+		schemaName, ok := l.ResourceLogs().At(0).Resource().Attributes().Get(csvSchemaNameKey)
+		assert.True(t, ok, "csv.schema.name should be set")
+		assert.Equal(t, csvSchemaName, schemaName.Str(),
+			"HTTP and gRPC records share the same schema name")
+	}
 
 	require.NoError(t, p.Shutdown(ctx))
 }
