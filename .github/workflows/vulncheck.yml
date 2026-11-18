@@ -39,6 +39,7 @@ jobs:
     outputs:
       has-vulns: ${{ steps.govulncheck.outputs.has-vulns }}
       vuln-count: ${{ steps.govulncheck.outputs.vuln-count }}
+      fix-targets: ${{ steps.govulncheck.outputs.fix-targets }}
       already-covered: ${{ steps.pr-coverage.outputs.already-covered }}
     steps:
       - name: Checkout Repository
@@ -70,20 +71,35 @@ jobs:
 
       - name: Run govulncheck
         id: govulncheck
+        # continue-on-error defers the failure past the Renovate PR check step.
+        # The final "Fail on vulnerabilities" step enforces the actual exit.
         continue-on-error: true
         run: |
+          # Disable errexit so govulncheck's non-zero exit doesn't abort the
+          # script before EXIT is captured and outputs are written.
+          set +e
           govulncheck ./...
           EXIT=$?
+          set -e
+
           if [ "$EXIT" -ne 0 ]; then
             echo "has-vulns=true" >> $GITHUB_OUTPUT
-            # JSON output for structured module/version extraction by the next step.
+            # JSON run for structured module/version data used by downstream steps.
+            # -format json always exits 0, so it is safe after restoring set -e.
             govulncheck -format json ./... > govulncheck.json 2>/dev/null || true
             VULN_COUNT=$(jq -r 'select(.finding != null) | .finding.osv' govulncheck.json \
               | sort -u | wc -l | tr -d ' ')
             echo "vuln-count=$VULN_COUNT" >> $GITHUB_OUTPUT
+            # Build "module@fixed_version" list for targeted upgrades in remediate job.
+            FIX_TARGETS=$(jq -r '
+              select(.finding != null and .finding.fixed_version != null) |
+              "\(.finding.trace[0].module)@\(.finding.fixed_version)"
+            ' govulncheck.json | sort -u | tr '\n' ' ' | xargs)
+            echo "fix-targets=$FIX_TARGETS" >> $GITHUB_OUTPUT
           else
             echo "has-vulns=false" >> $GITHUB_OUTPUT
             echo "vuln-count=0"    >> $GITHUB_OUTPUT
+            echo "fix-targets="   >> $GITHUB_OUTPUT
           fi
 
       - name: Check Renovate PRs for existing fixes
@@ -233,18 +249,26 @@ jobs:
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      - name: Update dependencies
+      - name: Update vulnerable modules
         run: |
-          # Upgrade all direct and indirect dependencies
-          go get -u ./...
+          FIX_TARGETS="${{ needs.vulncheck.outputs.fix-targets }}"
+          if [ -z "$FIX_TARGETS" ]; then
+            echo "::error::No specific fix targets available — the vulnerability database entry has no fixed version. Manual remediation required."
+            exit 1
+          fi
+          echo "Upgrading specific vulnerable modules: $FIX_TARGETS"
+          # shellcheck disable=SC2086 — intentional word-splitting of space-separated targets
+          go get $FIX_TARGETS
           go mod tidy
 
       - name: Verify no remaining vulnerabilities
         id: verify
         continue-on-error: true
         run: |
+          set +e
           govulncheck ./...
           EXIT=$?
+          set -e
           if [ "$EXIT" -ne 0 ]; then
             REMAINING=$(govulncheck -format json ./... 2>/dev/null \
               | jq -r 'select(.finding != null) | .finding.osv' | sort -u | wc -l | tr -d ' ')
