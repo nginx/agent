@@ -12,10 +12,12 @@ jobs:
     name: Vulnerability Scan - Main
     uses: ./.github/workflows/vulncheck.yml
     permissions:
-      contents: read
+      contents: write        # required for the remediation job to push a branch
+      pull-requests: write   # required for the remediation job to open a PR
       security-events: write # for reporting vulnerabilities via code-scanning API
     with:
       target-branch: 'main'
+      auto-remediate: true   # nightly runs automatically open a fix PR when vulns are found
 
   scan-v2:
     name: Vulnerability Scan - dev-v2

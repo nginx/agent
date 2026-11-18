@@ -7,12 +7,22 @@ on:
         type: string
         required: true
         default: 'main'
+      auto-remediate:
+        description: 'Open a PR updating modules when flagged vulnerabilities are found'
+        type: boolean
+        required: false
+        default: false
   workflow_dispatch:
     inputs:
       target-branch:
         description: 'Target branch to run govulncheck against'
         required: true
         default: 'main'
+      auto-remediate:
+        description: 'Open a PR updating modules when flagged vulnerabilities are found'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -22,9 +32,14 @@ jobs:
     name: Vulnerability Check
     runs-on: ubuntu-26.04
     permissions:
+      pull-requests: read    # for checking open PRs that may already fix vulnerabilities
       security-events: write # for reporting vulnerabilities via code-scanning API
     env:
       GOPROXY: "https://proxy.golang.org,direct"
+    outputs:
+      has-vulns: ${{ steps.govulncheck.outputs.has-vulns }}
+      vuln-count: ${{ steps.govulncheck.outputs.vuln-count }}
+      already-covered: ${{ steps.pr-coverage.outputs.already-covered }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -51,10 +66,261 @@ jobs:
           cache: true
 
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@v1.4.0
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run govulncheck
         id: govulncheck
+        continue-on-error: true
         run: |
-          # Scan only non-test packages to avoid false positives from test-only dependencies
-          govulncheck -scan=symbol $(go list ./...)
+          govulncheck ./...
+          EXIT=$?
+          if [ "$EXIT" -ne 0 ]; then
+            echo "has-vulns=true" >> $GITHUB_OUTPUT
+            # JSON output for structured module/version extraction by the next step.
+            govulncheck -format json ./... > govulncheck.json 2>/dev/null || true
+            VULN_COUNT=$(jq -r 'select(.finding != null) | .finding.osv' govulncheck.json \
+              | sort -u | wc -l | tr -d ' ')
+            echo "vuln-count=$VULN_COUNT" >> $GITHUB_OUTPUT
+          else
+            echo "has-vulns=false" >> $GITHUB_OUTPUT
+            echo "vuln-count=0"    >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Renovate PRs for existing fixes
+        id: pr-coverage
+        if: steps.govulncheck.outputs.has-vulns == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # inputs.target-branch may be a commit SHA (e.g. from a PR trigger in ci.yml).
+          # gh pr list --base requires a branch name, so resolve to the symbolic ref.
+          TARGET="${{ inputs.target-branch || github.ref_name || 'main' }}"
+          if git cat-file -t "$TARGET" 2>/dev/null | grep -q commit; then
+            BASE_BRANCH=$(git branch -r --contains "$TARGET" \
+              | grep -v HEAD | head -1 | sed 's|origin/||;s| ||g')
+            BASE_BRANCH="${BASE_BRANCH:-main}"
+          else
+            BASE_BRANCH="$TARGET"
+          fi
+          echo "Resolved base branch: ${BASE_BRANCH}"
+
+          # Extract "module@fixed_version" pairs from reachable findings.
+          # Field paths confirmed: .finding.trace[0].module, .finding.fixed_version
+          REQUIRED_FIXES=$(jq -r '
+            select(.finding != null and .finding.fixed_version != null) |
+            "\(.finding.trace[0].module)@\(.finding.fixed_version)"
+          ' govulncheck.json | sort -u)
+
+          if [ -z "$REQUIRED_FIXES" ]; then
+            echo "::notice::No structured fix targets found in govulncheck output — skipping Renovate PR check."
+            echo "already-covered=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Modules requiring fixes:"
+          echo "$REQUIRED_FIXES"
+
+          # List open Renovate PRs targeting this branch that modify go.mod.
+          PRS=$(gh pr list \
+            --base "$BASE_BRANCH" \
+            --state open \
+            --author "app/renovate" \
+            --json number,title,headRefName,files \
+            --jq '[.[] | select((.headRefName | startswith("renovate/")) and (.files[]?.path == "go.mod"))]')
+
+          PR_COUNT=$(echo "$PRS" | jq 'length')
+          if [ "$PR_COUNT" -eq 0 ]; then
+            echo "No open Renovate PRs modify go.mod against ${BASE_BRANCH}."
+            echo "already-covered=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Found ${PR_COUNT} open Renovate PR(s) modifying go.mod:"
+          echo "$PRS" | jq -r '.[] | "  #\(.number): \(.title)"'
+
+          COVERED=0
+          TOTAL=0
+          SUMMARY=""
+
+          while IFS= read -r FIX; do
+            [ -z "$FIX" ] && continue
+            MODULE="${FIX%@*}"
+            FIXED_VER="${FIX#*@}"
+            TOTAL=$((TOTAL + 1))
+            FOUND_IN=""
+
+            while IFS= read -r PR_NUM; do
+              PR_HEAD=$(echo "$PRS" | jq -r --argjson n "$PR_NUM" '.[] | select(.number == $n) | .headRefName')
+              PR_VER=$(gh api "repos/{owner}/{repo}/contents/go.mod?ref=${PR_HEAD}" \
+                --jq '.content' 2>/dev/null \
+                | base64 -d 2>/dev/null \
+                | grep -E "^\s+${MODULE} " | awk '{print $2}' | head -1)
+
+              [ -z "$PR_VER" ] && continue
+
+              # Covered when the PR version >= the minimum fixed version.
+              HIGHER=$(printf '%s\n%s\n' "$FIXED_VER" "$PR_VER" | sort -V | tail -1)
+              if [ "$HIGHER" = "$PR_VER" ] || [ "$PR_VER" = "$FIXED_VER" ]; then
+                FOUND_IN="#${PR_NUM} has ${MODULE}@${PR_VER}"
+                break
+              fi
+            done < <(echo "$PRS" | jq -r '.[].number')
+
+            if [ -n "$FOUND_IN" ]; then
+              COVERED=$((COVERED + 1))
+              SUMMARY="${SUMMARY}\n✅ ${MODULE}@${FIXED_VER} — covered by ${FOUND_IN}"
+            else
+              SUMMARY="${SUMMARY}\n❌ ${MODULE}@${FIXED_VER} — not in any open Renovate PR"
+            fi
+          done <<< "$REQUIRED_FIXES"
+
+          printf "%b\n" "$SUMMARY"
+
+          {
+            echo "### Renovate PR coverage: ${COVERED}/${TOTAL} modules addressed"
+            echo ""
+            printf "%b\n" "$SUMMARY"
+          } >> $GITHUB_STEP_SUMMARY
+
+          if [ "$COVERED" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+            echo "::notice::All ${TOTAL} vulnerable module(s) are already addressed in open Renovate PRs — auto-remediation skipped."
+            echo "already-covered=true" >> $GITHUB_OUTPUT
+          else
+            echo "already-covered=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fail on vulnerabilities
+        if: steps.govulncheck.outputs.has-vulns == 'true'
+        run: |
+          echo "::error::govulncheck found ${{ steps.govulncheck.outputs.vuln-count }} reachable vulnerability/vulnerabilities. See job log for call stacks."
+          exit 1
+
+  remediate:
+    name: Auto-remediate vulnerable modules
+    needs: vulncheck
+    if: |
+      always() &&
+      inputs.auto-remediate == true &&
+      needs.vulncheck.outputs.has-vulns == 'true' &&
+      needs.vulncheck.outputs.already-covered != 'true'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GOPROXY: "https://proxy.golang.org,direct"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+          ref: ${{ inputs.target-branch || github.ref_name || 'main' }}
+
+      - name: Check Go version
+        id: get-go-version
+        run: |
+          GO_VERSION=$(grep -E "^toolchain " go.mod | awk -F' ' '{print $2}' | tr -d 'go')
+          echo "go-version=$GO_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ steps.get-go-version.outputs.go-version }}
+          check-latest: true
+          cache: true
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Update dependencies
+        run: |
+          # Upgrade all direct and indirect dependencies
+          go get -u ./...
+          go mod tidy
+
+      - name: Verify no remaining vulnerabilities
+        id: verify
+        continue-on-error: true
+        run: |
+          govulncheck ./...
+          EXIT=$?
+          if [ "$EXIT" -ne 0 ]; then
+            REMAINING=$(govulncheck -format json ./... 2>/dev/null \
+              | jq -r 'select(.finding != null) | .finding.osv' | sort -u | wc -l | tr -d ' ')
+            echo "::warning::${REMAINING} vulnerability/vulnerabilities remain after update. Manual review required."
+          else
+            REMAINING=0
+            echo "✅ All vulnerabilities resolved."
+          fi
+          echo "remaining=$REMAINING" >> $GITHUB_OUTPUT
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet go.mod go.sum; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create remediation branch and PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BASE_BRANCH="${{ inputs.target-branch || github.ref_name || 'main' }}"
+
+          # This prevents duplicate PRs on consecutive nightly runs before the fix merges.
+          EXISTING=$(gh pr list \
+            --base "$BASE_BRANCH" \
+            --state open \
+            --json number,title,headRefName \
+            --jq '[.[] | select(.headRefName | startswith("govulncheck/"))] | first | .number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "::notice::Remediation PR #${EXISTING} is already open against ${BASE_BRANCH} — skipping."
+            exit 0
+          fi
+
+          BRANCH="govulncheck/auto-remediate-$(date +%Y%m%d-%H%M%S)"
+          VULN_COUNT="${{ needs.vulncheck.outputs.vuln-count }}"
+          REMAINING="${{ steps.verify.outputs.remaining }}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add go.mod go.sum
+          git commit -m "fix(deps): update vulnerable modules identified by govulncheck
+
+          Automatically updated by the vulncheck auto-remediation workflow.
+          Remaining vulnerabilities after update: ${REMAINING}"
+
+          git push origin "$BRANCH"
+
+          BODY="## Automated dependency update — govulncheck remediation
+
+          This PR was opened automatically by the [vulncheck workflow](../actions/workflows/vulncheck.yml) after \`govulncheck\` detected **${VULN_COUNT} reachable vulnerability/vulnerabilities**.
+
+          ### Changes
+          - \`go.mod\` and \`go.sum\` updated via \`go get -u ./...\` and \`go mod tidy\`.
+
+          ### Verification
+          - Vulnerabilities before update: **${VULN_COUNT}**
+          - Vulnerabilities remaining after update: **${REMAINING}**
+
+          > If vulnerabilities remain, no upstream fix is available yet — manual review is required.
+
+          Please review the diff carefully before merging."
+
+          gh pr create \
+            --base  "$BASE_BRANCH" \
+            --head  "$BRANCH" \
+            --title "fix(deps): update vulnerable modules (govulncheck — ${VULN_COUNT} vuln(s))" \
+            --body  "$BODY" \
+            --label "dependencies,security"
+
+      - name: No changes after update
+        if: steps.changes.outputs.changed == 'false'
+        run: |
+          echo "::notice::Dependency update produced no changes to go.mod/go.sum. The vulnerable modules may already be at their latest versions or the fix requires manual intervention."

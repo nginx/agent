@@ -106,6 +106,7 @@ jobs:
     uses: ./.github/workflows/vulncheck.yml
     permissions:
       contents: read
+      pull-requests: read
       security-events: write # for reporting vulnerabilities via code-scanning API
     with:
       # Use PR head SHA for pull requests (supports PRs from forks).
