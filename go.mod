@@ -48,7 +48,6 @@ require (
 	github.com/testcontainers/testcontainers-go v0.45.0
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
-	github.com/vardius/message-bus/v2 v2.0.0
 	go.opentelemetry.io/collector/component v1.71.0
 	go.opentelemetry.io/collector/component/componenttest v0.165.0
 	go.opentelemetry.io/collector/config/confighttp v1.71.0
