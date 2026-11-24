@@ -765,6 +765,7 @@ github.com/valyala/fastjson v1.6.10 h1:/yjJg8jaVQdYR3arGxPE2X5z89xrlhS0eGXdv+ADT
 github.com/valyala/fastjson v1.6.10/go.mod h1:e6FubmQouUNP73jtMLmcbxS6ydWIpOfhz34TSfO3JaE=
 github.com/vardius/message-bus v1.1.5 h1:YSAC2WB4HRlwc4neFPTmT88kzzoiQ+9WRRbej/E/LZc=
 github.com/vardius/message-bus v1.1.5/go.mod h1:6xladCV2lMkUAE4bzzS85qKOiB5miV7aBVRafiTJGqw=
+github.com/vardius/message-bus/v2 v2.0.0/go.mod h1:i8knSLk2c+YuMNNgSHx4tI+5nf+U4VOTPh1I1mLsRPg=
 github.com/vultr/govultr/v3 v3.33.0 h1:SD8y4tmoSXbpX137JT5k7jLxJ5j0WcnRtDbq/+P26IA=
 github.com/vultr/govultr/v3 v3.33.0/go.mod h1:2zyUw9yADQaGwKnwDesmIOlBNLrm7edsCfWHFJpWKf8=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
