@@ -1,5 +1,4 @@
 name: configure-goproxy
-author: s.breen
 description: Sets the current Go module proxy based on the presence of a private proxy URL in environment variables.
 runs:
   using: 'composite'
