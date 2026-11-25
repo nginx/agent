@@ -28,10 +28,22 @@ jobs:
     permissions:
       contents: read  # for actions/checkout to fetch code
       pull-requests: read  # for golangci/golangci-lint-action to fetch pull requests
+      id-token: write  # for OIDC authentication
     name: Lint
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
@@ -67,8 +79,21 @@ jobs:
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-24.04
+    permissions:
+      id-token: write  # for OIDC authentication
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
             go-version-file: 'go.mod'
@@ -89,8 +114,21 @@ jobs:
   component-test:
     name: Component Tests
     runs-on: ubuntu-24.04
+    permissions:
+      id-token: write  # for OIDC authentication
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
@@ -100,10 +138,23 @@ jobs:
   build-unsigned-snapshot:
     name: Build unsigned snapshot
     runs-on: ubuntu-24.04
+    permissions:
+      id-token: write  # for OIDC authentication
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
@@ -137,6 +188,8 @@ jobs:
       name: Integration Tests
       needs: build-unsigned-snapshot
       runs-on: ubuntu-24.04
+      permissions:
+          id-token: write  # for OIDC authentication
       strategy:
           fail-fast: false
           matrix:
@@ -177,6 +230,17 @@ jobs:
           - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             with:
                 fetch-depth: 0
+          - name: Get Secrets from Azure Key Vault
+            if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
+            uses: ./.github/actions/az-sync
+            with:
+                az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+                az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+                az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+                keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+                secrets-filter: 'artifactory'
+          - name: Configure Go Proxy
+            uses: ./.github/actions/configure-goproxy
           - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
             with:
                 go-version-file: 'go.mod'
@@ -400,11 +464,25 @@ jobs:
   build-signed-snapshot:
     name: Build signed snapshot
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write  # for OIDC authentication
     if: ${{ !startsWith(github.ref_name, 'release-') && !startsWith(github.ref_name, 'dependabot/') && !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'

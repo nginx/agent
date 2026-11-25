@@ -44,6 +44,19 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.releaseBranch }}
 
+      - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'renovate/') }}
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
