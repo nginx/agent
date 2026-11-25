@@ -28,14 +28,11 @@ const (
 
 	csvSeparator = "|"
 
-	// expectedCSVFields is the number of pipe-separated fields in the
-	// secops-dashboard-log profile format:
-	// support_id|ip_client|src_port|dest_ip|dest_port|vs_name|policy_name|
-	// method|uri|protocol|request_status|response_code|outcome|outcome_reason|
-	// violation_rating|blocking_exception_reason|is_truncated_bool|sig_ids|
-	// sig_names|sig_cves|sig_set_names|threat_campaign_names|sub_violations|
-	// x_forwarded_for_header_value|violations|violation_details|request|geo_location
-	expectedCSVFields = 28
+	// minCSVFields is the minimum pipe-separated field count a
+	// secops-dashboard-log record must have. The HTTP profile emits 28 fields and
+	// the gRPC profile appends more; accepting any record with at least this many
+	// lets both through and tolerates future profiles that add fields.
+	minCSVFields = 28
 
 	gatePending int32 = 0
 	gateOpen    int32 = 1
@@ -44,8 +41,9 @@ const (
 
 // securityViolationsFilterProcessor passes log record bodies through untouched and sets
 // resource-level schema attributes. It validates the first string body to confirm the
-// NAP logging profile is producing pipe-separated CSV output. If validation fails, all
-// subsequent messages are dropped until the OTel collector is restarted.
+// NAP logging profile is producing pipe-separated CSV output in either the HTTP or
+// gRPC secops-dashboard-log layout. If validation fails, all subsequent messages are
+// dropped until the OTel collector is restarted.
 type securityViolationsFilterProcessor struct {
 	nextConsumer consumer.Logs
 	settings     processor.Settings
@@ -121,8 +119,10 @@ func (p *securityViolationsFilterProcessor) evaluateGate(lr plog.LogRecord) {
 		return
 	}
 
+	// Accept any record with at least minCSVFields so both the HTTP and gRPC
+	// layouts pass. Console tells them apart per record by field count.
 	fieldCount := strings.Count(lr.Body().Str(), csvSeparator) + 1
-	if fieldCount != expectedCSVFields {
+	if fieldCount < minCSVFields {
 		p.logInvalidCSVBody(fieldCount)
 		p.gateState.Store(gateClosed)
 
@@ -143,9 +143,10 @@ func (p *securityViolationsFilterProcessor) logNonStringBody(lr plog.LogRecord) 
 func (p *securityViolationsFilterProcessor) logInvalidCSVBody(fieldCount int) {
 	p.settings.Logger.Error(
 		"Security violation log does not appear to be CSV format. "+
-			"Ensure the NAP logging profile uses the secops-dashboard-log format. "+
+			"Ensure the NAP logging profile uses the secops-dashboard-log format "+
+			"(HTTP or gRPC layout). "+
 			"All security violation logs will be dropped until the collector is restarted.",
-		zap.Int("expected_fields", expectedCSVFields),
+		zap.Int("min_expected_fields", minCSVFields),
 		zap.Int("actual_fields", fieldCount),
 	)
 }
