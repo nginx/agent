@@ -11,9 +11,9 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nginxinc/nginx-go-crossplane v0.4.89
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.10.2
 	github.com/stretchr/testify v1.12.1
-	google.golang.org/grpc v1.83.2
+	google.golang.org/grpc v1.85.0
 )
 
 require (
